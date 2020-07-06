@@ -92,7 +92,7 @@ async def on_message(message):
                 mycursor.execute(sql, val)
 
             elif(raid_setup_step == "when"):
-                await rs_message.edit(content = f'{rs_message.content} at {message.content}')
+                await rs_message.edit(content = f'{rs_message.content} at {message.content}\nRaid ID: {raid_setup_id}')
                 await raid_setup_user.dm_channel.send(f'raid setup complete')
 
                 raid_setup_active = False
@@ -101,6 +101,8 @@ async def on_message(message):
                 sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
                 val = (f'{message.content}', raid_setup_id)
                 mycursor.execute(sql, val)
+
+                raid_setup_id = ""
 
             mydb.commit()
                 
@@ -135,7 +137,18 @@ async def raid(ctx):
 
     raid_setup_id = mycursor.lastrowid
     
- 
+
+@bot.command(name='spot', help='type join and then the raid id to join')
+async def spot(ctx, raid_id):
+    global sun_chan_code
+    global mycursor
+    global mydb
+
+    mycursor.execute(f'SELECT message_id FROM raid_plan WHERE idRaids = {raid_id}')
+    id = mycursor.fetchone()
+    print(f'{id}')
+    id = filter(lambda i: i not in ['(','\'',','], id)
+    print(f'{id}')
 
 
 
