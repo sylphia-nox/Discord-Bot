@@ -24,7 +24,7 @@ BotToken = os.getenv('BOT_TOKEN')
 ServerToken = os.getenv('SERVER_TOKEN')
 
 sun_chan_code = 683409608987115740
-raid_chan_code = 683409608987115740
+raid_chan_code = 667741313105395712
 
 raid_setup_active = False
 raid_setup_step = "what"
@@ -112,7 +112,7 @@ async def on_message(message):
 
 @bot.command(name='raid', help='I want to raid')
 async def raid(ctx):
-    global sun_chan_code
+    global raid_chan_code
     global raid_setup_active
     global raid_setup_user 
     global rs_message
@@ -124,7 +124,7 @@ async def raid(ctx):
     raid_setup_active = True
     raid_setup_user = ctx.message.author
 
-    sun_chan = bot.get_channel(sun_chan_code)
+    sun_chan = bot.get_channel(raid_chan_code)
     response = f'let\'s raid'
     message = await sun_chan.send(response)
     rs_message = message
@@ -178,22 +178,14 @@ async def print_raid(raid_id):
     global mycursor
     global mydb
 
-    mycursor.execute(f'SELECT idRaids, time, what, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, message_id FROM raid_plan WHERE idRaids = {raid_id}')
+    mycursor.execute(f'SELECT idRaids, time, what, t1.Display_Name AS prime_one, t2.Display_Name AS prime_two, t3.Display_Name AS prime_three, t4.Display_Name AS prime_four, t5.Display_Name AS prime_five, t6.Display_Name AS prime_six, t7.Display_Name AS back_one, t7.Display_Name AS back_two, message_id FROM raid_plan t LEFT OUTER JOIN players t1 ON t1.DiscordID=t.prime_one LEFT OUTER JOIN players t2 ON t2.DiscordID=t.prime_two LEFT OUTER JOIN players t3 ON t3.DiscordID=t.prime_three LEFT OUTER JOIN players t4 ON t4.DiscordID=t.prime_four LEFT OUTER JOIN players t5 ON t5.DiscordID=t.prime_five LEFT OUTER JOIN players t6 ON t6.DiscordID=t.prime_six LEFT OUTER JOIN players t7 ON t7.DiscordID=t.back_one LEFT OUTER JOIN players t8 ON t8.DiscordID=t.back_two WHERE idRaids = {raid_id}')
     sqlreturn = mycursor.fetchone()
 
     raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[11])
 
-    await raid_message.edit(content = f'Raid {sqlreturn[0]}\nWe are raiding {sqlreturn[2]} at {sqlreturn[1]}\nPrimary 1 {sqlreturn[3]}\nPrimary 2 {sqlreturn[4]}\nPrimary 3 {sqlreturn[5]}\nPrimary 4 {sqlreturn[6]}\nPrimary 5 {sqlreturn[7]}\nPrimary 6 {sqlreturn[8]}\nBackup 1 {sqlreturn[9]}\nPrimary 2 {sqlreturn[10]}')
-
-
-
-
-
-
-    
-
-
+    await raid_message.edit(content = f'Raid {sqlreturn[0]}\nWe are raiding {sqlreturn[2]} at {sqlreturn[1]}\nPrimary 1: {sqlreturn[3]}\nPrimary 2: {sqlreturn[4]}\nPrimary 3: {sqlreturn[5]}\nPrimary 4: {sqlreturn[6]}\nPrimary 5: {sqlreturn[7]}\nPrimary 6: {sqlreturn[8]}\nBackup 1: {sqlreturn[9]}\nBackup 2: {sqlreturn[10]}')
 
 
 
 bot.run(BotToken)
+
