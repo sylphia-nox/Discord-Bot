@@ -35,7 +35,6 @@ raid_setup_id = ""
 bot = commands.Bot(command_prefix='!')
 
 
-
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
@@ -55,19 +54,6 @@ async def on_ready():
     raid_string = mycursor.fetchall()
     await sun_chanel.send(response + str(raid_string))
 
-
-
-@bot.event
-async def on_raw_reaction_add(reaction):
-    sun_chan = bot.get_channel(683409608987115740)
-    response = 'someone added a reaction!'
-    await sun_chan.send(response)
-
-@bot.event
-async def on_reaction_add(reaction, user):
-    sun_chan = bot.get_channel(683409608987115740)
-    response = f'@{user} added a reaction!'
-    await sun_chan.send(response)
 
 @bot.event
 async def on_message(message):
