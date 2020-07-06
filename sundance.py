@@ -24,7 +24,7 @@ BotToken = os.getenv('BOT_TOKEN')
 ServerToken = os.getenv('SERVER_TOKEN')
 
 sun_chan_code = 683409608987115740
-raid_chan_code = None
+raid_chan_code = 683409608987115740
 
 raid_setup_active = False
 raid_setup_step = "what"
@@ -102,6 +102,8 @@ async def on_message(message):
                 val = (f'{message.content}', raid_setup_id)
                 mycursor.execute(sql, val)
 
+                await print_raid(raid_setup_id)
+
                 raid_setup_id = ""
 
             mydb.commit()
@@ -139,16 +141,56 @@ async def raid(ctx):
     
 
 @bot.command(name='spot', help='type join and then the raid id to join')
-async def spot(ctx, raid_id):
+async def spot(ctx, raid_id, spot):
     global sun_chan_code
     global mycursor
     global mydb
 
-    mycursor.execute(f'SELECT message_id FROM raid_plan WHERE idRaids = {raid_id}')
-    id = mycursor.fetchone()
-    print(f'{id}')
-    id = filter(lambda i: i not in ['(','\'',','], id)
-    print(f'{id}')
+    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
+
+    mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
+    sqlreturn = mycursor.fetchone()
+    print(f'{sqlreturn}')
+    
+    sql = "INSERT IGNORE INTO players (DiscordID, Display_Name) VALUE (%s, %s)"
+    val = (ctx.message.author.id, ctx.message.author.name)
+    mycursor.execute(sql, val)
+    mydb.commit()
+
+    if(sqlreturn[int(spot)] == None):
+        sql = "UPDATE raid_plan SET " + spots[int(spot)-1] + " = %s WHERE idRaids = %s"
+        val = (f'{ctx.message.author.id}', raid_id)
+        mycursor.execute(sql, val)
+        mydb.commit()
+
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'You have been added to the raid.')
+        await print_raid(raid_id)
+    else:
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'That spot is taken, please choose another.')
+
+
+
+
+async def print_raid(raid_id):
+    global raid_chan_code
+    global mycursor
+    global mydb
+
+    mycursor.execute(f'SELECT idRaids, time, what, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, message_id FROM raid_plan WHERE idRaids = {raid_id}')
+    sqlreturn = mycursor.fetchone()
+
+    raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[11])
+
+    await raid_message.edit(content = f'Raid {sqlreturn[0]}\nWe are raiding {sqlreturn[2]} at {sqlreturn[1]}\nPrimary 1 {sqlreturn[3]}\nPrimary 2 {sqlreturn[4]}\nPrimary 3 {sqlreturn[5]}\nPrimary 4 {sqlreturn[6]}\nPrimary 5 {sqlreturn[7]}\nPrimary 6 {sqlreturn[8]}\nBackup 1 {sqlreturn[9]}\nPrimary 2 {sqlreturn[10]}')
+
+
+
+
+
+
+    
 
 
 
