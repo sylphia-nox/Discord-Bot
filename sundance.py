@@ -32,7 +32,7 @@ raid_setup_id = ""
 
 #create bot object
 #client = discord.Client()
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='~')
 
 
 @bot.event
@@ -149,9 +149,8 @@ async def raid(ctx):
     raid_setup_id = mycursor.lastrowid
     
 
-@bot.command(name='spot', help='type join and then the raid id to join')
-async def spot(ctx, raid_id, spot):
-    global sun_chan_code
+@bot.command(name='join', help='type join and then the raid id to join')
+async def join(ctx, raid_id, spot):
     global mycursor
     global mydb
 
@@ -178,7 +177,13 @@ async def spot(ctx, raid_id, spot):
         await ctx.message.author.create_dm()
         await ctx.message.author.dm_channel.send(f'That spot is taken, please choose another.')
 
+@bot.command(name='refresh', help='type refresh and the raid info will be refreshed')
+async def refresh(ctx, raid_id):
+    global sun_chan_code
+    global mycursor
+    global mydb
 
+    await print_raid(raid_id)
 
 
 async def print_raid(raid_id):
