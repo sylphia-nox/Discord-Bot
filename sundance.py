@@ -65,17 +65,35 @@ async def on_message(message):
     global mydb
     global raid_setup_id
 
+    #check if raid setup is active, if not ignore
     if(raid_setup_active):
+        #check to see if the message is a DM from the raid_setup_user
         if message.channel.type is discord.ChannelType.private and message.author == raid_setup_user:
+            #Check what state the raid setup is in.
             if(raid_setup_step == "what"):
-                await rs_message.edit(content = f'{rs_message.content} {message.content}')
-                await raid_setup_user.dm_channel.send(f'when?')
+                #grab number of raids for loop
+                mycursor.execute(f'SELECT COUNT(*) FROM raid_info')
+                sqlreturn = mycursor.fetchone()
 
-                raid_setup_step = "when"
+                in_list = False
 
-                sql = "UPDATE raid_plan SET what = %s WHERE idRaids = %s"
-                val = (f'{message.content}', raid_setup_id)
-                mycursor.execute(sql, val)
+                for i in range(sqlreturn[0]):
+                    if (int(message.content) == (i+1)):
+                        print(f'We have a match!')
+                        #do the thing
+                        sql = "UPDATE raid_plan SET what = %s WHERE idRaids = %s"
+                        val = (f'{message.content}', raid_setup_id)
+                        mycursor.execute(sql, val)
+
+                        await print_raid(raid_setup_id)
+                        await raid_setup_user.dm_channel.send(f'when?')
+                        
+                        raid_setup_step = "when"
+                        in_list = True
+                        break
+
+                if(not in_list):
+                    await raid_setup_user.dm_channel.send(f'Invalid choice, please choose a number from the list')
 
             elif(raid_setup_step == "when"):
                 await rs_message.edit(content = f'{rs_message.content} at {message.content}\nRaid ID: {raid_setup_id}')
@@ -104,25 +122,30 @@ async def raid(ctx):
     global rs_message
     global mycursor
     global mydb
-
     global raid_setup_id
 
+    #setting global variable values for new raid setup
     raid_setup_active = True
     raid_setup_user = ctx.message.author
 
+    #create raid post
     sun_chan = bot.get_channel(raid_chan_code)
     response = f'let\'s raid'
     message = await sun_chan.send(response)
+
+    #get raid post message object and set global variable
     rs_message = message
 
-    await raid_setup_user.create_dm()
-    await raid_setup_user.dm_channel.send(f'What raid?')
+    #ask the user which raid they want to do via DM
+    await which_raid_question(raid_setup_user)
 
+    #insert raid into DB, currently only setting Raid key and message ID
     sql = "INSERT INTO raid_plan (message_id) VALUE (%s)"
     val = (message.id,)
     mycursor.execute(sql, val)
     mydb.commit()
 
+    #setting raid ID global variable
     raid_setup_id = mycursor.lastrowid
     
 
@@ -136,7 +159,6 @@ async def spot(ctx, raid_id, spot):
 
     mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
     sqlreturn = mycursor.fetchone()
-    print(f'{sqlreturn}')
     
     sql = "INSERT IGNORE INTO players (DiscordID, Display_Name) VALUE (%s, %s)"
     val = (ctx.message.author.id, ctx.message.author.name)
@@ -164,14 +186,38 @@ async def print_raid(raid_id):
     global mycursor
     global mydb
 
-    mycursor.execute(f'SELECT idRaids, time, what, t1.Display_Name AS prime_one, t2.Display_Name AS prime_two, t3.Display_Name AS prime_three, t4.Display_Name AS prime_four, t5.Display_Name AS prime_five, t6.Display_Name AS prime_six, t7.Display_Name AS back_one, t7.Display_Name AS back_two, message_id FROM raid_plan t LEFT OUTER JOIN players t1 ON t1.DiscordID=t.prime_one LEFT OUTER JOIN players t2 ON t2.DiscordID=t.prime_two LEFT OUTER JOIN players t3 ON t3.DiscordID=t.prime_three LEFT OUTER JOIN players t4 ON t4.DiscordID=t.prime_four LEFT OUTER JOIN players t5 ON t5.DiscordID=t.prime_five LEFT OUTER JOIN players t6 ON t6.DiscordID=t.prime_six LEFT OUTER JOIN players t7 ON t7.DiscordID=t.back_one LEFT OUTER JOIN players t8 ON t8.DiscordID=t.back_two WHERE idRaids = {raid_id}')
+    select = f'SELECT t.idRaids, `time`, `raid_info`.`name`, t1.Display_Name, t2.Display_Name, t3.Display_Name, t4.Display_Name, t5.Display_Name, t6.Display_Name, t7.Display_Name, t8.Display_Name, message_id, `raid_info`.`dlc`, `raid_info`.`light_level` '
+    from_clause = f'FROM raid_plan t '
+    join_clause = f'LEFT OUTER JOIN raid_info ON `raid_info`.`idRaids`=t.what LEFT OUTER JOIN players t1 ON t1.DiscordID=t.prime_one LEFT OUTER JOIN players t2 ON t2.DiscordID=t.prime_two LEFT OUTER JOIN players t3 ON t3.DiscordID=t.prime_three LEFT OUTER JOIN players t4 ON t4.DiscordID=t.prime_four LEFT OUTER JOIN players t5 ON t5.DiscordID=t.prime_five LEFT OUTER JOIN players t6 ON t6.DiscordID=t.prime_six LEFT OUTER JOIN players t7 ON t7.DiscordID=t.back_one LEFT OUTER JOIN players t8 ON t8.DiscordID=t.back_two '
+    where_clause = f'WHERE t.idRaids = {raid_id}'
+    sql_statement = select + from_clause + join_clause + where_clause
+
+    mycursor.execute(sql_statement)
     sqlreturn = mycursor.fetchone()
 
     raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[11])
 
-    await raid_message.edit(content = f'Raid {sqlreturn[0]}\nWe are raiding {sqlreturn[2]} at {sqlreturn[1]}\nPrimary 1: {sqlreturn[3]}\nPrimary 2: {sqlreturn[4]}\nPrimary 3: {sqlreturn[5]}\nPrimary 4: {sqlreturn[6]}\nPrimary 5: {sqlreturn[7]}\nPrimary 6: {sqlreturn[8]}\nBackup 1: {sqlreturn[9]}\nBackup 2: {sqlreturn[10]}')
+    details = f'Raid {sqlreturn[0]}\nWe are raiding {sqlreturn[2]} at {sqlreturn[1]}\n'
+    primaries = f'Primary 1: {sqlreturn[3]}\nPrimary 2: {sqlreturn[4]}\nPrimary 3: {sqlreturn[5]}\nPrimary 4: {sqlreturn[6]}\nPrimary 5: {sqlreturn[7]}\nPrimary 6: {sqlreturn[8]}\n'
+    backups = f'Backup 1: {sqlreturn[9]}\nBackup 2: {sqlreturn[10]}\n'
+    requirements = f'{sqlreturn[2]} requires {sqlreturn[12]} and a light level of {sqlreturn[13]}'
+
+    await raid_message.edit(content = f'{details}{primaries}{backups}{requirements}')
+
+
+async def which_raid_question(user):
+    global mycursor
+
+    mycursor.execute(f'SELECT idRaids, name FROM raid_info')
+    sqlreturn = mycursor.fetchall()
+
+    await user.create_dm()
+    await user.dm_channel.send(f'What raid?')
+    raids = ""
+    for i in range(len(sqlreturn)):
+        raids = f'{raids}{sqlreturn[i][0]}: {sqlreturn[i][1]} \n'
+    await user.dm_channel.send(f'{raids}')
 
 
 
 bot.run(BotToken)
-
