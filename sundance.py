@@ -7,6 +7,8 @@ import mysql.connector
 from dotenv import load_dotenv
 from discord.ext import commands
 
+import numpy as np
+
 #load environment variables
 load_dotenv()
 
@@ -146,6 +148,7 @@ async def join(ctx, raid_id, spot):
     global mycursor
     global mydb
 
+
     spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
 
     mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
@@ -156,7 +159,12 @@ async def join(ctx, raid_id, spot):
     mycursor.execute(sql, val)
     mydb.commit()
 
-    if(sqlreturn[int(spot)] == None):
+    if str(ctx.message.author.id) in np.array(sqlreturn):
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'You are already in this raid.')
+        await print_raid(raid_id)
+
+    elif(sqlreturn[int(spot)] == None):
         sql = "UPDATE raid_plan SET " + spots[int(spot)-1] + " = %s WHERE idRaids = %s"
         val = (f'{ctx.message.author.id}', raid_id)
         mycursor.execute(sql, val)
@@ -165,6 +173,7 @@ async def join(ctx, raid_id, spot):
         await ctx.message.author.create_dm()
         await ctx.message.author.dm_channel.send(f'You have been added to the raid.')
         await print_raid(raid_id)
+
     else:
         await ctx.message.author.create_dm()
         await ctx.message.author.dm_channel.send(f'That spot is taken, please choose another.')
