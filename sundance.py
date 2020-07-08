@@ -45,14 +45,6 @@ async def on_ready():
         f'{bot.user} is connected to the following guild:\n'
         f'{guild.name}(id: {guild.id})\n'
     )
-    global sun_chan_code
-    global mycursor
-
-    sun_chanel = bot.get_channel(sun_chan_code)
-    mycursor.execute("SELECT * FROM raid_info")
-    response = 'here are the raids \n' 
-    raid_string = mycursor.fetchall()
-    await sun_chanel.send(response + str(raid_string))
 
 
 @bot.event
