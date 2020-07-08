@@ -186,6 +186,32 @@ async def refresh(ctx, raid_id):
     await print_raid(raid_id)
 
 
+@bot.command(name='leave', help='type leave # and you will be removed from that raid')
+async def leave(ctx, raid_id):
+    global sun_chan_code
+    global mycursor
+    global mydb
+
+    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
+
+    mycursor.execute(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
+    sqlreturn = mycursor.fetchone()
+
+    for i in range(len(sqlreturn)):
+        if (sqlreturn[i] == str(ctx.message.author.id)):
+            print(f'Removing user from raid position {i+1}')
+            
+            sql = "UPDATE raid_plan SET " + spots[i] + " = NULL WHERE idRaids = %s"
+            val = (raid_id,)
+            mycursor.execute(sql, val)
+            mydb.commit()
+
+            await ctx.message.author.create_dm()
+            await ctx.message.author.dm_channel.send(f'You have been removed from raid {raid_id}.')
+            await print_raid(raid_id)
+            break
+
+
 async def print_raid(raid_id):
     global raid_chan_code
     global mycursor
