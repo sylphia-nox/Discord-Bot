@@ -171,47 +171,7 @@ async def raid(ctx):
 #this command allows a user to join a raid.
 @bot.command(name='join', help='type ~join # # First number is the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
 async def join(ctx, raid_id, spot):
-    #declare global variables used in command
-    global mycursor
-    global mydb
-
-    #create array to allow dynamic SQL
-    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
-
-    #pull current information on raid.
-    mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
-    sqlreturn = mycursor.fetchone()
-    
-    #insert users Discord name and ID into players table if needed.
-    sql = "INSERT IGNORE INTO players (DiscordID, Display_Name) VALUE (%s, %s)"
-    val = (ctx.message.author.id, ctx.message.author.name)
-    mycursor.execute(sql, val)
-    mydb.commit()
-
-    #check to confirm user is not already in the raid.
-    if str(ctx.message.author.id) in np.array(sqlreturn):
-        #inform user they are already in the raid
-        await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send(f'You are already in this raid.')
-
-    #check to ensure the spot the user wants is not taken and add them if it is not
-    elif(sqlreturn[int(spot)] == None):
-        #update dabase with new info
-        sql = "UPDATE raid_plan SET " + spots[int(spot)-1] + " = %s WHERE idRaids = %s"
-        val = (f'{ctx.message.author.id}', raid_id)
-        mycursor.execute(sql, val)
-        mydb.commit()
-
-        #inform user they are added to the raid
-        await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send(f'You have been added to the raid.')
-        await print_raid(raid_id)
-
-    #if user is not already in the raid and tries to join a taken spot
-    else:
-        #inform user the spot is taken
-        await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send(f'That spot is taken, please choose another.')
+    await add_user_to_raid(ctx.message.author, raid_id, ctx.message.author, spot)
 
 #this is a utility command to refresh a raid post based on data in MySQL DB
 @bot.command(name='refresh', help='type ~refresh and the raid info will be refreshed')
@@ -276,10 +236,12 @@ async def delete(ctx, raid_id):
     mycursor.execute(sql, val)
     mydb.commit()
 
-
-
-
-
+#this command allows an admin user to add someone to a raid post
+@bot.command(name='add', help='type add @usertag # #, where # # is the raid ID followed by the spot to add them to that raid.')
+@commands.has_role(admin_role_code)
+async def add(ctx, user: discord.Member, raid_id, spot_id):
+    #call add user command
+    await add_user_to_raid(user, raid_id, ctx.message.author, spot_id)
 
 #helper utility to update the raid post, requires raid_id input matching ID in DB
 async def print_raid(raid_id):
@@ -328,6 +290,66 @@ async def which_raid_question(user):
     for i in range(len(sqlreturn)):
         raids = f'{raids}{sqlreturn[i][0]}: {sqlreturn[i][1]} \n'
     await user.dm_channel.send(f'{raids}')
+
+#helper function to add user to a raid
+async def add_user_to_raid(user, raid_id, request_user, spot):
+#create array to allow dynamic SQL
+    #declare global variables used in command
+    global mycursor
+    global mydb
+
+    #create array of values to allow dynamic sql
+    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
+
+    #pull current information on raid.
+    mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
+    sqlreturn = mycursor.fetchone()
+    
+    #insert users Discord name and ID into players table if needed.
+    sql = "INSERT IGNORE INTO players (DiscordID, Display_Name) VALUE (%s, %s)"
+    val = (user.id, user.name)
+    mycursor.execute(sql, val)
+    mydb.commit()
+
+    #check to confirm user is not already in the raid.
+    if str(user.id) in np.array(sqlreturn):
+        #check if request user is same as user to be added
+        if(user.id==request_user.id):
+            #inform user they are already in the raid
+            await request_user.create_dm()
+            await request_user.dm_channel.send(f'You are already in this raid.')
+        else:
+            #inform request user that the user is already in the raid
+            await request_user.create_dm()
+            await request_user.dm_channel.send(f'User is already in this raid.')
+
+    #check to ensure the spot the user wants is not taken and add them if it is not
+    elif(sqlreturn[int(spot)] == None):
+        #update dabase with new info
+        sql = "UPDATE raid_plan SET " + spots[int(spot)-1] + " = %s WHERE idRaids = %s"
+        val = (f'{user.id}', raid_id)
+        mycursor.execute(sql, val)
+        mydb.commit()
+
+        #check if request user is same as user to be added
+        if(user.id==request_user.id):
+            #inform user they are added to the raid
+            await request_user.create_dm()
+            await request_user.dm_channel.send(f'You have been added to the raid.')
+        else:
+            #inform request user that the user was added to the raid.
+            await request_user.create_dm()
+            await request_user.dm_channel.send(f'User added to the raid.')
+        
+    #if user is not already in the raid and tries to join a taken spot
+    else:
+        #inform user the spot is taken
+        await request_user.create_dm()
+        await request_user.dm_channel.send(f'That spot is taken, please choose another.')
+
+    #update raid post
+    await print_raid(raid_id)
+
 
 #execute Bot 
 bot.run(BotToken)
