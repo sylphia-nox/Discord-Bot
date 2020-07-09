@@ -35,6 +35,7 @@ ServerToken = os.getenv('SERVER_TOKEN')
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
 sun_chan_code = 683409608987115740
 raid_chan_code = 667741313105395712
+admin_role_code = 664595898579419147
 
 #global variables to allow the bot to know if raid setup is ongoing and its state
 raid_setup_active = False
@@ -90,7 +91,7 @@ async def on_message(message):
 
                         #prompt user for time in DM channel and edit raid post
                         await print_raid(raid_setup_id)
-                        await raid_setup_user.dm_channel.send(f'when?')
+                        await raid_setup_user.dm_channel.send(f'When is the raid? Response can include data and time.')
                         
                         #set global variable to "when" to change the event response
                         raid_setup_step = "when"
@@ -168,7 +169,7 @@ async def raid(ctx):
     raid_setup_id = mycursor.lastrowid
     
 #this command allows a user to join a raid.
-@bot.command(name='join', help='type ~join and then the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
+@bot.command(name='join', help='type ~join # # First number is the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
 async def join(ctx, raid_id, spot):
     #declare global variables used in command
     global mycursor
@@ -221,7 +222,6 @@ async def refresh(ctx, raid_id):
 @bot.command(name='leave', help='type ~leave # and you will be removed from that raid')
 async def leave(ctx, raid_id):
     #declare global variables used in command
-    global sun_chan_code
     global mycursor
     global mydb
 
@@ -251,6 +251,35 @@ async def leave(ctx, raid_id):
 
             #break loop to avoid excess computing
             break
+
+#this command allows a user with certain privileges to delete Raids
+@bot.command(name='delete', help='type ~delete #, this command is only available to admin users.')
+@commands.has_role(admin_role_code)
+async def delete(ctx, raid_id):
+    #declare global variables used in command
+    global mycursor
+    global mydb
+
+    #grab raid message ID to be deleted
+    mycursor.execute(f'SELECT message_id FROM raid_plan WHERE idRaids = {raid_id}')
+    sqlreturn = mycursor.fetchone()
+
+    #grab message object to delete using the message_ID stored in DB
+    raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[0])
+
+    #delete message
+    await raid_message.delete()
+
+    #delete raid from DB
+    sql = "DELETE FROM raid_plan WHERE idRaids = %s"
+    val = (raid_id,)
+    mycursor.execute(sql, val)
+    mydb.commit()
+
+
+
+
+
 
 #helper utility to update the raid post, requires raid_id input matching ID in DB
 async def print_raid(raid_id):
@@ -294,7 +323,7 @@ async def which_raid_question(user):
 
     #DM user list of Raids
     await user.create_dm()
-    await user.dm_channel.send(f'What raid?')
+    await user.dm_channel.send(f'What raid? (type number)')
     raids = ""
     for i in range(len(sqlreturn)):
         raids = f'{raids}{sqlreturn[i][0]}: {sqlreturn[i][1]} \n'
