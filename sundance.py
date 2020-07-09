@@ -35,7 +35,7 @@ ServerToken = os.getenv('SERVER_TOKEN')
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
 sun_chan_code = 683409608987115740
 raid_chan_code = 667741313105395712
-admin_role_code = 664595898579419147
+admin_role_code = 678799429326864385
 
 #global variables to allow the bot to know if raid setup is ongoing and its state
 raid_setup_active = False
@@ -57,6 +57,10 @@ async def on_ready():
         f'{bot.user} is connected to the following guild:\n'
         f'{guild.name}(id: {guild.id})\n'
     )
+
+    # Setting `Listening ` status
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
+
 
 #this event activates on all messages but is for DM messages for setting up a raid, everything else goes through commands
 @bot.event
@@ -108,6 +112,11 @@ async def on_message(message):
 
             #elif check if raid setup is in "when" state
             elif(raid_setup_step == "when"):
+                #update DB with "when" value
+                sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
+                val = (f'{message.content}', raid_setup_id)
+                mycursor.execute(sql, val)
+
                 #DM user that raid setup is complete
                 await raid_setup_user.dm_channel.send(f'raid setup complete')
 
@@ -115,16 +124,14 @@ async def on_message(message):
                 raid_setup_active = False
                 raid_setup_step = "what"
 
-                #update DB with "when" value
-                sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
-                val = (f'{message.content}', raid_setup_id)
-                mycursor.execute(sql, val)
-
                 #edit raid post to show new data
                 await print_raid(raid_setup_id)
 
                 #clear global variable for next setup
                 raid_setup_id = ""
+
+                # Reset boss display status
+                await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
 
             #both steps run SQL so we need to commit those changes
             mydb.commit()
@@ -167,6 +174,10 @@ async def raid(ctx):
 
     #setting raid ID global variable
     raid_setup_id = mycursor.lastrowid
+
+    # Setting `Playing ` status to show bot is setting up a raid
+    await bot.change_presence(activity=discord.Game(name="setting up a raid"))
+
     
 #this command allows a user to join a raid.
 @bot.command(name='join', help='type ~join # # First number is the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
