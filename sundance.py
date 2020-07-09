@@ -35,6 +35,7 @@ ServerToken = os.getenv('SERVER_TOKEN')
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
 sun_chan_code = 683409608987115740
 raid_chan_code = 667741313105395712
+admin_role_code = 664595898579419147
 
 #global variables to allow the bot to know if raid setup is ongoing and its state
 raid_setup_active = False
@@ -90,7 +91,7 @@ async def on_message(message):
 
                         #prompt user for time in DM channel and edit raid post
                         await print_raid(raid_setup_id)
-                        await raid_setup_user.dm_channel.send(f'when?')
+                        await raid_setup_user.dm_channel.send(f'When is the raid? Response can include data and time.')
                         
                         #set global variable to "when" to change the event response
                         raid_setup_step = "when"
@@ -168,49 +169,9 @@ async def raid(ctx):
     raid_setup_id = mycursor.lastrowid
     
 #this command allows a user to join a raid.
-@bot.command(name='join', help='type ~join and then the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
+@bot.command(name='join', help='type ~join # # First number is the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
 async def join(ctx, raid_id, spot):
-    #declare global variables used in command
-    global mycursor
-    global mydb
-
-    #create array to allow dynamic SQL
-    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
-
-    #pull current information on raid.
-    mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
-    sqlreturn = mycursor.fetchone()
-    
-    #insert users Discord name and ID into players table if needed.
-    sql = "INSERT IGNORE INTO players (DiscordID, Display_Name) VALUE (%s, %s)"
-    val = (ctx.message.author.id, ctx.message.author.name)
-    mycursor.execute(sql, val)
-    mydb.commit()
-
-    #check to confirm user is not already in the raid.
-    if str(ctx.message.author.id) in np.array(sqlreturn):
-        #inform user they are already in the raid
-        await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send(f'You are already in this raid.')
-
-    #check to ensure the spot the user wants is not taken and add them if it is not
-    elif(sqlreturn[int(spot)] == None):
-        #update dabase with new info
-        sql = "UPDATE raid_plan SET " + spots[int(spot)-1] + " = %s WHERE idRaids = %s"
-        val = (f'{ctx.message.author.id}', raid_id)
-        mycursor.execute(sql, val)
-        mydb.commit()
-
-        #inform user they are added to the raid
-        await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send(f'You have been added to the raid.')
-        await print_raid(raid_id)
-
-    #if user is not already in the raid and tries to join a taken spot
-    else:
-        #inform user the spot is taken
-        await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send(f'That spot is taken, please choose another.')
+    await add_user_to_raid(ctx.message.author, raid_id, ctx.message.author, spot)
 
 #this is a utility command to refresh a raid post based on data in MySQL DB
 @bot.command(name='refresh', help='type ~refresh and the raid info will be refreshed')
@@ -220,37 +181,44 @@ async def refresh(ctx, raid_id):
 #command to allow a user to leave the raid, it will remove the user from the first spot it finds them in.
 @bot.command(name='leave', help='type ~leave # and you will be removed from that raid')
 async def leave(ctx, raid_id):
+    await remove_user(ctx.message.author, raid_id, ctx.message.author)
+
+#this command allows a user with certain privileges to delete Raids
+@bot.command(name='delete', help='type ~delete #, this command is only available to admin users.')
+@commands.has_role(admin_role_code)
+async def delete(ctx, raid_id):
     #declare global variables used in command
-    global sun_chan_code
     global mycursor
     global mydb
 
-    #create array of values to allow dynamic sql
-    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
-
-    #pull current raid info
-    mycursor.execute(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
+    #grab raid message ID to be deleted
+    mycursor.execute(f'SELECT message_id FROM raid_plan WHERE idRaids = {raid_id}')
     sqlreturn = mycursor.fetchone()
 
-    #iterate through each spot to check if the user is in that spot.
-    for i in range(len(sqlreturn)):
-        #check if the message author's ID matches the ID in the spot
-        if (sqlreturn[i] == str(ctx.message.author.id)):
-            #update SQL to remove user
-            sql = "UPDATE raid_plan SET " + spots[i] + " = NULL WHERE idRaids = %s"
-            val = (raid_id,)
-            mycursor.execute(sql, val)
-            mydb.commit()
+    #grab message object to delete using the message_ID stored in DB
+    raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[0])
 
-            #notify user they have been removed from the raid.
-            await ctx.message.author.create_dm()
-            await ctx.message.author.dm_channel.send(f'You have been removed from raid {raid_id}.')
+    #delete message
+    await raid_message.delete()
 
-            #update raid post with new data
-            await print_raid(raid_id)
+    #delete raid from DB
+    sql = "DELETE FROM raid_plan WHERE idRaids = %s"
+    val = (raid_id,)
+    mycursor.execute(sql, val)
+    mydb.commit()
 
-            #break loop to avoid excess computing
-            break
+#this command allows an admin user to add someone to a raid post
+@bot.command(name='add', help='type add @usertag # #, where # # is the raid ID followed by the spot to add them to that raid.')
+@commands.has_role(admin_role_code)
+async def add(ctx, user: discord.Member, raid_id, spot_id):
+    #call add user command
+    await add_user_to_raid(user, raid_id, ctx.message.author, spot_id)
+
+#this command allows an admin user to remove someone from a raid post
+@bot.command(name='remove', help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
+@commands.has_role(admin_role_code)
+async def remove(ctx, user: discord.Member, raid_id):
+    await remove_user(user, raid_id, ctx.message.author)
 
 #helper utility to update the raid post, requires raid_id input matching ID in DB
 async def print_raid(raid_id):
@@ -294,11 +262,110 @@ async def which_raid_question(user):
 
     #DM user list of Raids
     await user.create_dm()
-    await user.dm_channel.send(f'What raid?')
+    await user.dm_channel.send(f'What raid? (type number)')
     raids = ""
     for i in range(len(sqlreturn)):
         raids = f'{raids}{sqlreturn[i][0]}: {sqlreturn[i][1]} \n'
     await user.dm_channel.send(f'{raids}')
+
+#helper function to add user to a raid
+async def add_user_to_raid(user, raid_id, request_user, spot):
+#create array to allow dynamic SQL
+    #declare global variables used in command
+    global mycursor
+    global mydb
+
+    #create array of values to allow dynamic sql
+    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
+
+    #pull current information on raid.
+    mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
+    sqlreturn = mycursor.fetchone()
+    
+    #insert users Discord name and ID into players table if needed.
+    sql = "INSERT IGNORE INTO players (DiscordID, Display_Name) VALUE (%s, %s)"
+    val = (user.id, user.name)
+    mycursor.execute(sql, val)
+    mydb.commit()
+
+    #check to confirm user is not already in the raid.
+    if str(user.id) in np.array(sqlreturn):
+        #check if request user is same as user to be added
+        if(user.id==request_user.id):
+            #inform user they are already in the raid
+            await request_user.create_dm()
+            await request_user.dm_channel.send(f'You are already in this raid.')
+        else:
+            #inform request user that the user is already in the raid
+            await request_user.create_dm()
+            await request_user.dm_channel.send(f'User is already in this raid.')
+
+    #check to ensure the spot the user wants is not taken and add them if it is not
+    elif(sqlreturn[int(spot)] == None):
+        #update dabase with new info
+        sql = "UPDATE raid_plan SET " + spots[int(spot)-1] + " = %s WHERE idRaids = %s"
+        val = (f'{user.id}', raid_id)
+        mycursor.execute(sql, val)
+        mydb.commit()
+
+        #check if request user is same as user to be added
+        if(user.id==request_user.id):
+            #inform user they are added to the raid
+            await request_user.create_dm()
+            await request_user.dm_channel.send(f'You have been added to the raid.')
+        else:
+            #inform request user that the user was added to the raid.
+            await request_user.create_dm()
+            await request_user.dm_channel.send(f'User added to the raid.')
+        
+    #if user is not already in the raid and tries to join a taken spot
+    else:
+        #inform user the spot is taken
+        await request_user.create_dm()
+        await request_user.dm_channel.send(f'That spot is taken, please choose another.')
+
+    #update raid post
+    await print_raid(raid_id)
+
+#helper function to remove user from a raid.
+async def remove_user(user, raid_id, request_user):
+    #declare global variables used in command
+    global mycursor
+    global mydb
+
+    #create array of values to allow dynamic sql
+    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
+
+    #pull current raid info
+    mycursor.execute(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
+    sqlreturn = mycursor.fetchone()
+
+    #iterate through each spot to check if the user is in that spot.
+    for i in range(len(sqlreturn)):
+        #check if the message author's ID matches the ID in the spot
+        if (sqlreturn[i] == str(user.id)):
+            #update SQL to remove user
+            sql = "UPDATE raid_plan SET " + spots[i] + " = NULL WHERE idRaids = %s"
+            val = (raid_id,)
+            mycursor.execute(sql, val)
+            mydb.commit()
+
+            #notify request_user that the user has been removed from the raid.
+            if(user.id==request_user.id):
+                #inform user they were removed from the raid
+                await request_user.create_dm()
+                await request_user.dm_channel.send(f'You have been removed from the raid.')
+            else:
+                #inform request user that the user was removed to the raid.
+                await request_user.create_dm()
+                await request_user.dm_channel.send(f'User has been removed from the raid.')
+
+            #update raid post with new data
+            await print_raid(raid_id)
+
+            #break loop to avoid excess computing
+            break
+
 
 #execute Bot 
 bot.run(BotToken)
