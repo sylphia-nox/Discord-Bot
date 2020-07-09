@@ -228,9 +228,9 @@ async def print_raid(raid_id):
     global mydb
 
     #SQL for query to pull Raid info with display values
-    select = f'SELECT t.idRaids, `time`, `raid_info`.`name`, t1.Display_Name, t2.Display_Name, t3.Display_Name, t4.Display_Name, t5.Display_Name, t6.Display_Name, t7.Display_Name, t8.Display_Name, message_id, `raid_info`.`dlc`, `raid_info`.`light_level` '
+    select = f'SELECT t.idRaids, `time`, `raid_info`.`name`, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, message_id, `raid_info`.`dlc`, `raid_info`.`light_level` '
     from_clause = f'FROM raid_plan t '
-    join_clause = f'LEFT OUTER JOIN raid_info ON `raid_info`.`idRaids`=t.what LEFT OUTER JOIN players t1 ON t1.DiscordID=t.prime_one LEFT OUTER JOIN players t2 ON t2.DiscordID=t.prime_two LEFT OUTER JOIN players t3 ON t3.DiscordID=t.prime_three LEFT OUTER JOIN players t4 ON t4.DiscordID=t.prime_four LEFT OUTER JOIN players t5 ON t5.DiscordID=t.prime_five LEFT OUTER JOIN players t6 ON t6.DiscordID=t.prime_six LEFT OUTER JOIN players t7 ON t7.DiscordID=t.back_one LEFT OUTER JOIN players t8 ON t8.DiscordID=t.back_two '
+    join_clause = f'LEFT OUTER JOIN raid_info ON `raid_info`.`idRaids`=t.what '
     where_clause = f'WHERE t.idRaids = {raid_id}'
     sql_statement = select + from_clause + join_clause + where_clause
 
@@ -238,13 +238,21 @@ async def print_raid(raid_id):
     mycursor.execute(sql_statement)
     sqlreturn = mycursor.fetchone()
 
+    #parse return to change values of None to "" and change ID values to tag format and store them in new array: raid_spots
+    raid_spots = []
+    for i in range(8):
+        if(sqlreturn[i+3]==None):
+            raid_spots.append("")
+        else:
+            raid_spots.append(f'<@{sqlreturn[i+3]}>')
+
     #grab message object to update using message_ID stored in DB
     raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[11])
 
     #text of post
     details = f'Raid {sqlreturn[0]}\nWe are raiding {sqlreturn[2]} at {sqlreturn[1]}\n'
-    primaries = f'Primary 1: {sqlreturn[3]}\nPrimary 2: {sqlreturn[4]}\nPrimary 3: {sqlreturn[5]}\nPrimary 4: {sqlreturn[6]}\nPrimary 5: {sqlreturn[7]}\nPrimary 6: {sqlreturn[8]}\n'
-    backups = f'Backup 1: {sqlreturn[9]}\nBackup 2: {sqlreturn[10]}\n'
+    primaries = f'Primary 1: {raid_spots[0]}\nPrimary 2: {raid_spots[1]}\nPrimary 3: {raid_spots[2]}\nPrimary 4: {raid_spots[3]}\nPrimary 5: {raid_spots[4]}\nPrimary 6: {raid_spots[5]}\n'
+    backups = f'Backup 1: {raid_spots[6]}\nBackup 2: {raid_spots[7]}\n'
     requirements = f'{sqlreturn[2]} requires {sqlreturn[12]} and a light level of {sqlreturn[13]}'
 
     #update post with text
@@ -281,12 +289,6 @@ async def add_user_to_raid(user, raid_id, request_user, spot):
     #pull current information on raid.
     mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
     sqlreturn = mycursor.fetchone()
-    
-    #insert users Discord name and ID into players table if needed.
-    sql = "INSERT IGNORE INTO players (DiscordID, Display_Name) VALUE (%s, %s)"
-    val = (user.id, user.name)
-    mycursor.execute(sql, val)
-    mydb.commit()
 
     #check to confirm user is not already in the raid.
     if str(user.id) in np.array(sqlreturn):
