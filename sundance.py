@@ -33,9 +33,9 @@ BotToken = os.getenv('BOT_TOKEN')
 ServerToken = os.getenv('SERVER_TOKEN')
 
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
-sun_chan_code = 683409608987115740
-raid_chan_code = 667741313105395712
-admin_role_code = 678799429326864385
+sun_chan_code = os.getenv('SUN_CHAN_CODE')
+raid_chan_code = os.getenv('RAID_CHAN_CODE')
+admin_role_code = os.getenv('ADMIN_ROLE_CODE')
 
 #global variables to allow the bot to know if raid setup is ongoing and its state
 raid_setup_active = False
@@ -95,7 +95,7 @@ async def on_message(message):
 
                         #prompt user for time in DM channel and edit raid post
                         await print_raid(raid_setup_id)
-                        await raid_setup_user.dm_channel.send(f'When is the raid? Response can include data and time.')
+                        await raid_setup_user.dm_channel.send(f'When is the raid? Response can include data and time. Limit 35 characters')
                         
                         #set global variable to "when" to change the event response
                         raid_setup_step = "when"
