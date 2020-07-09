@@ -289,12 +289,6 @@ async def add_user_to_raid(user, raid_id, request_user, spot):
     #pull current information on raid.
     mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
     sqlreturn = mycursor.fetchone()
-    
-    #insert users Discord name and ID into players table if needed.
-    sql = "INSERT IGNORE INTO players (DiscordID, Display_Name) VALUE (%s, %s)"
-    val = (user.id, user.name)
-    mycursor.execute(sql, val)
-    mydb.commit()
 
     #check to confirm user is not already in the raid.
     if str(user.id) in np.array(sqlreturn):
