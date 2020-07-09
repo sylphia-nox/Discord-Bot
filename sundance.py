@@ -181,36 +181,7 @@ async def refresh(ctx, raid_id):
 #command to allow a user to leave the raid, it will remove the user from the first spot it finds them in.
 @bot.command(name='leave', help='type ~leave # and you will be removed from that raid')
 async def leave(ctx, raid_id):
-    #declare global variables used in command
-    global mycursor
-    global mydb
-
-    #create array of values to allow dynamic sql
-    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
-
-    #pull current raid info
-    mycursor.execute(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
-    sqlreturn = mycursor.fetchone()
-
-    #iterate through each spot to check if the user is in that spot.
-    for i in range(len(sqlreturn)):
-        #check if the message author's ID matches the ID in the spot
-        if (sqlreturn[i] == str(ctx.message.author.id)):
-            #update SQL to remove user
-            sql = "UPDATE raid_plan SET " + spots[i] + " = NULL WHERE idRaids = %s"
-            val = (raid_id,)
-            mycursor.execute(sql, val)
-            mydb.commit()
-
-            #notify user they have been removed from the raid.
-            await ctx.message.author.create_dm()
-            await ctx.message.author.dm_channel.send(f'You have been removed from raid {raid_id}.')
-
-            #update raid post with new data
-            await print_raid(raid_id)
-
-            #break loop to avoid excess computing
-            break
+    await remove_user(ctx.message.author, raid_id, ctx.message.author)
 
 #this command allows a user with certain privileges to delete Raids
 @bot.command(name='delete', help='type ~delete #, this command is only available to admin users.')
@@ -242,6 +213,12 @@ async def delete(ctx, raid_id):
 async def add(ctx, user: discord.Member, raid_id, spot_id):
     #call add user command
     await add_user_to_raid(user, raid_id, ctx.message.author, spot_id)
+
+#this command allows an admin user to remove someone from a raid post
+@bot.command(name='remove', help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
+@commands.has_role(admin_role_code)
+async def remove(ctx, user: discord.Member, raid_id):
+    await remove_user(user, raid_id, ctx.message.author)
 
 #helper utility to update the raid post, requires raid_id input matching ID in DB
 async def print_raid(raid_id):
@@ -349,6 +326,45 @@ async def add_user_to_raid(user, raid_id, request_user, spot):
 
     #update raid post
     await print_raid(raid_id)
+
+#helper function to remove user from a raid.
+async def remove_user(user, raid_id, request_user):
+    #declare global variables used in command
+    global mycursor
+    global mydb
+
+    #create array of values to allow dynamic sql
+    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
+
+    #pull current raid info
+    mycursor.execute(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
+    sqlreturn = mycursor.fetchone()
+
+    #iterate through each spot to check if the user is in that spot.
+    for i in range(len(sqlreturn)):
+        #check if the message author's ID matches the ID in the spot
+        if (sqlreturn[i] == str(user.id)):
+            #update SQL to remove user
+            sql = "UPDATE raid_plan SET " + spots[i] + " = NULL WHERE idRaids = %s"
+            val = (raid_id,)
+            mycursor.execute(sql, val)
+            mydb.commit()
+
+            #notify request_user that the user has been removed from the raid.
+            if(user.id==request_user.id):
+                #inform user they were removed from the raid
+                await request_user.create_dm()
+                await request_user.dm_channel.send(f'You have been removed from the raid.')
+            else:
+                #inform request user that the user was removed to the raid.
+                await request_user.create_dm()
+                await request_user.dm_channel.send(f'User has been removed from the raid.')
+
+            #update raid post with new data
+            await print_raid(raid_id)
+
+            #break loop to avoid excess computing
+            break
 
 
 #execute Bot 
