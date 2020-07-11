@@ -33,9 +33,9 @@ BotToken = os.getenv('BOT_TOKEN')
 ServerToken = os.getenv('SERVER_TOKEN')
 
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
-sun_chan_code = os.getenv('SUN_CHAN_CODE')
-raid_chan_code = os.getenv('RAID_CHAN_CODE')
-admin_role_code = os.getenv('ADMIN_ROLE_CODE')
+sun_chan_code = 683409608987115740
+raid_chan_code = 667741313105395712
+admin_role_code = 678799429326864385
 
 #global variables to allow the bot to know if raid setup is ongoing and its state
 raid_setup_active = False
@@ -156,9 +156,9 @@ async def raid(ctx):
     raid_setup_user = ctx.message.author
 
     #create raid post
-    sun_chan = bot.get_channel(raid_chan_code)
-    response = f'let\'s raid'
-    message = await sun_chan.send(response)
+    raid_chan = bot.get_channel(raid_chan_code)
+    response = f'@here let\'s raid!'
+    message = await raid_chan.send(response)
 
     #get raid post message object and set global variable
     rs_message = message
