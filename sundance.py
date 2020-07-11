@@ -435,6 +435,10 @@ async def on_error(event, *args, **kwargs):
     #grab time for error message
     now = datetime.now().time()
 
+    #inform user an error occured
+    await message.author.create_dm()
+    await message.author.dm_channel.send(f'An error occured, please correct your input and try again.  If the issue continues to occur please contact <@{bot_admin_code}>.')
+
     #send error message to server admin
     await admin.create_dm()
     await admin.dm_channel.send(f'On_message error occured at {now}\nUser: {message.author.name}\nMessage: {message.content}\nError: {traceback.format_exc()}')
