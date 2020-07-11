@@ -7,9 +7,11 @@
 import os
 import discord
 import mysql.connector
+import traceback
 
 from dotenv import load_dotenv
 from discord.ext import commands
+from datetime import datetime
 
 import numpy as np
 
@@ -34,8 +36,10 @@ ServerToken = os.getenv('SERVER_TOKEN')
 
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
 sun_chan_code = 683409608987115740
-raid_chan_code = 667741313105395712
+#raid_chan_code = 667741313105395712 #actual raid channel for active use
+raid_chan_code = 725083506081792040 #clowns_of_sorrow for testing
 admin_role_code = 678799429326864385
+bot_admin_code = 462789628399845387
 
 #global variables to allow the bot to know if raid setup is ongoing and its state
 raid_setup_active = False
@@ -197,7 +201,7 @@ async def leave(ctx, raid_id):
 #this command allows a user with certain privileges to delete Raids
 @bot.command(name='delete', help='type ~delete #, this command is only available to admin users.')
 @commands.has_role(admin_role_code)
-async def delete(ctx, raid_id):
+async def delete(ctx, raid_id: int):
     #declare global variables used in command
     global mycursor
     global mydb
@@ -379,6 +383,61 @@ async def remove_user(user, raid_id, request_user):
             #break loop to avoid excess computing
             break
 
+@bot.event
+async def on_command_error(ctx, error):
+    print(f'error occured and was caught by on_command_error')
+    #import global variables
+    global bot_admin_code
+
+    #grab admin user object
+    admin = bot.get_user(bot_admin_code)
+
+    #because we only have role checks we know if the checks fail it was a role error
+    if isinstance(error, commands.errors.CheckFailure):
+        print(f'permissions error')
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send('You do not have the correct role for this command.')
+    #checking if the input was bad
+    elif isinstance(error, commands.BadArgument):
+        print(f'bad argument error')
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send('Incorrect arguments for command, consult `~help <command>` for more information.')
+    #checking if the command is missing arguments
+    elif isinstance(error, commands.MissingRequiredArgument):
+        print(f'missing argument error')
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'Missing arguments for command, consult `~help <command>` for more information.')
+    #unkown errors, sends user message and bot admin the error code.
+    else:
+        print(f'unknown error')
+        #inform user an unkown error occured
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'Unkown error, please retry your command or contact <@{bot_admin_code}> for assistance.')
+        
+        #grab time for error message
+        now = datetime.now().time()
+
+        #send error message to server admin
+        await admin.create_dm()
+        await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {traceback.format_exc()}\nError: {error}')
+    
+@bot.event
+async def on_error(event, *args, **kwargs):
+    #import global variables
+    global bot_admin_code
+
+    #grab admin user object
+    admin = bot.get_user(bot_admin_code)
+    
+    #Gets the message object
+    message = args[0] 
+    
+    #grab time for error message
+    now = datetime.now().time()
+
+    #send error message to server admin
+    await admin.create_dm()
+    await admin.dm_channel.send(f'On_message error occured at {now}\nUser: {message.author.name}\nMessage: {message.content}\nError: {traceback.format_exc()}')
 
 #execute Bot 
 bot.run(BotToken)
