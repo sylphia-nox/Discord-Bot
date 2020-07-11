@@ -116,26 +116,30 @@ async def on_message(message):
 
             #elif check if raid setup is in "when" state
             elif(raid_setup_step == "when"):
-                #update DB with "when" value
-                sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
-                val = (f'{message.content}', raid_setup_id)
-                mycursor.execute(sql, val)
+                #checking to make sure input is not too long
+                if(len(message.content) <= 35):
+                    #update DB with "when" value
+                    sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
+                    val = (f'{message.content}', raid_setup_id)
+                    mycursor.execute(sql, val)
 
-                #DM user that raid setup is complete
-                await raid_setup_user.dm_channel.send(f'raid setup complete')
+                    #DM user that raid setup is complete
+                    await raid_setup_user.dm_channel.send(f'raid setup complete')
 
-                #reset global variables for next raid setup
-                raid_setup_active = False
-                raid_setup_step = "what"
+                    #reset global variables for next raid setup
+                    raid_setup_active = False
+                    raid_setup_step = "what"
 
-                #edit raid post to show new data
-                await print_raid(raid_setup_id)
+                    #edit raid post to show new data
+                    await print_raid(raid_setup_id)
 
-                #clear global variable for next setup
-                raid_setup_id = ""
+                    #clear global variable for next setup
+                    raid_setup_id = ""
 
-                # Reset boss display status
-                await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
+                    # Reset boss display status
+                    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
+                else:
+                    await raid_setup_user.dm_channel.send(f'Input too long, please do not exceed 35 characters')
 
             #both steps run SQL so we need to commit those changes
             mydb.commit()
@@ -383,6 +387,7 @@ async def remove_user(user, raid_id, request_user):
             #break loop to avoid excess computing
             break
 
+#this event catches errors from commands
 @bot.event
 async def on_command_error(ctx, error):
     print(f'error occured and was caught by on_command_error')
@@ -392,24 +397,27 @@ async def on_command_error(ctx, error):
     #grab admin user object
     admin = bot.get_user(bot_admin_code)
 
+    #grab the name of the command that the user tried to execute
+    #this is grabbing what the user typed, taking the first word, and then removing the "~"
+    command_name = ctx.message.content.split()[0].strip("~")
+
     #because we only have role checks we know if the checks fail it was a role error
     if isinstance(error, commands.errors.CheckFailure):
-        print(f'permissions error')
         await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send('You do not have the correct role for this command.')
+        await ctx.message.author.dm_channel.send(f'You do not have the correct role to use {command_name}.')
+
     #checking if the input was bad
     elif isinstance(error, commands.BadArgument):
-        print(f'bad argument error')
         await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send('Incorrect arguments for command, consult `~help <command>` for more information.')
+        await ctx.message.author.dm_channel.send(f'Incorrect arguments for command: {command_name}, type `~help {command_name}` for more information.')
+
     #checking if the command is missing arguments
     elif isinstance(error, commands.MissingRequiredArgument):
-        print(f'missing argument error')
         await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send(f'Missing arguments for command, consult `~help <command>` for more information.')
+        await ctx.message.author.dm_channel.send(f'Missing arguments for command: {command_name}, type `~help {command_name}` for more information.')
+
     #unkown errors, sends user message and bot admin the error code.
     else:
-        print(f'unknown error')
         #inform user an unkown error occured
         await ctx.message.author.create_dm()
         await ctx.message.author.dm_channel.send(f'Unkown error, please retry your command or contact <@{bot_admin_code}> for assistance.')
@@ -420,7 +428,8 @@ async def on_command_error(ctx, error):
         #send error message to server admin
         await admin.create_dm()
         await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {traceback.format_exc()}\nError: {error}')
-    
+
+#this event catches errors from event coroutines 
 @bot.event
 async def on_error(event, *args, **kwargs):
     #import global variables
