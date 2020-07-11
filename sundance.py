@@ -185,17 +185,17 @@ async def raid(ctx):
     
 #this command allows a user to join a raid.
 @bot.command(name='join', help='type ~join # # First number is the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
-async def join(ctx, raid_id, spot):
+async def join(ctx, raid_id: int, spot: int):
     await add_user_to_raid(ctx.message.author, raid_id, ctx.message.author, spot)
 
 #this is a utility command to refresh a raid post based on data in MySQL DB
 @bot.command(name='refresh', help='type ~refresh and the raid info will be refreshed')
-async def refresh(ctx, raid_id):
+async def refresh(ctx, raid_id: int):
     await print_raid(raid_id)
 
 #command to allow a user to leave the raid, it will remove the user from the first spot it finds them in.
 @bot.command(name='leave', help='type ~leave # and you will be removed from that raid')
-async def leave(ctx, raid_id):
+async def leave(ctx, raid_id: int):
     await remove_user(ctx.message.author, raid_id, ctx.message.author)
 
 #this command allows a user with certain privileges to delete Raids
@@ -225,14 +225,14 @@ async def delete(ctx, raid_id: int):
 #this command allows an admin user to add someone to a raid post
 @bot.command(name='add', help='type add @usertag # #, where # # is the raid ID followed by the spot to add them to that raid.')
 @commands.has_role(admin_role_code)
-async def add(ctx, user: discord.Member, raid_id, spot_id):
+async def add(ctx, user: discord.Member, raid_id: int, spot_id: int):
     #call add user command
     await add_user_to_raid(user, raid_id, ctx.message.author, spot_id)
 
 #this command allows an admin user to remove someone from a raid post
 @bot.command(name='remove', help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
 @commands.has_role(admin_role_code)
-async def remove(ctx, user: discord.Member, raid_id):
+async def remove(ctx, user: discord.Member, raid_id: int):
     await remove_user(user, raid_id, ctx.message.author)
 
 #helper utility to update the raid post, requires raid_id input matching ID in DB
