@@ -35,11 +35,12 @@ BotToken = os.getenv('BOT_TOKEN')
 ServerToken = os.getenv('SERVER_TOKEN')
 
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
-sun_chan_code = 683409608987115740
-raid_chan_code = 667741313105395712 #actual raid channel for active use
-#raid_chan_code = 725083506081792040 #clowns_of_sorrow for testing
-admin_role_code = 678799429326864385
-bot_admin_code = 462789628399845387
+sun_chan_code = int(os.getenv('SUN_CHAN_CODE'))
+raid_chan_code = int(os.getenv('RAID_CHAN_CODE')) 
+#raid_chan_code = int(os.getenv('TEST_RAID_CHAN'))  #secondary channel for testing
+admin_role_code = int(os.getenv('ADMIN_ROLE_CODE'))
+bot_admin_code = int(os.getenv('BOT_ADMIN_CODE'))
+
 
 #global variables to allow the bot to know if raid setup is ongoing and its state
 raid_setup_active = False
@@ -198,18 +199,21 @@ async def join(ctx, raid_id: int, spot: int):
     #delete command message to keep channels clean
     await ctx.message.delete()
 
-#this is a utility command to refresh a raid post based on data in MySQL DB
-@bot.command(name='refresh', help='type ~refresh and the raid info will be refreshed')
-async def refresh(ctx, raid_id: int):
-    await print_raid(raid_id)
-
-    #delete command message to keep channels clean
-    await ctx.message.delete()
-
 #command to allow a user to leave the raid, it will remove the user from the first spot it finds them in.
 @bot.command(name='leave', help='type ~leave # and you will be removed from that raid')
 async def leave(ctx, raid_id: int):
     await remove_user(ctx.message.author, raid_id, ctx.message.author)
+
+    #delete command message to keep channels clean
+    await ctx.message.delete()
+
+#begin Admin command section
+
+#this is a utility command to refresh a raid post based on data in MySQL DB
+@bot.command(name='refresh', help='type ~refresh and the raid info will be refreshed')
+@commands.has_role(admin_role_code)
+async def refresh(ctx, raid_id: int):
+    await print_raid(raid_id)
 
     #delete command message to keep channels clean
     await ctx.message.delete()
@@ -248,11 +252,17 @@ async def add(ctx, user: discord.Member, raid_id: int, spot_id: int):
     #call add user command
     await add_user_to_raid(user, raid_id, ctx.message.author, spot_id)
 
+    #delete command message to keep channels clean
+    await ctx.message.delete()
+
 #this command allows an admin user to remove someone from a raid post
 @bot.command(name='remove', help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
 @commands.has_role(admin_role_code)
 async def remove(ctx, user: discord.Member, raid_id: int):
     await remove_user(user, raid_id, ctx.message.author)
+
+    #delete command message to keep channels clean
+    await ctx.message.delete()
 
 #helper utility to update the raid post, requires raid_id input matching ID in DB
 async def print_raid(raid_id):
