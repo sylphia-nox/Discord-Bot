@@ -7,9 +7,11 @@
 import os
 import discord
 import mysql.connector
+import traceback
 
 from dotenv import load_dotenv
 from discord.ext import commands
+from datetime import datetime
 
 import numpy as np
 
@@ -34,8 +36,10 @@ ServerToken = os.getenv('SERVER_TOKEN')
 
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
 sun_chan_code = 683409608987115740
-raid_chan_code = 667741313105395712
+raid_chan_code = 667741313105395712 #actual raid channel for active use
+#raid_chan_code = 725083506081792040 #clowns_of_sorrow for testing
 admin_role_code = 678799429326864385
+bot_admin_code = 462789628399845387
 
 #global variables to allow the bot to know if raid setup is ongoing and its state
 raid_setup_active = False
@@ -112,26 +116,30 @@ async def on_message(message):
 
             #elif check if raid setup is in "when" state
             elif(raid_setup_step == "when"):
-                #update DB with "when" value
-                sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
-                val = (f'{message.content}', raid_setup_id)
-                mycursor.execute(sql, val)
+                #checking to make sure input is not too long
+                if(len(message.content) <= 35):
+                    #update DB with "when" value
+                    sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
+                    val = (f'{message.content}', raid_setup_id)
+                    mycursor.execute(sql, val)
 
-                #DM user that raid setup is complete
-                await raid_setup_user.dm_channel.send(f'raid setup complete')
+                    #DM user that raid setup is complete
+                    await raid_setup_user.dm_channel.send(f'raid setup complete')
 
-                #reset global variables for next raid setup
-                raid_setup_active = False
-                raid_setup_step = "what"
+                    #reset global variables for next raid setup
+                    raid_setup_active = False
+                    raid_setup_step = "what"
 
-                #edit raid post to show new data
-                await print_raid(raid_setup_id)
+                    #edit raid post to show new data
+                    await print_raid(raid_setup_id)
 
-                #clear global variable for next setup
-                raid_setup_id = ""
+                    #clear global variable for next setup
+                    raid_setup_id = ""
 
-                # Reset boss display status
-                await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
+                    # Reset boss display status
+                    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
+                else:
+                    await raid_setup_user.dm_channel.send(f'Input too long, please do not exceed 35 characters')
 
             #both steps run SQL so we need to commit those changes
             mydb.commit()
@@ -178,26 +186,38 @@ async def raid(ctx):
     # Setting `Playing ` status to show bot is setting up a raid
     await bot.change_presence(activity=discord.Game(name="setting up a raid"))
 
+    #delete command message to keep channels clean
+    await ctx.message.delete()
+
     
 #this command allows a user to join a raid.
 @bot.command(name='join', help='type ~join # # First number is the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
-async def join(ctx, raid_id, spot):
+async def join(ctx, raid_id: int, spot: int):
     await add_user_to_raid(ctx.message.author, raid_id, ctx.message.author, spot)
+
+    #delete command message to keep channels clean
+    await ctx.message.delete()
 
 #this is a utility command to refresh a raid post based on data in MySQL DB
 @bot.command(name='refresh', help='type ~refresh and the raid info will be refreshed')
-async def refresh(ctx, raid_id):
+async def refresh(ctx, raid_id: int):
     await print_raid(raid_id)
+
+    #delete command message to keep channels clean
+    await ctx.message.delete()
 
 #command to allow a user to leave the raid, it will remove the user from the first spot it finds them in.
 @bot.command(name='leave', help='type ~leave # and you will be removed from that raid')
-async def leave(ctx, raid_id):
+async def leave(ctx, raid_id: int):
     await remove_user(ctx.message.author, raid_id, ctx.message.author)
+
+    #delete command message to keep channels clean
+    await ctx.message.delete()
 
 #this command allows a user with certain privileges to delete Raids
 @bot.command(name='delete', help='type ~delete #, this command is only available to admin users.')
 @commands.has_role(admin_role_code)
-async def delete(ctx, raid_id):
+async def delete(ctx, raid_id: int):
     #declare global variables used in command
     global mycursor
     global mydb
@@ -218,17 +238,20 @@ async def delete(ctx, raid_id):
     mycursor.execute(sql, val)
     mydb.commit()
 
+    #delete command message to keep channels clean
+    await ctx.message.delete()
+
 #this command allows an admin user to add someone to a raid post
 @bot.command(name='add', help='type add @usertag # #, where # # is the raid ID followed by the spot to add them to that raid.')
 @commands.has_role(admin_role_code)
-async def add(ctx, user: discord.Member, raid_id, spot_id):
+async def add(ctx, user: discord.Member, raid_id: int, spot_id: int):
     #call add user command
     await add_user_to_raid(user, raid_id, ctx.message.author, spot_id)
 
 #this command allows an admin user to remove someone from a raid post
 @bot.command(name='remove', help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
 @commands.has_role(admin_role_code)
-async def remove(ctx, user: discord.Member, raid_id):
+async def remove(ctx, user: discord.Member, raid_id: int):
     await remove_user(user, raid_id, ctx.message.author)
 
 #helper utility to update the raid post, requires raid_id input matching ID in DB
@@ -379,6 +402,73 @@ async def remove_user(user, raid_id, request_user):
             #break loop to avoid excess computing
             break
 
+#this event catches errors from commands
+@bot.event
+async def on_command_error(ctx, error):
+    print(f'error occured and was caught by on_command_error')
+    #import global variables
+    global bot_admin_code
+
+    #grab admin user object
+    admin = bot.get_user(bot_admin_code)
+
+    #grab the name of the command that the user tried to execute
+    #this is grabbing what the user typed, taking the first word, and then removing the "~"
+    command_name = ctx.message.content.split()[0].strip("~")
+
+    #because we only have role checks we know if the checks fail it was a role error
+    if isinstance(error, commands.errors.CheckFailure):
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'You do not have the correct role to use {command_name}.')
+
+    #checking if the input was bad
+    elif isinstance(error, commands.BadArgument):
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'Incorrect arguments for command: {command_name}, type `~help {command_name}` for more information.')
+
+    #checking if the command is missing arguments
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'Missing arguments for command: {command_name}, type `~help {command_name}` for more information.')
+
+    #unkown errors, sends user message and bot admin the error code.
+    else:
+        #inform user an unkown error occured
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'Unkown error, please retry your command or contact <@{bot_admin_code}> for assistance.')
+        
+        #grab time for error message
+        now = datetime.now().time()
+
+        #send error message to server admin
+        await admin.create_dm()
+        await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {traceback.format_exc()}\nError: {error}')
+
+    #delete message that caused error to keep channels clean
+    await ctx.message.delete()
+
+#this event catches errors from event coroutines 
+@bot.event
+async def on_error(event, *args, **kwargs):
+    #import global variables
+    global bot_admin_code
+
+    #grab admin user object
+    admin = bot.get_user(bot_admin_code)
+    
+    #Gets the message object
+    message = args[0] 
+    
+    #grab time for error message
+    now = datetime.now().time()
+
+    #inform user an error occured
+    await message.author.create_dm()
+    await message.author.dm_channel.send(f'An error occured, please correct your input and try again.  If the issue continues to occur please contact <@{bot_admin_code}>.')
+
+    #send error message to server admin
+    await admin.create_dm()
+    await admin.dm_channel.send(f'On_message error occured at {now}\nUser: {message.author.name}\nMessage: {message.content}\nError: {traceback.format_exc()}')
 
 #execute Bot 
 bot.run(BotToken)
