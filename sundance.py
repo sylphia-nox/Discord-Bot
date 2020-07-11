@@ -41,7 +41,6 @@ raid_chan_code = int(os.getenv('RAID_CHAN_CODE'))
 admin_role_code = int(os.getenv('ADMIN_ROLE_CODE'))
 bot_admin_code = int(os.getenv('BOT_ADMIN_CODE'))
 
-
 #global variables to allow the bot to know if raid setup is ongoing and its state
 raid_setup_active = False
 raid_setup_step = "what"
@@ -322,7 +321,6 @@ async def which_raid_question(user):
 
 #helper function to add user to a raid
 async def add_user_to_raid(user, raid_id, request_user, spot):
-#create array to allow dynamic SQL
     #declare global variables used in command
     global mycursor
     global mydb
