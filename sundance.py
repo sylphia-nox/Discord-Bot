@@ -39,8 +39,8 @@ ServerToken = os.getenv('SERVER_TOKEN')
 
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
 sun_chan_code = int(os.getenv('SUN_CHAN_CODE'))
-#raid_chan_code = int(os.getenv('RAID_CHAN_CODE')) 
-raid_chan_code = int(os.getenv('TEST_RAID_CHAN'))  #secondary channel for testing
+raid_chan_code = int(os.getenv('RAID_CHAN_CODE')) 
+#raid_chan_code = int(os.getenv('TEST_RAID_CHAN'))  #secondary channel for testing
 admin_role_code = int(os.getenv('ADMIN_ROLE_CODE'))
 bot_admin_code = int(os.getenv('BOT_ADMIN_CODE'))
 
@@ -561,11 +561,6 @@ async def notify():
             #check to see if raid started over 30 minutes ago, if so, delete
             elif (raid_time + timedelta(minutes = 30) < now):
                 await delete_raid(raid_id)
-
-        
-
-    print(f'{sqlreturn}')
-    print('This should print every 30 seconds.')
 
 #function needed to configure notify loop
 @notify.before_loop
