@@ -464,7 +464,12 @@ async def on_command_error(ctx, error):
         await ctx.message.author.create_dm()
         await ctx.message.author.dm_channel.send(f'Missing arguments for command: {command_name}, type `~help {command_name}` for more information.')
 
-    #unkown errors, sends user message and bot admin the error code.
+    #check if user was trying to cross-out text and so triggered the bot.  If so, this is not an error.
+    elif (ctx.message.content.split()[0][1] == "~"):
+        #not an error do nothing 
+        print(f'not an error.  Someone was using cross-out notation.')
+
+    #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
     else:
         #inform user an unkown error occured
         await ctx.message.author.create_dm()
@@ -477,8 +482,10 @@ async def on_command_error(ctx, error):
         await admin.create_dm()
         await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {traceback.format_exc()}\nError: {error}')
 
-    #delete message that caused error to keep channels clean
-    await ctx.message.delete()
+    #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
+    if(ctx.message.content.split()[0][1] != "~"):
+        #delete message that caused error to keep channels clean
+        await ctx.message.delete()
 
 #this event catches errors from event coroutines 
 @bot.event
