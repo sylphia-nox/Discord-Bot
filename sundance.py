@@ -10,8 +10,7 @@ import mysql.connector
 import traceback
 
 from dotenv import load_dotenv
-from discord.ext import commands
-from datetime import datetime
+from discord.ext import commands, tasks
 from discord.ext.tasks import loop
 from datetime import datetime, timedelta
 from dateutil.parser import parse
