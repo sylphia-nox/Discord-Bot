@@ -118,30 +118,38 @@ async def on_message(message):
 
             #elif check if raid setup is in "when" state
             elif(raid_setup_step == "when"):
-                #if the input is invalid it will throw either ParserError, ValueError, or Overflow Error
-                raid_time = parse(message.content, fuzzy=True)
+                try:
+                    #if the input is invalid it will throw either ParserError, ValueError, or Overflow Error
+                    raid_time = parse(message.content, fuzzy=True)
 
-                #update DB with "when" value
-                sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
-                val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_setup_id)
-                mycursor.execute(sql, val)
+                    #update DB with "when" value
+                    sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
+                    val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_setup_id)
+                    mycursor.execute(sql, val)
 
-                #DM user that raid setup is complete
-                await raid_setup_user.dm_channel.send(f'raid setup complete')
+                    #DM user that raid setup is complete
+                    await raid_setup_user.dm_channel.send(f'raid setup complete')
 
-                #reset global variables for next raid setup
-                raid_setup_active = False
-                raid_setup_step = "what"
+                    #reset global variables for next raid setup
+                    raid_setup_active = False
+                    raid_setup_step = "what"
 
-                #edit raid post to show new data
-                await print_raid(raid_setup_id)
+                    #edit raid post to show new data
+                    await print_raid(raid_setup_id)
 
-                #clear global variable for next setup
-                raid_setup_id = ""
+                    #clear global variable for next setup
+                    raid_setup_id = ""
 
-                # Reset boss display status
-                await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
-                
+                    # Reset boss display status
+                    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
+
+                #catching the error handling to notify user if their input was invalid
+                except ParserError:
+                    await raid_setup_user.dm_channel.send(f'not a date time input, please try again')
+                except ValueError:
+                    await raid_setup_user.dm_channel.send(f'invalid input, please try again')
+                except OverflowError:
+                    await raid_setup_user.dm_channel.send(f'date time values exceed possible values, please try again')
 
             #both steps run SQL so we need to commit those changes
             mydb.commit()
