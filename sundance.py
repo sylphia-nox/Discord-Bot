@@ -12,6 +12,8 @@ import traceback
 from dotenv import load_dotenv
 from discord.ext import commands
 from datetime import datetime
+from dateutil.parser import parse
+from dateutil.parser import ParserError
 
 import numpy as np
 
@@ -99,7 +101,7 @@ async def on_message(message):
 
                         #prompt user for time in DM channel and edit raid post
                         await print_raid(raid_setup_id)
-                        await raid_setup_user.dm_channel.send(f'When is the raid? Response can include data and time. Limit 35 characters')
+                        await raid_setup_user.dm_channel.send(f'When is the raid?')
                         
                         #set global variable to "when" to change the event response
                         raid_setup_step = "when"
@@ -116,30 +118,30 @@ async def on_message(message):
 
             #elif check if raid setup is in "when" state
             elif(raid_setup_step == "when"):
-                #checking to make sure input is not too long
-                if(len(message.content) <= 35):
-                    #update DB with "when" value
-                    sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
-                    val = (f'{message.content}', raid_setup_id)
-                    mycursor.execute(sql, val)
+                #if the input is invalid it will throw either ParserError, ValueError, or Overflow Error
+                raid_time = parse(message.content, fuzzy=True)
 
-                    #DM user that raid setup is complete
-                    await raid_setup_user.dm_channel.send(f'raid setup complete')
+                #update DB with "when" value
+                sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
+                val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_setup_id)
+                mycursor.execute(sql, val)
 
-                    #reset global variables for next raid setup
-                    raid_setup_active = False
-                    raid_setup_step = "what"
+                #DM user that raid setup is complete
+                await raid_setup_user.dm_channel.send(f'raid setup complete')
 
-                    #edit raid post to show new data
-                    await print_raid(raid_setup_id)
+                #reset global variables for next raid setup
+                raid_setup_active = False
+                raid_setup_step = "what"
 
-                    #clear global variable for next setup
-                    raid_setup_id = ""
+                #edit raid post to show new data
+                await print_raid(raid_setup_id)
 
-                    # Reset boss display status
-                    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
-                else:
-                    await raid_setup_user.dm_channel.send(f'Input too long, please do not exceed 35 characters')
+                #clear global variable for next setup
+                raid_setup_id = ""
+
+                # Reset boss display status
+                await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
+                
 
             #both steps run SQL so we need to commit those changes
             mydb.commit()
