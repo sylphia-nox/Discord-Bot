@@ -164,6 +164,7 @@ async def raid(ctx):
     global raid_chan_code
     global raid_setup_active
     global raid_setup_user 
+    global raid_setup_step
     global rs_message
     global mycursor
     global mydb
@@ -190,8 +191,9 @@ async def raid(ctx):
     mycursor.execute(sql, val)
     mydb.commit()
 
-    #setting raid ID global variable
+    #setting global variable
     raid_setup_id = mycursor.lastrowid
+    raid_setup_step = "what"
 
     # Setting `Playing ` status to show bot is setting up a raid
     await bot.change_presence(activity=discord.Game(name="setting up a raid"))
