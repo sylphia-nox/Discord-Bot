@@ -10,8 +10,11 @@ import mysql.connector
 import traceback
 
 from dotenv import load_dotenv
-from discord.ext import commands
-from datetime import datetime
+from discord.ext import commands, tasks
+from discord.ext.tasks import loop
+from datetime import datetime, timedelta
+from dateutil.parser import parse
+from dateutil.parser import ParserError
 
 import numpy as np
 
@@ -99,7 +102,7 @@ async def on_message(message):
 
                         #prompt user for time in DM channel and edit raid post
                         await print_raid(raid_setup_id)
-                        await raid_setup_user.dm_channel.send(f'When is the raid? Response can include data and time. Limit 35 characters')
+                        await raid_setup_user.dm_channel.send(f'When is the raid?')
                         
                         #set global variable to "when" to change the event response
                         raid_setup_step = "when"
@@ -116,11 +119,13 @@ async def on_message(message):
 
             #elif check if raid setup is in "when" state
             elif(raid_setup_step == "when"):
-                #checking to make sure input is not too long
-                if(len(message.content) <= 35):
+                try:
+                    #if the input is invalid it will throw either ParserError, ValueError, or Overflow Error
+                    raid_time = parse(message.content, fuzzy=True)
+
                     #update DB with "when" value
                     sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
-                    val = (f'{message.content}', raid_setup_id)
+                    val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_setup_id)
                     mycursor.execute(sql, val)
 
                     #DM user that raid setup is complete
@@ -138,8 +143,14 @@ async def on_message(message):
 
                     # Reset boss display status
                     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
-                else:
-                    await raid_setup_user.dm_channel.send(f'Input too long, please do not exceed 35 characters')
+
+                #catching the error handling to notify user if their input was invalid
+                except ParserError:
+                    await raid_setup_user.dm_channel.send(f'not a date time input, please try again')
+                except ValueError:
+                    await raid_setup_user.dm_channel.send(f'invalid input, please try again')
+                except OverflowError:
+                    await raid_setup_user.dm_channel.send(f'date time values exceed possible values, please try again')
 
             #both steps run SQL so we need to commit those changes
             mydb.commit()
@@ -154,6 +165,7 @@ async def raid(ctx):
     global raid_chan_code
     global raid_setup_active
     global raid_setup_user 
+    global raid_setup_step
     global rs_message
     global mycursor
     global mydb
@@ -180,8 +192,9 @@ async def raid(ctx):
     mycursor.execute(sql, val)
     mydb.commit()
 
-    #setting raid ID global variable
+    #setting global variable
     raid_setup_id = mycursor.lastrowid
+    raid_setup_step = "what"
 
     # Setting `Playing ` status to show bot is setting up a raid
     await bot.change_presence(activity=discord.Game(name="setting up a raid"))
@@ -221,25 +234,7 @@ async def refresh(ctx, raid_id: int):
 @bot.command(name='delete', help='type ~delete #, this command is only available to admin users.')
 @commands.has_role(admin_role_code)
 async def delete(ctx, raid_id: int):
-    #declare global variables used in command
-    global mycursor
-    global mydb
-
-    #grab raid message ID to be deleted
-    mycursor.execute(f'SELECT message_id FROM raid_plan WHERE idRaids = {raid_id}')
-    sqlreturn = mycursor.fetchone()
-
-    #grab message object to delete using the message_ID stored in DB
-    raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[0])
-
-    #delete message
-    await raid_message.delete()
-
-    #delete raid from DB
-    sql = "DELETE FROM raid_plan WHERE idRaids = %s"
-    val = (raid_id,)
-    mycursor.execute(sql, val)
-    mydb.commit()
+    await delete_raid(raid_id)
 
     #delete command message to keep channels clean
     await ctx.message.delete()
@@ -410,6 +405,36 @@ async def remove_user(user, raid_id, request_user):
             #break loop to avoid excess computing
             break
 
+#helper function to delete raids.
+async def delete_raid(raid_id):
+    #declare global variables used in command
+    global mycursor
+    global mydb
+    global raid_chan_code
+
+    #grab raid message ID to be deleted
+    mycursor.execute(f'SELECT message_id, notify_message_id FROM raid_plan WHERE idRaids = {raid_id}')
+    sqlreturn = mycursor.fetchone()
+
+    #grab message object to delete using the message_ID stored in DB
+    raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[0])
+
+    #delete raid post
+    await raid_message.delete()
+
+    #delete notify message if it exists
+    if(sqlreturn[1] != None):
+        #grab message object to delete using the message_ID stored in DB
+        notify_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[1])
+        await notify_message.delete()
+
+    #delete raid from DB
+    sql = "DELETE FROM raid_plan WHERE idRaids = %s"
+    val = (raid_id,)
+    mycursor.execute(sql, val)
+    mydb.commit()
+
+
 #this event catches errors from commands
 @bot.event
 async def on_command_error(ctx, error):
@@ -439,7 +464,12 @@ async def on_command_error(ctx, error):
         await ctx.message.author.create_dm()
         await ctx.message.author.dm_channel.send(f'Missing arguments for command: {command_name}, type `~help {command_name}` for more information.')
 
-    #unkown errors, sends user message and bot admin the error code.
+    #check if user was trying to cross-out text and so triggered the bot.  If so, this is not an error.
+    elif (ctx.message.content.split()[0][1] == "~"):
+        #not an error do nothing 
+        print(f'not an error.  Someone was using cross-out notation.')
+
+    #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
     else:
         #inform user an unkown error occured
         await ctx.message.author.create_dm()
@@ -452,8 +482,10 @@ async def on_command_error(ctx, error):
         await admin.create_dm()
         await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {traceback.format_exc()}\nError: {error}')
 
-    #delete message that caused error to keep channels clean
-    await ctx.message.delete()
+    #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
+    if(ctx.message.content.split()[0][1] != "~"):
+        #delete message that caused error to keep channels clean
+        await ctx.message.delete()
 
 #this event catches errors from event coroutines 
 @bot.event
@@ -478,5 +510,70 @@ async def on_error(event, *args, **kwargs):
     await admin.create_dm()
     await admin.dm_channel.send(f'On_message error occured at {now}\nUser: {message.author.name}\nMessage: {message.content}\nError: {traceback.format_exc()}')
 
-#execute Bot 
+#creating this event to notify users approximately 1 hour before a raid
+@loop(minutes = 30)
+async def notify():
+    global mycursor
+    global mydb
+    global raid_chan_code
+
+    #grab current time.
+    now = datetime.now()
+    
+
+    #pull current information on raids and times.
+    mycursor.execute(f'SELECT idRaids, time, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids IS NOT Null')
+    sqlreturn = mycursor.fetchall()
+
+    for i in range(len(sqlreturn)):
+        if(sqlreturn[i][1]!=None):
+            #converting time to a dateutil object to allow comparison
+            raid_time = parse(sqlreturn[i][1], fuzzy=True) 
+
+            #raid_id will be used repeatedly so setting it to a variable
+            raid_id = sqlreturn[i][0]
+
+            #check if raid is starting between 40 and 70 minutes from now
+            if ((now + timedelta(minutes = 40)) < raid_time <= (now + timedelta(hours = 1, minutes = 10))):
+    
+                #creating int value so the function knows how many people are in the raid
+                raid_members = 0
+
+                #beginning of notification message
+                notify = f'Notification: Raid {raid_id} is starting soon. If you are tagged then you are currently scheduled to raid.\n'
+                
+                #adding users to notification message and checking how many people we have
+                for ii in range(8):
+                    if(sqlreturn[i][ii+2] != None and raid_members < 6):
+                        raid_members += 1
+                        notify =  notify + f'<@{sqlreturn[i][ii+2]}> '
+
+                #adding a @here mention if we are missing people
+                if (raid_members < 6):
+                    notify = notify + f'\n@here we still need {6-raid_members} fireteam member(s) for the raid.'
+                
+                #notify everyone in the raid and ping @here if we need someone
+                raid_chan = bot.get_channel(raid_chan_code)
+                message = await raid_chan.send(notify)
+
+                #get raid post message object and set global variable
+                notify_message = message
+
+                #add notify message ID to DB
+                sql = "UPDATE raid_plan SET notify_message_ID = %s WHERE idRaids = %s"
+                val = (notify_message.id,  raid_id)
+                mycursor.execute(sql, val)
+                mydb.commit()
+
+            #check to see if raid started over 30 minutes ago, if so, delete
+            elif (raid_time + timedelta(minutes = 30) < now):
+                await delete_raid(raid_id)
+
+#function needed to configure notify loop
+@notify.before_loop
+async def notify_before():
+    await bot.wait_until_ready()
+
+#execute Bot and notify loop
+notify.start()
 bot.run(BotToken)
