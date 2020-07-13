@@ -86,36 +86,43 @@ async def on_message(message):
         if message.channel.type is discord.ChannelType.private and message.author == raid_setup_user:
             #Check what state the raid setup is in.
             if(raid_setup_step == "what"):
-                #grab number of raids for loop
-                mycursor.execute(f'SELECT COUNT(*) FROM raid_info')
-                sqlreturn = mycursor.fetchone()
+                #try loop to catch non int-parsable input, all other exceptions will trigger on_error event and send exception to admin user
+                try:
+                    #grab number of raids for loop
+                    mycursor.execute(f'SELECT COUNT(*) FROM raid_info')
+                    sqlreturn = mycursor.fetchone()
 
-                in_list = False
+                    in_list = False
 
-                #checking to confirm the response is valid
-                for i in range(sqlreturn[0]):
-                    if (int(message.content) == (i+1)):
-                        #if the values match a valid raid, update SQL with the raid and respond to user
-                        sql = "UPDATE raid_plan SET what = %s WHERE idRaids = %s"
-                        val = (f'{message.content}', raid_setup_id)
-                        mycursor.execute(sql, val)
+                    #checking to confirm the response is valid
+                    for i in range(sqlreturn[0]):
+                        if (int(message.content) == (i+1)):
+                            #if the values match a valid raid, update SQL with the raid and respond to user
+                            sql = "UPDATE raid_plan SET what = %s WHERE idRaids = %s"
+                            val = (f'{message.content}', raid_setup_id)
+                            mycursor.execute(sql, val)
 
-                        #prompt user for time in DM channel and edit raid post
-                        await print_raid(raid_setup_id)
-                        await raid_setup_user.dm_channel.send(f'When is the raid?')
-                        
-                        #set global variable to "when" to change the event response
-                        raid_setup_step = "when"
+                            #prompt user for time in DM channel and edit raid post
+                            await print_raid(raid_setup_id)
+                            await raid_setup_user.dm_channel.send(f'When is the raid?')
+                            
+                            #set global variable to "when" to change the event response
+                            raid_setup_step = "when"
 
-                        #set boolean so code knows the response was valid
-                        in_list = True
-                        
-                        #break loop to avoid excess computing
-                        break
+                            #set boolean so code knows the response was valid
+                            in_list = True
+                            
+                            #break loop to avoid excess computing
+                            break
 
-                #if the answer is not valid, reprompt user and do not change state
-                if(not in_list):
-                    await raid_setup_user.dm_channel.send(f'Invalid choice, please choose a number from the list')
+                    #if the answer is not valid, reprompt user and do not change state
+                    if(not in_list):
+                        await raid_setup_user.dm_channel.send(f'Invalid choice, please choose a number from the list')
+
+                #except block to catch ValueError if user does not provide int-parsable input
+                except ValueError:
+                    await raid_setup_user.dm_channel.send(f'Your input is not a number, please provide valid input')
+
 
             #elif check if raid setup is in "when" state
             elif(raid_setup_step == "when"):
