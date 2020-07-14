@@ -39,8 +39,8 @@ ServerToken = os.getenv('SERVER_TOKEN')
 
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
 sun_chan_code = int(os.getenv('SUN_CHAN_CODE'))
-raid_chan_code = int(os.getenv('RAID_CHAN_CODE')) 
-#raid_chan_code = int(os.getenv('TEST_RAID_CHAN'))  #secondary channel for testing
+#raid_chan_code = int(os.getenv('RAID_CHAN_CODE')) 
+raid_chan_code = int(os.getenv('TEST_RAID_CHAN'))  #secondary channel for testing
 admin_role_code = int(os.getenv('ADMIN_ROLE_CODE'))
 bot_admin_code = int(os.getenv('BOT_ADMIN_CODE'))
 
@@ -69,8 +69,7 @@ async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
 
 #this event activates on all messages but is for DM messages for setting up a raid, everything else goes through commands
-@bot.event
-async def on_message(message):
+async def on_message(self, message):
     global raid_setup_active
     global raid_setup_user
     global raid_setup_step
@@ -148,7 +147,7 @@ async def on_message(message):
                     raid_setup_id = ""
 
                     # Reset boss display status
-                    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
+                    await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
 
                 #catching the error handling to notify user if their input was invalid
                 except ParserError:
@@ -161,8 +160,6 @@ async def on_message(message):
             #both steps run SQL so we need to commit those changes
             mydb.commit()
 
-    #this function is needed to allow events and commands to be used, without this, none of the commands will be able to be used.     
-    await bot.process_commands(message)
 
 #this command creates a new raid post, user needs to respond to DMs to complete setup.
 @bot.command(name='raid', help='Type ~raid and the bot will create a new raid post for you')
@@ -225,256 +222,6 @@ async def leave(ctx, raid_id: int):
     await ctx.message.delete()
 
 #begin Admin command section
-
-#this is a utility command to refresh a raid post based on data in MySQL DB
-@bot.command(name='refresh', help='type ~refresh and the raid info will be refreshed')
-@commands.has_role(admin_role_code)
-async def refresh(ctx, raid_id: int):
-    await print_raid(raid_id)
-
-    #delete command message to keep channels clean
-    await ctx.message.delete()
-
-#this command allows a user with certain privileges to delete Raids
-@bot.command(name='delete', help='type ~delete #, this command is only available to admin users.')
-@commands.has_role(admin_role_code)
-async def delete(ctx, raid_id: int):
-    await delete_raid(raid_id)
-
-    #delete command message to keep channels clean
-    await ctx.message.delete()
-
-#this command allows an admin user to add someone to a raid post
-@bot.command(name='add', help='type add @usertag # #, where # # is the raid ID followed by the spot to add them to that raid.')
-@commands.has_role(admin_role_code)
-async def add(ctx, user: discord.Member, raid_id: int, spot_id: int):
-    #call add user command
-    await add_user_to_raid(user, raid_id, ctx.message.author, spot_id)
-
-    #delete command message to keep channels clean
-    await ctx.message.delete()
-
-#this command allows an admin user to remove someone from a raid post
-@bot.command(name='remove', help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
-@commands.has_role(admin_role_code)
-async def remove(ctx, user: discord.Member, raid_id: int):
-    await remove_user(user, raid_id, ctx.message.author)
-
-    #delete command message to keep channels clean
-    await ctx.message.delete()
-
-@bot.command(name='reschedule', hidden = True)
-@commands.has_role(admin_role_code)
-async def reschedule(ctx, raid_id: int, new_time: str):
-    global mycursor
-
-    print (f'Raid ID: {raid_id} new_time string: {new_time}')
-
-    #create DM channel for user, creating now so except clauses can also use.
-    await ctx.message.author.create_dm()
-
-    try:
-        #if the input is invalid it will throw either ParserError, ValueError, or Overflow Error
-        raid_time = parse(new_time, fuzzy=True)
-
-        #update DB with "when" value
-        sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
-        val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_id)
-        mycursor.execute(sql, val)
-
-        #DM user that raid setup is complete
-        await ctx.message.author.dm_channel.send(f'raid {raid_id} rescheduled to {raid_time.strftime("%I:%M %p %m/%d")}')
-
-        #edit raid post to show new data
-        await print_raid(raid_id)
-
-    #catching the error handling to notify user if their input was invalid
-    except ParserError:
-        await ctx.message.author.dm_channel.send(f'not a date time input, please try again')
-    except ValueError:
-        await ctx.message.author.dm_channel.send(f'invalid input, please try again')
-    except OverflowError:
-        await ctx.message.author.dm_channel.send(f'date time values exceed possible values, please try again')
-
-    #delete command message to keep channels clean
-    await ctx.message.delete()
-    
-
-#helper utility to update the raid post, requires raid_id input matching ID in DB
-async def print_raid(raid_id):
-    #declare global variable used in command
-    global raid_chan_code
-    global mycursor
-    global mydb
-
-    #SQL for query to pull Raid info with display values
-    select = f'SELECT t.idRaids, `time`, `raid_info`.`name`, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, message_id, `raid_info`.`dlc`, `raid_info`.`light_level` '
-    from_clause = f'FROM raid_plan t '
-    join_clause = f'LEFT OUTER JOIN raid_info ON `raid_info`.`idRaids`=t.what '
-    where_clause = f'WHERE t.idRaids = {raid_id}'
-    sql_statement = select + from_clause + join_clause + where_clause
-
-    #execute SQL and grab results
-    mycursor.execute(sql_statement)
-    sqlreturn = mycursor.fetchone()
-
-    #parse return to change values of None to "" and change ID values to tag format and store them in new array: raid_spots
-    raid_spots = []
-    for i in range(8):
-        if(sqlreturn[i+3]==None):
-            raid_spots.append("")
-        else:
-            raid_spots.append(f'<@{sqlreturn[i+3]}>')
-
-    #grab message object to update using message_ID stored in DB
-    raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[11])
-
-    #text of post
-    details = f'Raid {sqlreturn[0]}\nWe are raiding {sqlreturn[2]} at {sqlreturn[1]}\n'
-    primaries = f'Primary 1: {raid_spots[0]}\nPrimary 2: {raid_spots[1]}\nPrimary 3: {raid_spots[2]}\nPrimary 4: {raid_spots[3]}\nPrimary 5: {raid_spots[4]}\nPrimary 6: {raid_spots[5]}\n'
-    backups = f'Backup 1: {raid_spots[6]}\nBackup 2: {raid_spots[7]}\n'
-    requirements = f'{sqlreturn[2]} requires {sqlreturn[12]} and a light level of {sqlreturn[13]}'
-
-    #update post with text
-    await raid_message.edit(content = f'{details}{primaries}{backups}{requirements}')
-
-#helper function to ask user what raid they want to run
-#currently this is only used once so it should potentially be merged into the event command
-async def which_raid_question(user):
-    #declare global variable used in function
-    global mycursor
-
-    #grab the list of Raid names from DB
-    mycursor.execute(f'SELECT idRaids, name FROM raid_info')
-    sqlreturn = mycursor.fetchall()
-
-    #DM user list of Raids
-    await user.create_dm()
-    await user.dm_channel.send(f'What raid? (type number)')
-    raids = ""
-    for i in range(len(sqlreturn)):
-        raids = f'{raids}{sqlreturn[i][0]}: {sqlreturn[i][1]} \n'
-    await user.dm_channel.send(f'{raids}')
-
-#helper function to add user to a raid
-async def add_user_to_raid(user, raid_id, request_user, spot):
-    #declare global variables used in command
-    global mycursor
-    global mydb
-
-    #create array of values to allow dynamic sql
-    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
-
-    #pull current information on raid.
-    mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
-    sqlreturn = mycursor.fetchone()
-
-    #check to confirm user is not already in the raid.
-    if str(user.id) in np.array(sqlreturn):
-        #check if request user is same as user to be added
-        if(user.id==request_user.id):
-            #inform user they are already in the raid
-            await request_user.create_dm()
-            await request_user.dm_channel.send(f'You are already in this raid.')
-        else:
-            #inform request user that the user is already in the raid
-            await request_user.create_dm()
-            await request_user.dm_channel.send(f'User is already in this raid.')
-
-    #check to ensure the spot the user wants is not taken and add them if it is not
-    elif(sqlreturn[int(spot)] == None):
-        #update dabase with new info
-        sql = "UPDATE raid_plan SET " + spots[int(spot)-1] + " = %s WHERE idRaids = %s"
-        val = (f'{user.id}', raid_id)
-        mycursor.execute(sql, val)
-        mydb.commit()
-
-        #check if request user is same as user to be added
-        if(user.id==request_user.id):
-            #inform user they are added to the raid
-            await request_user.create_dm()
-            await request_user.dm_channel.send(f'You have been added to the raid.')
-        else:
-            #inform request user that the user was added to the raid.
-            await request_user.create_dm()
-            await request_user.dm_channel.send(f'User added to the raid.')
-        
-    #if user is not already in the raid and tries to join a taken spot
-    else:
-        #inform user the spot is taken
-        await request_user.create_dm()
-        await request_user.dm_channel.send(f'That spot is taken, please choose another.')
-
-    #update raid post
-    await print_raid(raid_id)
-
-#helper function to remove user from a raid.
-async def remove_user(user, raid_id, request_user):
-    #declare global variables used in command
-    global mycursor
-    global mydb
-
-    #create array of values to allow dynamic sql
-    spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
-
-    #pull current raid info
-    mycursor.execute(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
-    sqlreturn = mycursor.fetchone()
-
-    #iterate through each spot to check if the user is in that spot.
-    for i in range(len(sqlreturn)):
-        #check if the message author's ID matches the ID in the spot
-        if (sqlreturn[i] == str(user.id)):
-            #update SQL to remove user
-            sql = "UPDATE raid_plan SET " + spots[i] + " = NULL WHERE idRaids = %s"
-            val = (raid_id,)
-            mycursor.execute(sql, val)
-            mydb.commit()
-
-            #notify request_user that the user has been removed from the raid.
-            if(user.id==request_user.id):
-                #inform user they were removed from the raid
-                await request_user.create_dm()
-                await request_user.dm_channel.send(f'You have been removed from the raid.')
-            else:
-                #inform request user that the user was removed to the raid.
-                await request_user.create_dm()
-                await request_user.dm_channel.send(f'User has been removed from the raid.')
-
-            #update raid post with new data
-            await print_raid(raid_id)
-
-            #break loop to avoid excess computing
-            break
-
-#helper function to delete raids.
-async def delete_raid(raid_id):
-    #declare global variables used in command
-    global mycursor
-    global mydb
-    global raid_chan_code
-
-    #grab raid message ID to be deleted
-    mycursor.execute(f'SELECT message_id, notify_message_id FROM raid_plan WHERE idRaids = {raid_id}')
-    sqlreturn = mycursor.fetchone()
-
-    #grab message object to delete using the message_ID stored in DB
-    raid_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[0])
-
-    #delete raid post
-    await raid_message.delete()
-
-    #delete notify message if it exists
-    if(sqlreturn[1] != None):
-        #grab message object to delete using the message_ID stored in DB
-        notify_message = await bot.get_channel(raid_chan_code).fetch_message(sqlreturn[1])
-        await notify_message.delete()
-
-    #delete raid from DB
-    sql = "DELETE FROM raid_plan WHERE idRaids = %s"
-    val = (raid_id,)
-    mycursor.execute(sql, val)
-    mydb.commit()
 
 #this event catches errors from commands
 @bot.event
@@ -551,6 +298,7 @@ async def on_error(event, *args, **kwargs):
     await admin.create_dm()
     await admin.dm_channel.send(f'On_message error occured at {now}\nUser: {message.author.name}\nMessage: {message.content}\nError: {traceback.format_exc()}')
 
+
 #creating this event to notify users approximately 1 hour before a raid
 @loop(minutes = 30)
 async def notify():
@@ -615,6 +363,10 @@ async def notify():
 @notify.before_loop
 async def notify_before():
     await bot.wait_until_ready()
+
+#load cog
+bot.load_extension('cogs.helper_cogs')
+bot.load_extension('cogs.admin_cogs')
 
 #execute Bot and notify loop
 notify.start()
