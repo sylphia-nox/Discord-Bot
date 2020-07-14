@@ -1,7 +1,7 @@
 # this cog provides the utiltiy functions used by the commands to actually make changes
 # to avoid issues with multiple connections to the DB, anything that uses the mysql DB will exist in this cog even if it is only used once elsewhere
 
-#import statements
+# import statements
 import os
 import discord
 import mysql.connector
@@ -28,7 +28,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         global raid_chan_code
         global bot_admin_code
 
-        #create DB connection
+        # create DB connection
         mydb = mysql.connector.connect(
             host = os.getenv('DB_HOST'),
             user = os.getenv('DB_USER'),
@@ -37,35 +37,35 @@ class helper_cogs(commands.Cog, name='Utilities'):
             auth_plugin='mysql_native_password'
         )
 
-        #create object to access DB connection
+        # create object to access DB connection
         mycursor = mydb.cursor()
 
-        #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
+        # set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
         sun_chan_code = int(os.getenv('SUN_CHAN_CODE'))
-        #raid_chan_code = int(os.getenv('RAID_CHAN_CODE')) 
-        raid_chan_code = int(os.getenv('TEST_RAID_CHAN'))  #secondary channel for testing
+        raid_chan_code = int(os.getenv('RAID_CHAN_CODE')) 
+        #raid_chan_code = int(os.getenv('TEST_RAID_CHAN'))  #secondary channel for testing
         bot_admin_code = int(os.getenv('BOT_ADMIN_CODE'))
 
 
-    #helper utility to update the raid post, requires raid_id input matching ID in DB
+    # helper utility to update the raid post, requires raid_id input matching ID in DB
     async def print_raid(self, raid_id):
-        #declare global variable used in command
+        # declare global variable used in command
         global raid_chan_code
         global mycursor
         global mydb
 
-        #SQL for query to pull Raid info with display values
+        # SQL for query to pull Raid info with display values
         select = f'SELECT t.idRaids, `time`, `raid_info`.`name`, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, message_id, `raid_info`.`dlc`, `raid_info`.`light_level` '
         from_clause = f'FROM raid_plan t '
         join_clause = f'LEFT OUTER JOIN raid_info ON `raid_info`.`idRaids`=t.what '
         where_clause = f'WHERE t.idRaids = {raid_id}'
         sql_statement = select + from_clause + join_clause + where_clause
 
-        #execute SQL and grab results
+        # execute SQL and grab results
         mycursor.execute(sql_statement)
         sqlreturn = mycursor.fetchone()
 
-        #parse return to change values of None to "" and change ID values to tag format and store them in new array: raid_spots
+        # parse return to change values of None to "" and change ID values to tag format and store them in new array: raid_spots
         raid_spots = []
         for i in range(8):
             if(sqlreturn[i+3]==None):
@@ -73,28 +73,28 @@ class helper_cogs(commands.Cog, name='Utilities'):
             else:
                 raid_spots.append(f'<@{sqlreturn[i+3]}>')
 
-        #grab message object to update using message_ID stored in DB
+        # grab message object to update using message_ID stored in DB
         raid_message = await self.bot.get_channel(raid_chan_code).fetch_message(sqlreturn[11])
 
-        #text of post
+        # text of post
         details = f'Raid {sqlreturn[0]}\nWe are raiding {sqlreturn[2]} at {sqlreturn[1]}\n'
         primaries = f'Primary 1: {raid_spots[0]}\nPrimary 2: {raid_spots[1]}\nPrimary 3: {raid_spots[2]}\nPrimary 4: {raid_spots[3]}\nPrimary 5: {raid_spots[4]}\nPrimary 6: {raid_spots[5]}\n'
         backups = f'Backup 1: {raid_spots[6]}\nBackup 2: {raid_spots[7]}\n'
         requirements = f'{sqlreturn[2]} requires {sqlreturn[12]} and a light level of {sqlreturn[13]}'
 
-        #update post with text
+        # update post with text
         await raid_message.edit(content = f'{details}{primaries}{backups}{requirements}')
 
-    #helper function to ask user what raid they want to run
+    # helper function to ask user what raid they want to run
     async def which_raid_question(self, user):
-        #declare global variable used in function
+        # declare global variable used in function
         global mycursor
 
-        #grab the list of Raid names from DB
+        # grab the list of Raid names from DB
         mycursor.execute(f'SELECT idRaids, name FROM raid_info')
         sqlreturn = mycursor.fetchall()
 
-        #DM user list of Raids
+        # DM user list of Raids
         await user.create_dm()
         await user.dm_channel.send(f'What raid? (type number)')
         raids = ""
@@ -102,20 +102,20 @@ class helper_cogs(commands.Cog, name='Utilities'):
             raids = f'{raids}{sqlreturn[i][0]}: {sqlreturn[i][1]} \n'
         await user.dm_channel.send(f'{raids}')
 
-    #helper function to add user to a raid
+    # helper function to add user to a raid
     async def add_user_to_raid(self, user, raid_id, request_user, spot):
-        #declare global variables used in command
+        # declare global variables used in command
         global mycursor
         global mydb
 
-        #create array of values to allow dynamic sql
+        # create array of values to allow dynamic sql
         spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
 
-        #pull current information on raid.
+        # pull current information on raid.
         mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
         sqlreturn = mycursor.fetchone()
 
-        #check to confirm user is not already in the raid.
+        # check to confirm user is not already in the raid.
         if str(user.id) in np.array(sqlreturn):
             #check if request user is same as user to be added
             if(user.id==request_user.id):
@@ -127,7 +127,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 await request_user.create_dm()
                 await request_user.dm_channel.send(f'User is already in this raid.')
 
-        #check to ensure the spot the user wants is not taken and add them if it is not
+        # check to ensure the spot the user wants is not taken and add them if it is not
         elif(sqlreturn[int(spot)] == None):
             #update dabase with new info
             sql = "UPDATE raid_plan SET " + spots[int(spot)-1] + " = %s WHERE idRaids = %s"
@@ -145,31 +145,31 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 await request_user.create_dm()
                 await request_user.dm_channel.send(f'User added to the raid.')
             
-        #if user is not already in the raid and tries to join a taken spot
+        # if user is not already in the raid and tries to join a taken spot
         else:
             #inform user the spot is taken
             await request_user.create_dm()
             await request_user.dm_channel.send(f'That spot is taken, please choose another.')
 
-        #update raid post
+        # update raid post
         await self.print_raid(raid_id)
 
-    #helper function to remove user from a raid.
+    # helper function to remove user from a raid.
     async def remove_user(self, user, raid_id, request_user):
-        #declare global variables used in command
+        # declare global variables used in command
         global mycursor
         global mydb
 
-        #create array of values to allow dynamic sql
+        # create array of values to allow dynamic sql
         spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
 
-        #pull current raid info
+        # pull current raid info
         mycursor.execute(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
         sqlreturn = mycursor.fetchone()
 
-        #iterate through each spot to check if the user is in that spot.
+        # iterate through each spot to check if the user is in that spot.
         for i in range(len(sqlreturn)):
-            #check if the message author's ID matches the ID in the spot
+            # check if the message author's ID matches the ID in the spot
             if (sqlreturn[i] == str(user.id)):
                 #update SQL to remove user
                 sql = "UPDATE raid_plan SET " + spots[i] + " = NULL WHERE idRaids = %s"
@@ -177,7 +177,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 mycursor.execute(sql, val)
                 mydb.commit()
 
-                #notify request_user that the user has been removed from the raid.
+                # notify request_user that the user has been removed from the raid.
                 if(user.id==request_user.id):
                     #inform user they were removed from the raid
                     await request_user.create_dm()
@@ -187,10 +187,10 @@ class helper_cogs(commands.Cog, name='Utilities'):
                     await request_user.create_dm()
                     await request_user.dm_channel.send(f'User has been removed from the raid.')
 
-                #update raid post with new data
+                # update raid post with new data
                 await self.print_raid(raid_id)
 
-                #break loop to avoid excess computing
+                # break loop to avoid excess computing
                 break
 
 
