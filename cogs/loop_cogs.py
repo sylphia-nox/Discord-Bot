@@ -1,3 +1,6 @@
+#this cog is for the loop tasks, relies on helper_cogs.py for functionality.
+
+
 from discord.ext import commands, tasks
 from discord.ext.tasks import loop
 from datetime import datetime, timedelta
@@ -16,7 +19,8 @@ class loop_cogs(commands.Cog):
         if(helpers is None):
             print(f'Fatal error, loop_cogs failed to load helper_cogs.py')
 
-        self.bot.notify.start()
+        # pyline ignore command as it does not properly recognize that this method does exist
+        self.notify.start() # pylint: disable=no-member
 
 
 
