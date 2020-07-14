@@ -268,6 +268,8 @@ async def remove(ctx, user: discord.Member, raid_id: int):
 async def reschedule(ctx, raid_id: int, new_time: str):
     global mycursor
 
+    print (f'Raid ID: {raid_id} new_time string: {new_time}')
+
     #create DM channel for user, creating now so except clauses can also use.
     await ctx.message.author.create_dm()
 
@@ -277,14 +279,14 @@ async def reschedule(ctx, raid_id: int, new_time: str):
 
         #update DB with "when" value
         sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
-        val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_setup_id)
+        val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_id)
         mycursor.execute(sql, val)
 
         #DM user that raid setup is complete
         await ctx.message.author.dm_channel.send(f'raid {raid_id} rescheduled to {raid_time.strftime("%I:%M %p %m/%d")}')
 
         #edit raid post to show new data
-        await print_raid(raid_setup_id)
+        await print_raid(raid_id)
 
     #catching the error handling to notify user if their input was invalid
     except ParserError:
@@ -294,6 +296,8 @@ async def reschedule(ctx, raid_id: int, new_time: str):
     except OverflowError:
         await ctx.message.author.dm_channel.send(f'date time values exceed possible values, please try again')
 
+    #delete command message to keep channels clean
+    await ctx.message.delete()
     
 
 #helper utility to update the raid post, requires raid_id input matching ID in DB
@@ -557,6 +561,7 @@ async def notify():
     #grab current time.
     now = datetime.now()
     
+    print(f'loop check {now}')
 
     #pull current information on raids and times.
     mycursor.execute(f'SELECT idRaids, time, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids IS NOT Null')
