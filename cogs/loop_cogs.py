@@ -1,0 +1,42 @@
+from discord.ext import commands, tasks
+from discord.ext.tasks import loop
+from datetime import datetime, timedelta
+
+from dateutil.parser import parse
+from dateutil.parser import ParserError
+
+class loop_cogs(commands.Cog):
+
+    # this method runs on cog load
+    def __init__(self, bot):
+        self.bot = bot
+
+        global helpers
+        helpers = self.bot.get_cog('Utilities')
+        if(helpers is None):
+            print(f'Fatal error, loop_cogs failed to load helper_cogs.py')
+
+        self.bot.notify.start()
+
+
+
+    #creating this event to notify users approximately 1 hour before a raid
+    @tasks.loop(minutes = 30)
+    async def notify(self):
+
+        #grab current time.
+        now = datetime.now()
+        
+        print(f'loop check {now}')
+
+        await helpers.raid_notifiation_check()
+
+    #function needed to configure notify loop
+    @notify.before_loop
+    async def notify_before(self):
+        await self.bot.wait_until_ready()
+
+
+
+def setup(bot):
+    bot.add_cog(loop_cogs(bot))

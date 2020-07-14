@@ -6,48 +6,23 @@
 #import statements
 import os
 import discord
-import mysql.connector
 import traceback
 
 from dotenv import load_dotenv
-from discord.ext import commands, tasks
-from discord.ext.tasks import loop
-from datetime import datetime, timedelta
-from dateutil.parser import parse
-from dateutil.parser import ParserError
+from discord.ext import commands
+from datetime import datetime
 
 import numpy as np
 
 #load environment variables
 load_dotenv()
 
-#create DB connection
-mydb = mysql.connector.connect(
-    host = os.getenv('DB_HOST'),
-    user = os.getenv('DB_USER'),
-    passwd = os.getenv('DB_PASSWD'),
-    database = os.getenv('DATABASE'),
-    auth_plugin='mysql_native_password'
-)
-
-#create object to access DB connection
-mycursor = mydb.cursor()
-
 #set Bot and Server Token variables
 BotToken = os.getenv('BOT_TOKEN')
 ServerToken = os.getenv('SERVER_TOKEN')
 
 #set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
-sun_chan_code = int(os.getenv('SUN_CHAN_CODE'))
-#raid_chan_code = int(os.getenv('RAID_CHAN_CODE')) 
-raid_chan_code = int(os.getenv('TEST_RAID_CHAN'))  #secondary channel for testing
-admin_role_code = int(os.getenv('ADMIN_ROLE_CODE'))
 bot_admin_code = int(os.getenv('BOT_ADMIN_CODE'))
-
-#global variables to allow the bot to know if raid setup is ongoing and its state
-raid_setup_active = False
-raid_setup_step = "what"
-raid_setup_id = ""
 
 #create bot object
 bot = commands.Bot(command_prefix='~')
@@ -67,161 +42,6 @@ async def on_ready():
 
     # Setting `Listening ` status
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
-
-#this event activates on all messages but is for DM messages for setting up a raid, everything else goes through commands
-async def on_message(self, message):
-    global raid_setup_active
-    global raid_setup_user
-    global raid_setup_step
-    global rs_message
-    global mycursor
-    global mydb
-    global raid_setup_id
-
-    #check if raid setup is active, if not ignore
-    if(raid_setup_active):
-        #check to see if the message is a DM from the raid_setup_user
-        if message.channel.type is discord.ChannelType.private and message.author == raid_setup_user:
-            #Check what state the raid setup is in.
-            if(raid_setup_step == "what"):
-                #try loop to catch non int-parsable input, all other exceptions will trigger on_error event and send exception to admin user
-                try:
-                    #grab number of raids for loop
-                    mycursor.execute(f'SELECT COUNT(*) FROM raid_info')
-                    sqlreturn = mycursor.fetchone()
-
-                    in_list = False
-
-                    #checking to confirm the response is valid
-                    for i in range(sqlreturn[0]):
-                        if (int(message.content) == (i+1)):
-                            #if the values match a valid raid, update SQL with the raid and respond to user
-                            sql = "UPDATE raid_plan SET what = %s WHERE idRaids = %s"
-                            val = (f'{message.content}', raid_setup_id)
-                            mycursor.execute(sql, val)
-
-                            #prompt user for time in DM channel and edit raid post
-                            await print_raid(raid_setup_id)
-                            await raid_setup_user.dm_channel.send(f'When is the raid?')
-                            
-                            #set global variable to "when" to change the event response
-                            raid_setup_step = "when"
-
-                            #set boolean so code knows the response was valid
-                            in_list = True
-                            
-                            #break loop to avoid excess computing
-                            break
-
-                    #if the answer is not valid, reprompt user and do not change state
-                    if(not in_list):
-                        await raid_setup_user.dm_channel.send(f'Invalid choice, please choose a number from the list')
-
-                #except block to catch ValueError if user does not provide int-parsable input
-                except ValueError:
-                    await raid_setup_user.dm_channel.send(f'Your input is not a number, please provide valid input')
-
-
-            #elif check if raid setup is in "when" state
-            elif(raid_setup_step == "when"):
-                try:
-                    #if the input is invalid it will throw either ParserError, ValueError, or Overflow Error
-                    raid_time = parse(message.content, fuzzy=True)
-
-                    #update DB with "when" value
-                    sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
-                    val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_setup_id)
-                    mycursor.execute(sql, val)
-
-                    #DM user that raid setup is complete
-                    await raid_setup_user.dm_channel.send(f'raid setup complete')
-
-                    #reset global variables for next raid setup
-                    raid_setup_active = False
-                    raid_setup_step = "what"
-
-                    #edit raid post to show new data
-                    await print_raid(raid_setup_id)
-
-                    #clear global variable for next setup
-                    raid_setup_id = ""
-
-                    # Reset boss display status
-                    await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
-
-                #catching the error handling to notify user if their input was invalid
-                except ParserError:
-                    await raid_setup_user.dm_channel.send(f'not a date time input, please try again')
-                except ValueError:
-                    await raid_setup_user.dm_channel.send(f'invalid input, please try again')
-                except OverflowError:
-                    await raid_setup_user.dm_channel.send(f'date time values exceed possible values, please try again')
-
-            #both steps run SQL so we need to commit those changes
-            mydb.commit()
-
-
-#this command creates a new raid post, user needs to respond to DMs to complete setup.
-@bot.command(name='raid', help='Type ~raid and the bot will create a new raid post for you')
-async def raid(ctx):
-    #declare global variables used in command
-    global raid_chan_code
-    global raid_setup_active
-    global raid_setup_user 
-    global raid_setup_step
-    global rs_message
-    global mycursor
-    global mydb
-    global raid_setup_id
-
-    #setting global variable values for new raid setup
-    raid_setup_active = True
-    raid_setup_user = ctx.message.author
-
-    #create raid post
-    raid_chan = bot.get_channel(raid_chan_code)
-    response = f'@here let\'s raid!'
-    message = await raid_chan.send(response)
-
-    #get raid post message object and set global variable
-    rs_message = message
-
-    #ask the user which raid they want to do via DM
-    await which_raid_question(raid_setup_user)
-
-    #insert raid into DB, currently only setting Raid key and message ID
-    sql = "INSERT INTO raid_plan (message_id) VALUE (%s)"
-    val = (message.id,)
-    mycursor.execute(sql, val)
-    mydb.commit()
-
-    #setting global variable
-    raid_setup_id = mycursor.lastrowid
-    raid_setup_step = "what"
-
-    # Setting `Playing ` status to show bot is setting up a raid
-    await bot.change_presence(activity=discord.Game(name="setting up a raid"))
-
-    #delete command message to keep channels clean
-    await ctx.message.delete()
- 
-#this command allows a user to join a raid.
-@bot.command(name='join', help='type ~join # # First number is the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
-async def join(ctx, raid_id: int, spot: int):
-    await add_user_to_raid(ctx.message.author, raid_id, ctx.message.author, spot)
-
-    #delete command message to keep channels clean
-    await ctx.message.delete()
-
-#command to allow a user to leave the raid, it will remove the user from the first spot it finds them in.
-@bot.command(name='leave', help='type ~leave # and you will be removed from that raid')
-async def leave(ctx, raid_id: int):
-    await remove_user(ctx.message.author, raid_id, ctx.message.author)
-
-    #delete command message to keep channels clean
-    await ctx.message.delete()
-
-#begin Admin command section
 
 #this event catches errors from commands
 @bot.event
@@ -298,76 +118,11 @@ async def on_error(event, *args, **kwargs):
     await admin.create_dm()
     await admin.dm_channel.send(f'On_message error occured at {now}\nUser: {message.author.name}\nMessage: {message.content}\nError: {traceback.format_exc()}')
 
-
-#creating this event to notify users approximately 1 hour before a raid
-@loop(minutes = 30)
-async def notify():
-    global mycursor
-    global mydb
-    global raid_chan_code
-
-    #grab current time.
-    now = datetime.now()
-    
-    print(f'loop check {now}')
-
-    #pull current information on raids and times.
-    mycursor.execute(f'SELECT idRaids, time, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids IS NOT Null')
-    sqlreturn = mycursor.fetchall()
-
-    for i in range(len(sqlreturn)):
-        if(sqlreturn[i][1]!=None):
-            #converting time to a dateutil object to allow comparison
-            raid_time = parse(sqlreturn[i][1], fuzzy=True) 
-
-            #raid_id will be used repeatedly so setting it to a variable
-            raid_id = sqlreturn[i][0]
-
-            #check if raid is starting between 40 and 70 minutes from now
-            if ((now + timedelta(minutes = 40)) < raid_time <= (now + timedelta(hours = 1, minutes = 10))):
-    
-                #creating int value so the function knows how many people are in the raid
-                raid_members = 0
-
-                #beginning of notification message
-                notify = f'Notification: Raid {raid_id} is starting soon. If you are tagged then you are currently scheduled to raid.\n'
-                
-                #adding users to notification message and checking how many people we have
-                for ii in range(8):
-                    if(sqlreturn[i][ii+2] != None and raid_members < 6):
-                        raid_members += 1
-                        notify =  notify + f'<@{sqlreturn[i][ii+2]}> '
-
-                #adding a @here mention if we are missing people
-                if (raid_members < 6):
-                    notify = notify + f'\n@here we still need {6-raid_members} fireteam member(s) for the raid.'
-                
-                #notify everyone in the raid and ping @here if we need someone
-                raid_chan = bot.get_channel(raid_chan_code)
-                message = await raid_chan.send(notify)
-
-                #get raid post message object and set global variable
-                notify_message = message
-
-                #add notify message ID to DB
-                sql = "UPDATE raid_plan SET notify_message_ID = %s WHERE idRaids = %s"
-                val = (notify_message.id,  raid_id)
-                mycursor.execute(sql, val)
-                mydb.commit()
-
-            #check to see if raid started over 30 minutes ago, if so, delete
-            elif (raid_time + timedelta(minutes = 30) < now):
-                await delete_raid(raid_id)
-
-#function needed to configure notify loop
-@notify.before_loop
-async def notify_before():
-    await bot.wait_until_ready()
-
-#load cog
+#load cogs
 bot.load_extension('cogs.helper_cogs')
 bot.load_extension('cogs.admin_cogs')
+bot.load_extension('cogs.user_cogs')
+bot.load_extension('cogs.loop_cogs')
 
-#execute Bot and notify loop
-notify.start()
+#execute Bot
 bot.run(BotToken)
