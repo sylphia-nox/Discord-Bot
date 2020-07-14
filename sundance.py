@@ -68,7 +68,6 @@ async def on_ready():
     # Setting `Listening ` status
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
 
-
 #this event activates on all messages but is for DM messages for setting up a raid, everything else goes through commands
 @bot.event
 async def on_message(message):
@@ -208,8 +207,7 @@ async def raid(ctx):
 
     #delete command message to keep channels clean
     await ctx.message.delete()
-
-    
+ 
 #this command allows a user to join a raid.
 @bot.command(name='join', help='type ~join # # First number is the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
 async def join(ctx, raid_id: int, spot: int):
@@ -264,6 +262,43 @@ async def remove(ctx, user: discord.Member, raid_id: int):
 
     #delete command message to keep channels clean
     await ctx.message.delete()
+
+@bot.command(name='reschedule', hidden = True)
+@commands.has_role(admin_role_code)
+async def reschedule(ctx, raid_id: int, new_time: str):
+    global mycursor
+
+    print (f'Raid ID: {raid_id} new_time string: {new_time}')
+
+    #create DM channel for user, creating now so except clauses can also use.
+    await ctx.message.author.create_dm()
+
+    try:
+        #if the input is invalid it will throw either ParserError, ValueError, or Overflow Error
+        raid_time = parse(new_time, fuzzy=True)
+
+        #update DB with "when" value
+        sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s"
+        val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_id)
+        mycursor.execute(sql, val)
+
+        #DM user that raid setup is complete
+        await ctx.message.author.dm_channel.send(f'raid {raid_id} rescheduled to {raid_time.strftime("%I:%M %p %m/%d")}')
+
+        #edit raid post to show new data
+        await print_raid(raid_id)
+
+    #catching the error handling to notify user if their input was invalid
+    except ParserError:
+        await ctx.message.author.dm_channel.send(f'not a date time input, please try again')
+    except ValueError:
+        await ctx.message.author.dm_channel.send(f'invalid input, please try again')
+    except OverflowError:
+        await ctx.message.author.dm_channel.send(f'date time values exceed possible values, please try again')
+
+    #delete command message to keep channels clean
+    await ctx.message.delete()
+    
 
 #helper utility to update the raid post, requires raid_id input matching ID in DB
 async def print_raid(raid_id):
@@ -441,7 +476,6 @@ async def delete_raid(raid_id):
     mycursor.execute(sql, val)
     mydb.commit()
 
-
 #this event catches errors from commands
 @bot.event
 async def on_command_error(ctx, error):
@@ -527,6 +561,7 @@ async def notify():
     #grab current time.
     now = datetime.now()
     
+    print(f'loop check {now}')
 
     #pull current information on raids and times.
     mycursor.execute(f'SELECT idRaids, time, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids IS NOT Null')
