@@ -123,6 +123,7 @@ bot.load_extension('cogs.helper_cogs')
 bot.load_extension('cogs.admin_cogs')
 bot.load_extension('cogs.user_cogs')
 bot.load_extension('cogs.loop_cogs')
+bot.load_extension('cogs.destiny_api_cogs')
 
 #execute Bot
 bot.run(BotToken)
