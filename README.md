@@ -5,6 +5,7 @@ I am beggining to work on implementing Destiny APIs into the bot.  My hope is to
 - next_level: would return gear items needed to reach next power level
 - quick_swap: have two items preset to be swapped in your inventory
 - loadout_swap: quick swap between two loadouts
+- max_power: move items to character to make them max possible power
 <br>
 
 Please feel free to recommend other potentially handy commands.<br>
