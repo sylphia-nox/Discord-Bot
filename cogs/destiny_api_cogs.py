@@ -18,8 +18,8 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         HEADERS = {"X-API-Key": api_key}
 
 
-    @commands.command(name = 'next_level', help = "`~next_level <steam_name> <character: int> Character is 0, 1, 2 in order of appearance on character select.")
-    async def bungie(self, ctx, steam_name: str, character: int):
+    @commands.command(name = 'power', help = "`~next_level <steam_name> <character: int> Character is 0, 1, 2 in order of appearance on character select.")
+    async def power(self, ctx, steam_name: str, character: int):
 
         # grab manifest file for items
         global manifest
@@ -189,36 +189,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         del json
         return items_list
 
-    @commands.command(name = 'character_ids', hidden = True)
-    async def character_ids(self, ctx, name):
-        # base url
-        base_url = "https://www.bungie.net/platform"
-
-        #make request for membership ID
-        url = base_url + f'/Destiny2/SearchDestinyPlayer/3/{name}/'
-        r = requests.get(url, headers = HEADERS)
-
-        # convert the json object we received into a Python dictionary object
-        # and print the name of the item
-        inventoryItem = r.json()
-
-        # get memberID to use in next API call
-        memberID = inventoryItem['Response'][0]['membershipId']
-
-        # get character info
-        url = base_url + f'/Destiny2/3/Profile/{memberID}/?components=200'
-        r = requests.get(url, headers = HEADERS)
-
-        # store character info in dictionary object
-        inventoryItem = r.json()
-
-        # cycle through JSON to get character IDS, they are stored in the Key instead of as a value.
-        char_ids = []
-        for key in inventoryItem['Response']['characters']['data']:
-            char_ids.append(key)
-
-        # send message to channel with user IDs
-        await ctx.send(char_ids)
+   
 
 
 def setup(bot):
