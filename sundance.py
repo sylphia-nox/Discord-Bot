@@ -27,6 +27,19 @@ bot_admin_code = int(os.getenv('BOT_ADMIN_CODE'))
 #create bot object
 bot = commands.Bot(command_prefix='~')
 
+# command to reload cogs
+@bot.command(name='reload_cog', hidden=True)
+@commands.is_owner()
+async def reload_cog(ctx, module : str):
+    """Reloads a module."""
+    try:
+        bot.reload_extension(module)
+    except Exception as e:
+        await ctx.send('\N{PISTOL}')
+        await ctx.send('{}: {}'.format(type(e).__name__, e))
+    else:
+        await ctx.send('\N{OK HAND SIGN}')
+
 #this event dictates the actions the bot takes when it connects.
 @bot.event
 async def on_ready():
