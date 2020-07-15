@@ -41,15 +41,18 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         #convert the json object we received into a Python dictionary object
         #and print the name of the item
         get_user_return = r.json()
+        print(json.dumps(get_user_return,indent = 4))
 
         # get member ID for user
         memberID = get_user_return['Response'][0]['membershipId']
         print(f'MemberID: {memberID}')
 
+        membershipType = get_user_return['Response'][0]['membershipType']
+
         # deleting json to save resources
         del get_user_return
 
-        url = base_url + f'/Destiny2/3/Profile/{memberID}/?components=200'
+        url = base_url + f'/Destiny2/{membershipType}/Profile/{memberID}/?components=200'
         r = requests.get(url, headers = HEADERS)
 
         get_characters_return = r.json()
@@ -64,7 +67,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
 
         # get all items and info for items
-        url = base_url + f'/Destiny2/3/Profile/{memberID}/?components=102, 201, 205, 300'
+        url = base_url + f'/Destiny2/{membershipType}/Profile/{memberID}/?components=102, 201, 205, 300'
         r = requests.get(url, headers = HEADERS)
         json_return = r.json()
 
