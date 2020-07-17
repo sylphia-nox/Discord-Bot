@@ -220,10 +220,6 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         r = requests.get(url, headers = HEADERS)
         json_return = r.json()
         del r
-
-        with open('test_api_return.json', 'w') as data_file:
-            json.dump(json_return, data_file, indent = 4)
-
        
         # pull out item_info
         global item_info
