@@ -1,6 +1,6 @@
 #this cog is for the loop tasks, relies on helper_cogs.py for functionality.
 
-
+# import statements
 from discord.ext import commands, tasks
 from discord.ext.tasks import loop
 from datetime import datetime, timedelta
@@ -14,6 +14,7 @@ class loop_cogs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        # import utility functions
         global helpers
         helpers = self.bot.get_cog('Utilities')
         if(helpers is None):
@@ -24,22 +25,23 @@ class loop_cogs(commands.Cog):
 
 
 
-    #creating this event to notify users approximately 1 hour before a raid
+    # creating this event to notify users approximately 1 hour before a raid
     @tasks.loop(minutes = 30)
     async def notify(self):
 
-        #grab current time.
+        # grab current time.
         now = datetime.now()
         
+        # print to console for monitoring
         print(f'loop check {now}')
 
+        # run utility
         await helpers.raid_notifiation_check()
 
-    #function needed to configure notify loop
+    #function ensure bot is started and ready before running loop
     @notify.before_loop
     async def notify_before(self):
         await self.bot.wait_until_ready()
-
 
 
 def setup(bot):
