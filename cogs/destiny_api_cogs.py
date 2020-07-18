@@ -11,23 +11,34 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
     def __init__(self, bot):
         self.bot = bot
 
+        # load environment file into environment variables
         load_dotenv()
 
+        #declare global varibles for API calls
         global api_key
         global HEADERS
         global base_url
         
+        # create HEADERS and base_url
         api_key = os.getenv('DESTINY_API_KEY')
-        HEADERS = {"X-API-Key": api_key}
+        HEADERS = {
+            'X-API-Key': api_key,  
+            'User-Agent': "Sundance_Discord_Bot/1.0 AppId/##### (+https://github.com/michaelScarfi/Discord-Bot;michael@scarfi.me)"
+        }
         base_url = "https://www.bungie.net/platform"
 
+        # load helper cogs.
+        global helpers
+        helpers = self.bot.get_cog('Utilities')
+        if(helpers is None):
+            print(f'Fatal error, desteny API cogs failed to load helper_cogs.py')
+
+        # load manifests
+        self.initialize_manifest()
+
     # this command shows a user their current power, highest power level of each equipement piece, and needed power to hit the next level.
-    @commands.command(name = 'power', help = "`~next_level <steam_name> <class: str> Class should be warlock/hunter/titan (not case sensitive).")
+    @commands.command(name = 'power', help = "`~power <steam_name> <class: str> Class should be warlock/hunter/titan (not case sensitive).")
     async def power(self, ctx, steam_name: str, character: str):
-
-        # load manifest
-        await self.get_manifest()
-
         # get memberID and membershipType
         player_info = await self.get_member_info(steam_name)
         
@@ -46,6 +57,33 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
         # send message to channel
         await ctx.send(message_content)
+
+        # delete command message to keep channels clean
+        await ctx.message.delete()
+
+    @commands.command(name = 'next_power', help = "`~next_power <steam_name> <class: str> Class should be warlock/hunter/titan (not case sensitive).")
+    async def next_power(self, ctx, steam_name: str, character: str):
+        # get memberID and membershipType
+        player_info = await self.get_member_info(steam_name)
+
+        # get player character info
+        player_char_info = await self.get_player_char_info(player_info[0], player_info[1], character)
+        char_type = player_char_info[2]
+
+        # declare list to hold items and get items
+        items = await self.get_player_items(player_char_info)
+        
+        # get highest light for each slot
+        high_items = await self.get_max_power_list(items)
+
+        # get active milestones and milestone info
+        active_milestones = await self.get_player_milestones(player_char_info)
+
+    @commands.command(name = 'reload_manifest', hidden = True)
+    @commands.is_owner()
+    async def reload_manifest(self, ctx):
+         # load manifest
+        await self.get_manifest()
 
         # delete command message to keep channels clean
         await ctx.message.delete()
@@ -135,6 +173,14 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         manifest = r.json()
         del r
 
+    # helper function to initialize manifest file when cog is loaded, non async version of get_manifest
+    def initialize_manifest(self):
+        global manifest
+        r = requests.get("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
+        manifest = r.json()
+        del r
+        print('Manifest Initialized')
+
     # helper function to get memberID and membershipType from steam_name
     async def get_member_info(self, steam_name:str):
         # base url
@@ -149,13 +195,19 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         get_user_return = r.json()
         del r
 
-        try:
-            # get member ID for user
-            memberID = get_user_return['Response'][0]['membershipId']
+        # check to get user with exact display name, not full-proof but should reduce issues with grabbing the wrong player
+        for user in get_user_return['Response']:
+            try:
+                if(user['displayName'] == steam_name):
+                    # get member ID for user
+                    memberID = user['membershipId']
 
-            # get membershipType
-            membershipType = get_user_return['Response'][0]['membershipType']
-        except IndexError:
+                    # get membershipType
+                    membershipType = user['membershipType']
+            except IndexError:
+                raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
+
+        if(memberID is None):
             raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
 
         # deleting json to save resources
@@ -191,6 +243,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
             char_ids.append(key)
             if (get_characters_return['Response']['characters']['data'][str(key)]['classType'] == character_class):
                 has_character = True
+                char_id = key
 
         # if user does not have a character of that class, raise exception
         if (not has_character):
@@ -199,7 +252,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # delete json to save memory
         del get_characters_return
 
-        player_char_info = [memberID, membershipType, character_class, char_ids]
+        player_char_info = [memberID, membershipType, character_class, char_ids, char_id]
         return player_char_info
 
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
@@ -239,11 +292,49 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         
 
         # deleting variable to save memory usage.
-        del manifest
         del item_info
         del json_return
 
         return items
+
+    # helper function to get milestones for a character
+    async def get_player_milestones(self, player_char_info):
+        global manifest
+
+        # declare list to hold items
+        active_pinnacles = []
+
+        # get variable information from list, doing this way for ease of reading code.
+        memberID = player_char_info[0]
+        membershipType = player_char_info[1]
+        char_id = player_char_info[4]
+
+        # get all items and info for items
+        url = base_url + f'/Destiny2/{membershipType}/Profile/{memberID}/Character/{char_id}/?components=202'
+        r = requests.get(url, headers = HEADERS)
+        json_return = r.json()
+        del r
+        
+        # try to get list of milestones from return, if privacy is an issue this should fail with a KeyError
+        try:
+            # pull out item_info
+            milestones = json_return['Response']['progressions']['data']['milestones']
+            del json_return
+        except KeyError:
+            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory.")
+        
+        # get list of pinnacle activities from DB
+        pinnacle_activity_info = await helpers.get_pinnacle_activity_info()
+    
+        # cycle through return and see if the user has not completed them already
+        for info in pinnacle_activity_info:
+            if str(info[1]) in milestones:
+                active_pinnacles.append(info)
+
+        # deleting variable to save memory usage.
+        del milestones
+
+        return active_pinnacles
 
     # helper function to parse JSON, returns items[] that can be equiped by class_type
     async def parse_json_for_item_info(self, json, items_list, class_type):
@@ -270,8 +361,44 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         del json
         return items_list
 
+    # helper function to calculater probabilities
+    async def calculate_probabilities(self, high_items, milestone):
+        # define list of possible drops
+        drops = [milestone[3],milestone[4],milestone[5],milestone[6],milestone[7],milestone[8],milestone[9],milestone[10]]
+        sum_drops = sum(drops)
 
 
+    
+    async def best_options(self, high_items, active_milestones):
+        # garden hash
+        raid_hash = 2712317338
+
+        # list to hold the info we need
+        best_options_list = []
+
+        # list to hold the 4 raid encounters
+        raid_encounters = []
+
+        # calculate average power
+        play_pow = int(sum(high_items)/8)
+
+        for item in high_items:
+            if item < play_pow:
+                item = play_pow
+
+        play_pow_potential = int(sum(high_items)/8)    
+
+        if(play_pow_potential > play_pow):
+            print(f'go get at-level drops, you don\'t need pinacles')
+        else:
+            for milestone in active_milestones:
+                if milestone[1] != raid_hash:
+                    probabilities = await self.calculate_probabilities(high_items, milestone)
+                    best_options_list.append([milestone[2], probabilities[0], probabilities[1], probabilities[2]])
+                else:
+                    raid_encounters.append(milestone)
+
+        print(f'{best_options_list}')
 
 def setup(bot):
     bot.add_cog(destiny_api_cogs(bot))

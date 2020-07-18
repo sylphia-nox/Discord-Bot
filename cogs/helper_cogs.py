@@ -193,9 +193,6 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 # break loop to avoid excess computing
                 break
 
-
-
-
     #helper function to delete raids.
     async def delete_raid(self, raid_id):
         #declare global variables used in command
@@ -343,6 +340,16 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 elif (raid_time + timedelta(minutes = 30) < now):
                     await self.delete_raid(raid_id)
 
+    # helper utility to query the DB for Pinnacle activity info
+    async def get_pinnacle_activity_info(self):
+        global mycursor
+
+        # query DB and grab results
+        mycursor.execute(f'SELECT * FROM `pinnacle_milestone_info`')
+        sqlreturn = mycursor.fetchall()
+
+        # return results
+        return sqlreturn
 
 def setup(bot):
     bot.add_cog(helper_cogs(bot))
