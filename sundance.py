@@ -55,7 +55,8 @@ async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
 
 #load cogs
-bot.load_extension('cogs.helper_cogs')
+bot.load_extension('cogs.helper_cogs') 
+bot.load_extension('cogs.destiny_api_helper_cogs')
 bot.load_extension('cogs.admin_cogs')
 bot.load_extension('cogs.error_handling_cogs')
 bot.load_extension('cogs.user_cogs')

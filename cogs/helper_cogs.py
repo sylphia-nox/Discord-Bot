@@ -278,7 +278,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         global mycursor
 
         # query DB and grab results
-        mycursor.execute(f'SELECT COUNT(*) FROM raid_info')
+        mycursor.execute(query)
         sqlreturn = mycursor.fetchall()
 
         # return results
@@ -340,16 +340,6 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 elif (raid_time + timedelta(minutes = 30) < now):
                     await self.delete_raid(raid_id)
 
-    # helper utility to query the DB for Pinnacle activity info
-    async def get_pinnacle_activity_info(self):
-        global mycursor
-
-        # query DB and grab results
-        mycursor.execute(f'SELECT * FROM `pinnacle_milestone_info`')
-        sqlreturn = mycursor.fetchall()
-
-        # return results
-        return sqlreturn
 
 def setup(bot):
     bot.add_cog(helper_cogs(bot))
