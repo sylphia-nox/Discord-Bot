@@ -193,9 +193,6 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 # break loop to avoid excess computing
                 break
 
-
-
-
     #helper function to delete raids.
     async def delete_raid(self, raid_id):
         #declare global variables used in command
@@ -281,7 +278,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         global mycursor
 
         # query DB and grab results
-        mycursor.execute(f'SELECT COUNT(*) FROM raid_info')
+        mycursor.execute(query)
         sqlreturn = mycursor.fetchall()
 
         # return results
