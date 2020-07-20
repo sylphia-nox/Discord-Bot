@@ -24,9 +24,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         
         # create HEADERS and base_url
         api_key = os.getenv('DESTINY_API_KEY')
+        bot_name = os.getenv('BOT_NAME')
+        bot_version = os.getenv('BOT_VERSION')
+        client_id = os.getenv('DESTINY_OATH_CLIENT_ID')
+        email = os.getenv('EMAIL')
         HEADERS = {
             'X-API-Key': api_key,  
-            'User-Agent': "Sundance_Discord_Bot/1.0 AppId/##### (+https://github.com/michaelScarfi/Discord-Bot;michael@scarfi.me)"
+            'User-Agent': bot_name + "/" + bot_version + " AppId/" + client_id + " (+https://github.com/michaelScarfi/Discord-Bot;" + email + ")"
         }
         base_url = "https://www.bungie.net/platform"
 
