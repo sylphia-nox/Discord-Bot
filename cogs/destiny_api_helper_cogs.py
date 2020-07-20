@@ -375,11 +375,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         sub_message += f'- {categories[index]}\n'
 
                 if sub_message != "":
-                    message += f'The power level of the following items can be increased by getting an at-level drop in that slot.\n' + sub_message
+                    message += f'```The power level of the following items can be increased by getting an at-level drop in that slot.\n' + sub_message + "```"
 
                 # calculate power to next level
                 power_needed = 8-(sum(high_items)%8)
-                message += f'You need +{power_needed} above your current average from prime/powerfuls to hit the next power level.```\nLook for {destiny_challenge_emote} on the map.'
+                if(potential_power_increase <= 0):
+                    message += f'You need +{power_needed} above your current average from prime/powerfuls to hit the next power level.\nLook for {destiny_challenge_emote} on the map.'
 
                 return(f'{message}')
             
