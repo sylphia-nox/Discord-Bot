@@ -98,8 +98,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
         await user.create_dm()
         await user.dm_channel.send(f'What raid? (type number)')
         raids = ""
-        for i in range(len(sqlreturn)):
-            raids = f'{raids}{sqlreturn[i][0]}: {sqlreturn[i][1]} \n'
+        for raid in sqlreturn:
+            raids = f'{raids}{raid[0]}: {raid[1]} \n'
         await user.dm_channel.send(f'{raids}')
 
     # helper function to add user to a raid
@@ -168,9 +168,9 @@ class helper_cogs(commands.Cog, name='Utilities'):
         sqlreturn = mycursor.fetchone()
 
         # iterate through each spot to check if the user is in that spot.
-        for i in range(len(sqlreturn)):
+        for i, spot in enumerate(sqlreturn):
             # check if the message author's ID matches the ID in the spot
-            if (sqlreturn[i] == str(user.id)):
+            if (spot == str(user.id)):
                 #update SQL to remove user
                 sql = "UPDATE raid_plan SET " + spots[i] + " = NULL WHERE idRaids = %s"
                 val = (raid_id,)
@@ -296,16 +296,16 @@ class helper_cogs(commands.Cog, name='Utilities'):
         mycursor.execute(f'SELECT idRaids, time, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, notify_message_ID FROM raid_plan WHERE idRaids IS NOT Null')
         sqlreturn = mycursor.fetchall()
 
-        for i in range(len(sqlreturn)):
-            if(sqlreturn[i][1]is not None):
+        for raid in sqlreturn:
+            if(raid[1]is not None):
                 #converting time to a dateutil object to allow comparison
-                raid_time = parse(sqlreturn[i][1], fuzzy=True) 
+                raid_time = parse(raid[1], fuzzy=True) 
 
                 #raid_id will be used repeatedly so setting it to a variable
-                raid_id = sqlreturn[i][0]
+                raid_id = raid[0]
 
                 #check if raid is starting under 70 minutes from now and does not have a notification message already
-                if (raid_time <= (now + timedelta(minutes = 70))) and sqlreturn[i][10] is None:
+                if (raid_time <= (now + timedelta(minutes = 70))) and raid[10] is None:
         
                     #creating int value so the function knows how many people are in the raid
                     raid_members = 0
@@ -314,10 +314,10 @@ class helper_cogs(commands.Cog, name='Utilities'):
                     notify = f'Notification: Raid {raid_id} is starting soon. If you are tagged then you are currently scheduled to raid.\n'
                     
                     #adding users to notification message and checking how many people we have
-                    for ii in range(8):
-                        if(sqlreturn[i][ii+2] != None and raid_members < 6):
+                    for i in range(8):
+                        if(raid[i+2] != None and raid_members < 6):
                             raid_members += 1
-                            notify =  notify + f'<@{sqlreturn[i][ii+2]}> '
+                            notify =  notify + f'<@{raid[i+2]}> '
 
                     #adding a @here mention if we are missing people
                     if (raid_members < 6):

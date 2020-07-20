@@ -17,9 +17,9 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
     # this command shows a user their current power, highest power level of each equipement piece, and needed power to hit the next level.
     @commands.command(name = 'power', help = "`~power <steam_name> <class: str> Class should be warlock/hunter/titan (not case sensitive).")
-    async def power(self, ctx, steam_name: str, character: str):
+    async def power(self, ctx, steam_name: str, character: str, platform: int = 3):
         # get memberID and membershipType
-        player_info = await destiny_helpers.get_member_info(steam_name)
+        player_info = await destiny_helpers.get_member_info(steam_name, platform)
         
         # get player character info
         player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character)
@@ -41,9 +41,9 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.message.delete()
 
     @commands.command(name = 'next_power', help = "`~next_power <steam_name> <class: str> Class should be warlock/hunter/titan (not case sensitive).")
-    async def next_power(self, ctx, steam_name: str, character: str):
+    async def next_power(self, ctx, steam_name: str, character: str, platform: int = 3):
         # get memberID and membershipType
-        player_info = await destiny_helpers.get_member_info(steam_name)
+        player_info = await destiny_helpers.get_member_info(steam_name, platform)
 
         # get player character info
         player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character)
