@@ -137,12 +137,17 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return high_items
 
     # helper function to get memberID and membershipType from steam_name
-    async def get_member_info(self, steam_name:str):
+    async def get_member_info(self, name:str, platform: int = 3):
+        # 3 = steam, 2 = xbox, 1 = psn, (4 = stadia?)
+
         # base url
         global base_url
 
+        # create blank MemberID, needed to raise proper error
+        memberID = ""
+
         #make request for membership ID
-        url = base_url + f'/Destiny2/SearchDestinyPlayer/3/{steam_name}/'
+        url = base_url + f'/Destiny2/SearchDestinyPlayer/{platform}/{name}/'
         r = requests.get(url, headers = HEADERS)
 
         #convert the json object we received into a Python dictionary object
@@ -153,7 +158,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # check to get user with exact display name, not full-proof but should reduce issues with grabbing the wrong player
         for user in get_user_return['Response']:
             try:
-                if(user['displayName'] == steam_name):
+                if(user['displayName'] == name):
                     # get member ID for user
                     memberID = user['membershipId']
 
@@ -162,8 +167,17 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             except IndexError:
                 raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
 
-        if(memberID is None):
-            raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
+        # could not get exact match, return first results
+        if(memberID == ""):
+            try: 
+                # get member ID for user
+                memberID = get_user_return['Response'][0]['membershipId']
+
+                # get membershipType
+                membershipType = get_user_return['Response'][0]['membershipType']
+            except IndexError:
+                raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
+
 
         # deleting json to save resources
         del get_user_return
@@ -361,11 +375,16 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         sub_message += f'- {categories[index]}\n'
 
                 if sub_message != "":
-                    message += f'The power level of the following items can be increased by getting an at-level drop in that slot.\n' + sub_message
+                    message += f'```The power level of the following items can be increased by getting an at-level drop in that slot.\n' + sub_message + "```"
 
-                # calculate power to next level
-                power_needed = 8-(sum(high_items)%8)
-                message += f'You need +{power_needed} above your current average from prime/powerfuls to hit the next power level.```\nLook for {destiny_challenge_emote} on the map.'
+                
+                # if player needs prime/powerfuls to level up, let them know how much in each slot.
+                if(potential_power_increase <= 0):
+                    # calculate power to next level
+                    power_needed = 8-(sum(high_items)%8)
+
+                    # add to message string
+                    message += f'You need +{power_needed} above your current average from prime/powerfuls to hit the next power level.\nLook for {destiny_challenge_emote} on the map.'
 
                 return(f'{message}')
             
@@ -450,13 +469,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     # create header for message
                     message += 'You are in the final push, here are the pinnacles you can run and probability of getting a needed item.\n'
 
-                    # create new array with activity name and probability
+                    # create new array with just activity name and probability of +1/+2 increase (since we are 1 away we want the non +0 probability)
                     final_push_milestones = []
 
                     # cycle through and add each active_milestones to final_push_milestones
-                    for i in range(len(probability_array)):
+                    for i, activity in enumerate(probability_array):
                         
-                        final_push_milestones.append([active_milestones[2]],[probability_array[i][0] + probability_array[i][1]])
+                        final_push_milestones.append(active_milestones[i][2],activity[0] + activity[1])
                         # since we have been dealing with floats, if a probabilty is almost 1.00 change it to be 1
                         if(final_push_milestones[i][1] >= .99):
                             final_push_milestones[i][1] = 1
@@ -477,6 +496,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 raid_prob = []
                 raid_info = []
 
+                # sadly, a non-pythonic loop but this is the easiest way to iterate backwards, there is probably a more pythonic way to accomplish this task
+                # we need to split out the raid activities from the rest the filter is if the active_milestones hash [1] == the raid hash
                 for i in range(len(probability_array), -1, -1):
                     if (active_milestones[i-1][1] == raid_hash):
                         raid_prob.insert(0, probability_array[i-1])
@@ -495,26 +516,30 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     max_prob = np.max(valid_probs)
                     message += "Recommend doing +1 activities first.\n"
                     message += f'+1 activity(s) with the best chance of raising your light level ({max_prob*100:.1f}%):\n'
+
                     # iterate through list and print out activities with prob matching top probability and at +1 power
-                    for i in range(len(prob_array[1])):
-                        if prob_array[1][i] == max_prob and prob_array[3][i] == 1:
+                    for i, activity_prob in enumerate(probability_array):
+                        if activity_prob[1] == max_prob and activity_prob[3] == 1:
                             message += f'- {active_milestones[i][2]}\n'
+
                 # if player is two away and has not completed the raid, check if it makes sense to run the raid.
                 elif(power_needed <= 2 and any(raid_info)):
                     if(raid_prob[0][0] > .5 or raid_prob[1][0] > .5):
                         message += "Consider running the raid since there is a high chance you will go up a light level in the first two encounters:\n"
-                        for i in range(len(raid_info)):
-                            message += f'- {raid_info[i][2]} | +2: {raid_prob[i][0]*100:.1f}%, +1: {raid_prob[i][1]*100:.1f}%\n'
+                        for i, encounter in enumerate(raid_info):
+                            message += f'- {encounter[2]} | +2: {raid_prob[i][0]*100:.1f}%, +1: {raid_prob[i][1]*100:.1f}%\n'
 
                 # get best probability of a +2 drop.
                 max_prob = np.max(prob_array[0])
                 # confirm there are +2 activities that can raise a gear slot by 2.
                 if(max_prob != 0):
                     message += f'+2 activity(s) with the best chance of raising one of your equipement slots by 2:\n'
+
                     # iterate through list and print out activities with prob matching top probability and at +2 power
-                    for i in range(len(prob_array[1])):
-                        if prob_array[0][i] == max_prob and prob_array[3][i] == 2:
-                            message += f'- {active_milestones[i][2]} | +2: {probability_array[i][0]*100:.1f}%, +1: {probability_array[i][1]*100:.1f}%\n'
+                    for i, activity_prob in enumerate(probability_array):
+                        if activity_prob[0] == max_prob and activity_prob[3] == 2:
+                            message += f'- {active_milestones[i][2]} | +2: {activity_prob[0]*100:.1f}%, +1: {activity_prob[1]*100:.1f}%\n'
+
                 else:
                     message += f'There are currently no activities that can raise an equipement slot by 2:\n'
                     # check if their are +1 activities and that we have not already sent them to the message
@@ -523,18 +548,20 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         valid_probs = prob_array[1][(prob_array[3] == 1)]
                         max_prob = np.max(valid_probs)
                         message += f'+1 activity(s) with the best chance of raising your light level ({max_prob*100:.1f}%):\n'
+
                         # iterate through list and print out activities with prob matching top probability and at +1 power
-                        for i in range(len(prob_array[1])):
-                            if prob_array[1][i] == max_prob and prob_array[3][i] == 1:
+                        for i, activity_prob in enumerate(probability_array):
+                            if activity_prob[1] == max_prob and activity_prob[3] == 1:
                                 message += f'- {active_milestones[i][2]}\n'
+
                     elif 2 in prob_array[3]:
                         # get +2 activities
                         valid_probs = prob_array[1][(prob_array[3] == 2)]
                         max_prob = np.max(valid_probs)
                         message += f'+2 activity(s) with the best chance of raising a gear slot by +1 ({max_prob*100:.1f}%):\n'
                         # iterate through list and print out activities with prob matching top probability and at +1 power
-                        for i in range(len(prob_array[1])):
-                            if prob_array[1][i] == max_prob and prob_array[3][i] == 2:
+                        for i, activity_prob in enumerate(probability_array):
+                            if activity_prob[1] == max_prob and activity_prob[3] == 1:
                                 message += f'- {active_milestones[i][2]}\n'
         else:
             message += 'You do not have any pinnacles left this week.'
@@ -554,12 +581,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         plus_zero_prob = 0.0
 
         # iterate through each drop and check if it can be a +2, +1, or cannot be increased, then increase probability
-        for i in range(len(power_difference)):
+        for i, diff in enumerate(power_difference):
             # check if this slot can be increased by 2
-            if power_difference[i] <= 0:
+            if diff <= 0:
                 plus_two_prob += drops[i]/sum_drops
             # check if this slot can be be increased by 1
-            elif power_difference[i] == 1:
+            elif diff == 1:
                 plus_one_prob += drops[i]/sum_drops
             else:
                 plus_zero_prob += drops[i]/sum_drops
