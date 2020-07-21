@@ -475,7 +475,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     # cycle through and add each active_milestones to final_push_milestones
                     for i, activity in enumerate(probability_array):
                         
-                        final_push_milestones.append(active_milestones[i][2],activity[0] + activity[1])
+                        final_push_milestones.append([active_milestones[i][2],activity[0] + activity[1]])
                         # since we have been dealing with floats, if a probabilty is almost 1.00 change it to be 1
                         if(final_push_milestones[i][1] >= .99):
                             final_push_milestones[i][1] = 1
