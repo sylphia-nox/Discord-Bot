@@ -75,13 +75,12 @@ class error_handling_cogs(commands.Cog):
             await admin.create_dm()
             await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {error.__traceback__}\nError: ' + '{}: {}'.format(type(error).__name__, error))
 
-            #delete message that caused error to keep channels clean
-            await ctx.message.delete()
 
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
         if(ctx.message.content.split()[0][1] != "~"):
             #delete message that caused error to keep channels clean
             await ctx.message.delete()
+            raise error
 
     #this event catches errors from event coroutines 
     @commands.Cog.listener()

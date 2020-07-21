@@ -472,24 +472,40 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     # create new array with just activity name and probability of +1/+2 increase (since we are 1 away we want the non +0 probability)
                     final_push_milestones = []
 
+                    print (probability_array)
                     # cycle through and add each active_milestones to final_push_milestones
                     for i, activity in enumerate(probability_array):
+                        # We need the odds of increasing the power level in that slot, since we can't go up +1 here we need to adjust, at this point, the formula thinks that any +2 drop can give +1 to slots already at max power
+                        # so, we need to remove those from the equation, for +1s, the +1 odd is correct.
+                        if(activity[3] == 2):
+                            probability = activity[0]
+                        else:
+                            probability = activity[1]
                         
-                        final_push_milestones.append([active_milestones[i][2],activity[0] + activity[1]])
+                        final_push_milestones.append([active_milestones[i][2], probability])
                         # since we have been dealing with floats, if a probabilty is almost 1.00 change it to be 1
                         if(final_push_milestones[i][1] >= .99):
                             final_push_milestones[i][1] = 1
 
-                    # create strutured array and assign it back to active_milestones
-                    dtype = [('name', 'S10'), ('probability', float)]
-                    active_milestones = np.array(final_push_milestones, dtype=dtype)        # create a structured array
+
+                    # create dtype to format structured array
+                    dtype = np.dtype([('name', 'O'), ('probability', '<f8')])
+
+                    # convert array to nparray 
+                    temp = np.array(final_push_milestones)
+
+                    # transform nparray to structured array with column names so it can be sorted
+                    active_milestones = np.rec.fromarrays(temp.T, dtype=dtype)
+                    del temp                                                                # del temp array to save resources
+                    
                     active_milestones = np.sort(active_milestones, order='probability')     # sort the array
-                    active_milestones = np.flip(active_milestones[0])
-                    active_milestones = np.flip(active_milestones[1])                       # flip array so it is in descending order.
+                    active_milestones = np.flip(active_milestones)                          # flip array so it is in descending order.
 
                     for milestone in active_milestones:
-                        message += f'{milestone[0]} {milestone[1]*100:.1f}%\n'
+                        message += f'{milestone[1]*100:.1f}%: {milestone[0]}\n'
                 
+                    # del array to save memory since it contains large strings
+                    del active_milestones
 
             # everything else needs to make special consideration of raid probabilities
             else:
