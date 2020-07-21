@@ -472,7 +472,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     # create new array with just activity name and probability of +1/+2 increase (since we are 1 away we want the non +0 probability)
                     final_push_milestones = []
 
-                    print (probability_array)
                     # cycle through and add each active_milestones to final_push_milestones
                     for i, activity in enumerate(probability_array):
                         # We need the odds of increasing the power level in that slot, since we can't go up +1 here we need to adjust, at this point, the formula thinks that any +2 drop can give +1 to slots already at max power
