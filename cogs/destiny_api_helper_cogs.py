@@ -484,7 +484,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     dtype = [('name', 'S10'), ('probability', float)]
                     active_milestones = np.array(final_push_milestones, dtype=dtype)        # create a structured array
                     active_milestones = np.sort(active_milestones, order='probability')     # sort the array
-                    active_milestones = np.flip(active_milestones)                          # flip array so it is in descending order.
+                    active_milestones = np.flip(active_milestones[0])
+                    active_milestones = np.flip(active_milestones[1])                       # flip array so it is in descending order.
 
                     for milestone in active_milestones:
                         message += f'{milestone[0]} {milestone[1]*100:.1f}%\n'
