@@ -371,7 +371,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 sub_message = ""
                 for index, item in enumerate(high_items):
                     if item < current_play_pow:
-                        item = current_play_pow
+                        high_items[index] = current_play_pow
                         sub_message += f'- {categories[index]}\n'
 
                 if sub_message != "":
@@ -397,7 +397,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 sub_message = ""
                 for index, item in enumerate(high_items):
                     if item < current_play_pow:
-                        item = current_play_pow
+                        high_items[index] = current_play_pow
                         sub_message += f'- {categories[index]}\n'
 
                 if(potential_power_increase >= 1):
