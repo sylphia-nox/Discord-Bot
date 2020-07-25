@@ -63,7 +63,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
         # execute SQL and grab results
         mycursor.execute(sql_statement)
-        sqlreturn = mycursor.fetchone()
+        sqlreturn = mycursor.fetchall()
+        sqlreturn = sqlreturn[0]
 
         # parse return to change values of None to "" and change ID values to tag format and store them in new array: raid_spots
         raid_spots = []
@@ -113,7 +114,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
         # pull current information on raid.
         mycursor.execute(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
-        sqlreturn = mycursor.fetchone()
+        sqlreturn = mycursor.fetchall()
+        sqlreturn = sqlreturn[0]
 
         # check to confirm user is not already in the raid.
         if str(user.id) in np.array(sqlreturn):
@@ -165,7 +167,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
         # pull current raid info
         mycursor.execute(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE idRaids = {raid_id}')
-        sqlreturn = mycursor.fetchone()
+        sqlreturn = mycursor.fetchall()
+        sqlreturn = sqlreturn[0]
 
         # iterate through each spot to check if the user is in that spot.
         for i, spot in enumerate(sqlreturn):
@@ -202,7 +205,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
         #grab raid message ID to be deleted
         mycursor.execute(f'SELECT message_id, notify_message_id FROM raid_plan WHERE idRaids = {raid_id}')
-        sqlreturn = mycursor.fetchone()
+        sqlreturn = mycursor.fetchall()
+        sqlreturn = sqlreturn[0]
 
         #grab message object to delete using the message_ID stored in DB
         raid_message = await self.bot.get_channel(raid_chan_code).fetch_message(sqlreturn[0])

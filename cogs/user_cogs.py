@@ -37,7 +37,6 @@ class user_cogs(commands.Cog, name='User Commands'):
         global raid_setup_active
         global raid_setup_user
         global raid_setup_step
-        global raid_setup_id
         global raid_setup_what
 
         # check if raid setup is active, if not ignore
