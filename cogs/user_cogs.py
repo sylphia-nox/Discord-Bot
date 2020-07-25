@@ -53,7 +53,7 @@ class user_cogs(commands.Cog, name='User Commands'):
 
                         # checking to confirm the response is valid
                         if (int(message.content) <= int(sqlreturn[0][0])):
-                            raid_setup_id = int(message.content)
+                            raid_setup_what = int(message.content)
 
                             # prompt user for time in DM channel
                             await raid_setup_user.dm_channel.send(f'When is the raid?')
