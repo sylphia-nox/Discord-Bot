@@ -3,7 +3,7 @@ Description=Sundance
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python3 -u sandance.python3
+ExecStart=/usr/bin/python3 -u sundance.python3
 WorkingDirectory=/home/github/Discord-Bot
 StandardOutput=inherit
 StandardError=inherit
