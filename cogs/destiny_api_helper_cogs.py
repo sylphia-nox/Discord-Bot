@@ -30,7 +30,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         email = os.getenv('EMAIL')
         HEADERS = {
             'X-API-Key': api_key,  
-            'User-Agent': bot_name + "/" + bot_version + " AppId/" + client_id + " (+https://github.com/michaelScarfi/Discord-Bot;" + email + ")"
+            'User-Agent': bot_name + "/" + bot_version + " AppId/" + client_id + " (+https://github.com/michaelScarfi/Discord-Bot;" + email + ")",
+            'Accept-Encoding': 'gzip'
         }
         base_url = "https://www.bungie.net/platform"
 
