@@ -2,6 +2,7 @@
 
 from discord.ext import commands
 from dotenv import load_dotenv
+import discord
 import requests
 import os
 import json
@@ -61,7 +62,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         print('Manifest Initialized')
 
     # this helper function generates the formatted message for the ~power command
-    async def format_power_message(self, high_items, class_type, steam_name):
+    async def format_power_message(self, high_items, player_char_info, steam_name):
+        class_type = player_char_info[2]
+        emblem = player_char_info[5]
+
         # get class string
         if(class_type == 0):
             class_name = "Titan"
@@ -76,11 +80,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # calculate power to next level
         power_needed = 8-(sum(high_items)%8)
 
-        #titles
-        messageHeader = f'***{steam_name}: {class_name}***\n'
-        message1 = f'**Current Power: {play_pow}\n'
-        message2 = "**Highest Items:\n"
-
         # create string for displaying each item's power and then its difference from current power
         highest_items = ""
         categories = ['Kinetic','Energy','Power','Helmet','Gauntlets','Chest','Legs','Class Item']
@@ -88,11 +87,24 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             power_dif = high_items[i] - play_pow
             highest_items = highest_items + f'{categories[i]}: {high_items[i]} ({power_dif:+})\n'
 
-        # show needed increase in item power for next level.
-        message3 = f'**Power needed for next level: {power_needed}'
+        # create embed
+        embed = discord.Embed(title=f'***{steam_name}: {class_name}***', colour=discord.Colour(0x0033cc))
 
-        message_content = messageHeader + "```" + message1 + message2 + highest_items + message3 + "```"
-        return message_content
+        # set image to player emblem
+        embed.set_thumbnail(url=emblem)
+
+        # set embed footer
+        embed.set_footer(text="Sundance | created by Michael Scarfi", icon_url="https://drive.google.com/uc?export=view&id=1GRYmllW4Ig9LvsNldcOyU3rpbZPb6fD_")
+
+        # show current power and highest level items
+        embed.add_field(name=f'Current Power:', value=play_pow, inline = True)
+        # show needed increase in item power for next level.
+        embed.add_field(name=f'Power for next level:', value= power_needed, inline = True)
+
+        embed.add_field(name="Highest Items:", value = highest_items, inline = False)
+
+
+        return embed
 
     # this function returns the a list with the highest power level for each equipement slot.
     async def get_max_power_list(self, items):
@@ -214,15 +226,18 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             if (get_characters_return['Response']['characters']['data'][str(key)]['classType'] == character_class):
                 has_character = True
                 char_id = key
+                emblem = get_characters_return['Response']['characters']['data'][str(key)]['emblemPath']
 
         # if user does not have a character of that class, raise exception
         if (not has_character):
             raise errors.NoCharacterOfClass(f'You do not have a character of class {character}')
 
+        emblem = "https://www.bungie.net" + emblem
+
         # delete json to save memory
         del get_characters_return
 
-        player_char_info = [memberID, membershipType, character_class, char_ids, char_id]
+        player_char_info = [memberID, membershipType, character_class, char_ids, char_id, emblem]
         return player_char_info
 
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
@@ -332,7 +347,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return active_pinnacles
 
     # helper function to determine where the player is in the powergrind and what steps to take 
-    async def calculate_next_step(self, high_items, player_char_info):
+    async def calculate_next_step(self, high_items, player_char_info, embed):
         # get current power level boundaries
         sql_return = await helpers.query_db("SELECT `field_one`, `field_two`, `field_three` FROM `current_info` WHERE `name` = 'power_levels'")
         power_level_brackets = sql_return[0]
@@ -342,7 +357,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         # check if player is below prime/powerful bracket.
         if(current_play_pow < int(power_level_brackets[0])):
-            return (f'You can level up by doing anything.  Go play some Destiny!')
+            embed.add_field(name="Next Level:", value = "You can level up by doing anything.  Go play some Destiny!", inline = False)
+            return embed
         # player is into prime/powerful/pinnacles
         else:
             # calculate total positive power in current loadout, for every +8 the player can go up a light level if they get at level items.
@@ -358,12 +374,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             
             # check if we are in the prime/powerful bracket
             if(current_play_pow < int(power_level_brackets[1])):
-                # create message object to append values to.
-                message = ""
 
                 # check if player can go up a power level by getting at level drops
                 if(potential_power_increase >= 1):
-                    message += (f'Character can be leveled up by {potential_power_increase} level(s) by getting at level drops.  These can be aquired in any activity at your current power level.')
+                    embed.add_field(name="Levels that can be gained by at-level drops:", value = f'**{potential_power_increase}**: These can be aquired in any activity at your current power level.', inline = False)
                   
 
                 # create item slot array to ease translation
@@ -376,7 +390,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         sub_message += f'- {categories[index]}\n'
 
                 if sub_message != "":
-                    message += f'```The power level of the following items can be increased by getting an at-level drop in that slot.\n' + sub_message + "```"
+                    embed.add_field(name = "Items that can be increased by at-level drops:", value = sub_message, inline = False)
 
                 
                 # if player needs prime/powerfuls to level up, let them know how much in each slot.
@@ -385,9 +399,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     power_needed = 8-(sum(high_items)%8)
 
                     # add to message string
-                    message += f'You need +{power_needed} above your current average from prime/powerfuls to hit the next power level.\nLook for {destiny_challenge_emote} on the map.'
+                    embed.add_field(name="Next Level:", value = f'You need +{power_needed} above your current average from prime/powerfuls to hit the next power level.\nLook for {destiny_challenge_emote} on the map.', inline = False)
 
-                return(f'{message}')
+                # add message to embed and return embed
+                return embed
             
             # check if chareacter is in the pinnacle bracket
             elif(current_play_pow < int(power_level_brackets[2])):
@@ -403,23 +418,21 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                 if(potential_power_increase >= 1):
                     # create message
-                    message = f'Character can be leveled up by {potential_power_increase} level(s) by getting at level drops.  Look for {destiny_challenge_emote} on the map.'
+                    embed.add_field(name="Levels that can be gained by at-level drops:", value = f'**{potential_power_increase}**: Look for {destiny_challenge_emote} on the map.', inline = False)
                     # append sub message if appropriate
                     if sub_message != "":
-                        message += f'```The power level of the following items can be increased by getting a prime/powerful drop in that slot.\n' + sub_message + "```"
+                        embed.add_field(name = "Items that can be increased by getting prime/powerful drops:", value = sub_message, inline = False)
                     
-                    return (message)
+                    return embed
                 else: 
-                    # create message object to append values to.
-                    message = '```'
                     
-
+                    # check if there are items below average power
                     if sub_message != "":
-                        message += f'The power level of the following items can be increased by getting a prime/powerful drop in that slot.\n' + sub_message
+                        embed.add_field(name = "Items that can be increased by getting prime/powerful drops:", value = sub_message, inline = False)
 
                     # calculate power to next level
                     power_needed = 8-(sum(high_items)%8)
-                    message += f'You need +{power_needed} from pinnacles to hit the next power level.\n'
+                    embed.add_field(name = "Pinnacle Power needed:", value = power_needed, inline = True)
 
                     # create list of power differences
                     power_difference = []
@@ -433,21 +446,23 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     probability_array = await self.options(power_difference, active_milestones)
                     
                     # get recommendations
-                    reccomendation_message = await self.get_recommendation(active_milestones, probability_array, power_needed, high_items, power_level_brackets)
+                    recommendation_message = await self.get_recommendation(active_milestones, probability_array, power_needed, high_items, power_level_brackets)
 
-                    # complete message to return
-                    message += reccomendation_message + '```'
+                    # add recommendation to embed
+                    embed.add_field(name = "Pinnacle Sources:", value = recommendation_message, inline = False)
 
                     # return message
-                    return (f'{message}')
+                    return embed
             
             # check if character is at max power
             elif(current_play_pow == int(power_level_brackets[2])):
-                return("Character is currently at maximum power, congratulations!")
+                embed.add_field(name="Next Level:", value = "Character is currently at maximum power, congratulations!", inline = False)
+                return embed
             
             # if none of these catch we have an error
             else:
-                return("Error, player power not within possible levels")
+                embed.add_field(name="Next Level:", value = "Error, player power not within possible levels", inline = False)
+                return embed
 
     # helper function to generate reccomendations
     async def get_recommendation(self, active_milestones, probability_array, power_needed, high_items, power_level_brackets):
@@ -468,7 +483,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             if (int(sum(high_items)/8) + 1 == int(power_level_brackets[2])):
                 
                     # create header for message
-                    message += 'You are in the final push, here are the pinnacles you can run and probability of getting a needed item.\n'
+                    message += 'You are in the final push\n *Pinnacles you can run and probability of getting a needed item:*\n'
 
                     # create new array with just activity name and probability of +1/+2 increase (since we are 1 away we want the non +0 probability)
                     final_push_milestones = []
@@ -531,7 +546,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     # get +1 activities
                     valid_probs = prob_array[1][(prob_array[3] == 1)]
                     max_prob = np.max(valid_probs)
-                    message += "Recommend doing +1 activities first.\n"
+                    message += "Do +1 activities first.\n"
                     message += f'+1 activity(s) with the best chance of raising your light level ({max_prob*100:.1f}%):\n'
 
                     # iterate through list and print out activities with prob matching top probability and at +1 power
