@@ -56,7 +56,8 @@ def api_auth():
     # add code to generate random statecode
     # add statecode to end of url + "&state=statecode"
     
-    redirect(authorization_url)
+    return redirect(authorization_url)
+    
 
 # If we're running in stand alone mode, run the application
 if __name__ == '__main__':
