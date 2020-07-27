@@ -73,13 +73,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def get_manifest(self):
         # grab manifest file for items
         global manifest
-        manifest = await api.get_simple("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
+        manifest = await api.get_simple_async("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
 
     # helper function to initialize manifest file when cog is loaded, non async version of get_manifest
     def initialize_manifest(self):
         global manifest
 
-        manifest = await api.get_simple("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
+        manifest = api.get_simple("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
         print('Manifest Initialized')
 
     # this helper function generates the formatted message for the ~power command

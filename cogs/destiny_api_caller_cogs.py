@@ -60,17 +60,54 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
             print(f'Fatal error, Destiny_api_helper_cogs failed to load helper_cogs.py')
 
     # helper function to call get on Bungie.net api's
-    async def get(self, api_url):
+    async def get(self, api_url, OAuth = False, access_token = ""):
+        # create copy of HEADERS to ensure we do not permanently modify HEADERS
+        headers = HEADERS.copy()
+        
+        # if OAuth is set to True, add access token to header
+        if OAuth:
+            headers.update('Authorization',f'Bearer {access_token}')
+
         #make request for membership ID
         url = base_url + api_url
-        r = requests.get(url, headers = HEADERS)
+        r = requests.get(url, headers = headers)
 
-        #convert the json object we received into a Python dictionary object
-        #and print the name of the item
-        get_return = r.json()
-        del r
+        #convert the json object we received into a Python dictionary object and return that object
+        return r.json()
 
-        return get_return
+    # helper function to call get without header or base url
+    async def get_simple_async(self, url):
+        r = requests.get(url)
+        return r.json()
+
+    # helper function to call get without header or base url
+    def get_simple(self, url):
+        r = requests.get(url)
+        return r.json()
+
+
+    # helper function to update oauth
+    async def refresh_token(self, user_oauth_tokens):
+        header = {'Authorization':f'Basic {id_and_secret}', 'Content-Type':'application/x-www-form-urlencoded'}
+        data = {'grant_type':'refresh_token','refresh_token':f'{user_oauth_tokens[4]}'}
+
+        r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
+
+        user_tokens = r.json()
+
+        sql = "UPDATE oauth_tokens SET access_token = %s, expires_in = %s, refresh_token = %s, refresh_expires_in = %s WHERE discordID = %s"
+        val = (
+            user_tokens['access_token'], 
+            datetime.now() + timedelta(seconds = int(user_tokens['expires_in'])), 
+            user_tokens['refresh_token'],
+            datetime.now() + timedelta(seconds = int(user_tokens['refresh_expires_in'])), 
+            user_oauth_tokens[0]
+        )
+        # write new values to DB
+        await helpers.write_db(sql, val)
+
+        # return access token to avoid unecessary DB calls
+        return user_tokens['access_token']
 
 def setup(bot):
     bot.add_cog(destiny_api_caller_cogs(bot))
