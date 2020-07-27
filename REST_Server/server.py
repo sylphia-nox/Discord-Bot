@@ -6,8 +6,11 @@ from flask import (
 )
 import os
 from dotenv import load_dotenv
+import base64
+import requests
 
 bot_oauth = os.getenv('DESTINY_OATH_CLIENT_ID')
+bot_secret = os.getenv('BOT_SECRET')
 
 # Create the application instance
 app = Flask(__name__, template_folder="templates")
@@ -26,11 +29,17 @@ def api_oath():
     # If ID is provided, assign it to a variable.
     # If no ID is provided, display an error in the browser.
     if 'code' in request.args:
-        code = request.args['code']
-        print(f'User auth code: {code}')
+        auth_code = request.args['code']
     else:
         return "Error: No id field provided. Please specify an id."
 
+    message = f'{bot_oauth}:{bot_secret}'
+    message_bytes = message.encode('ascii')
+    id_and_secret = base64.b64encode(message_bytes)
+    r = requests.post('https://www.bungie.net/platform/app/oauth/token/ HTTP/1.1', data = {'Authorizatoin':f'Basic {id_and_secret}', 'Content-Type':'application/x-www-form-urlencoded', 'grant_type':f'authorization_code&code={auth_code}'})
+
+    user_tokens = r.json()
+    print(user_tokens)
 
     # Use the jsonify function from Flask to convert our list of
     # Python dictionaries to the JSON format.
@@ -47,7 +56,13 @@ def api_auth():
     else:
         return "Error: No id field provided. Please specify an id."
 
+   
+
     
+
+
+
+
     # add code to generate random statecode
     # add statecode to end of url + "&state=statecode"
     
