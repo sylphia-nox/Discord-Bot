@@ -34,8 +34,11 @@ class helper_cogs(commands.Cog, name='Utilities'):
             user = os.getenv('DB_USER'),
             passwd = os.getenv('DB_PASSWD'),
             database = os.getenv('DATABASE'),
-            auth_plugin='mysql_native_password'
+            auth_plugin='mysql_native_password',
+            pool_name='helper_cogs_pool',
+            pool_size=5
         )
+        mydb.close()
 
         # create object to access DB connection
         mycursor = mydb.cursor()
@@ -51,8 +54,9 @@ class helper_cogs(commands.Cog, name='Utilities'):
     async def print_raid(self, raid_id):
         # declare global variable used in command
         global raid_chan_code
-        global mycursor
-        global mydb
+
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb
 
         # SQL for query to pull Raid info with display values
         select = f'SELECT t.idRaids, `time`, `raid_info`.`name`, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, message_id, `raid_info`.`dlc`, `raid_info`.`light_level` '
@@ -65,6 +69,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         mycursor.execute(sql_statement)
         sqlreturn = mycursor.fetchall()
         sqlreturn = sqlreturn[0]
+        mydb.close()
 
         # parse return to change values of None to "" and change ID values to tag format and store them in new array: raid_spots
         raid_spots = []
@@ -89,11 +94,13 @@ class helper_cogs(commands.Cog, name='Utilities'):
     # helper function to ask user what raid they want to run
     async def which_raid_question(self, user):
         # declare global variable used in function
-        global mycursor
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb
 
         # grab the list of Raid names from DB
         mycursor.execute(f'SELECT idRaids, name FROM raid_info')
         sqlreturn = mycursor.fetchall()
+        mydb.close()
 
         # DM user list of Raids
         await user.create_dm()
@@ -106,8 +113,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
     # helper function to add user to a raid
     async def add_user_to_raid(self, user, raid_id, request_user, spot):
         # declare global variables used in command
-        global mycursor
-        global mydb
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb
 
         # create array of values to allow dynamic sql
         spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
@@ -156,11 +163,14 @@ class helper_cogs(commands.Cog, name='Utilities'):
         # update raid post
         await self.print_raid(raid_id)
 
+        # close db connection
+        mydb.close()
+
     # helper function to remove user from a raid.
     async def remove_user(self, user, raid_id, request_user):
         # declare global variables used in command
-        global mycursor
-        global mydb
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb
 
         # create array of values to allow dynamic sql
         spots = ["prime_one", "prime_two", "prime_three", "prime_four", "prime_five", "prime_six", "back_one", "back_two"]
@@ -196,11 +206,13 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 # break loop to avoid excess computing
                 break
 
+        mydb.close()
+
     #helper function to delete raids.
     async def delete_raid(self, raid_id):
         #declare global variables used in command
-        global mycursor
-        global mydb
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb
         global raid_chan_code
 
         #grab raid message ID to be deleted
@@ -225,10 +237,12 @@ class helper_cogs(commands.Cog, name='Utilities'):
         val = (raid_id,)
         mycursor.execute(sql, val)
         mydb.commit()
+        mydb.close()
 
     # helper utility to change the raid time.
     async def change_raid_time(self, user, raid_id, new_time):
-        global mycursor
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb
 
         #create DM channel for user, creating now so except clauses can also use.
         await user.create_dm()
@@ -256,10 +270,11 @@ class helper_cogs(commands.Cog, name='Utilities'):
         except OverflowError:
             await user.dm_channel.send(f'date time values exceed possible values, please try again')
 
+        finally:
+            mydb.close()
+
     # helper utility to create raid
     async def create_raid(self, raid_number: int, raid_time: str):
-        global mycursor
-        global mydb
         global raid_chan_code
 
         #create raid post
@@ -267,11 +282,11 @@ class helper_cogs(commands.Cog, name='Utilities'):
         response = f'@here let\'s raid!'
         message = await raid_chan.send(response)
 
+        
         #insert raid into DB, currently only setting Raid key and message ID
         sql = "INSERT INTO raid_plan (`message_id`, `what`, `time`) VALUES (%s, %s, %s)"
         val = (message.id, raid_number, f'{raid_time.strftime("%I:%M %p %m/%d")}')
-        mycursor.execute(sql, val)
-        mydb.commit()
+        await self.write_db(sql, val)
 
         raid_setup_id = mycursor.lastrowid
 
@@ -279,23 +294,30 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
     # helper utility to query the DB
     async def query_db(self, query: str):
-        global mycursor
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb
 
-        # query DB and grab results
-        mycursor.execute(query)
-        sqlreturn = mycursor.fetchall()
+        try:
+            # query DB and grab results
+            mycursor.execute(query)
+            sqlreturn = mycursor.fetchall()
+        finally:
+            mydb.close()
 
         # return results
         return sqlreturn
 
     # helper function to write to db
     async def write_db(self, query: str, *args):
-        global mycursor
-        global mydb
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb
 
-        
-        mycursor.execute(query, *args)
-        mydb.commit()
+        try:
+            # send sql to db.
+            mycursor.execute(query, *args)
+            mydb.commit()
+        finally:
+            mydb.close()
 
     # helper utility to create Raid notification posts
     async def raid_notifiation_check(self):
@@ -306,8 +328,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
         now = datetime.now()
 
         #pull current information on raids and times.
-        mycursor.execute(f'SELECT idRaids, time, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, notify_message_ID FROM raid_plan WHERE idRaids IS NOT Null')
-        sqlreturn = mycursor.fetchall()
+        sql = f'SELECT idRaids, time, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, notify_message_ID FROM raid_plan WHERE idRaids IS NOT Null'
+        sqlreturn = await self.query_db(sql)
 
         for raid in sqlreturn:
             if(raid[1]is not None):
@@ -346,8 +368,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
                     #add notify message ID to DB
                     sql = "UPDATE raid_plan SET notify_message_ID = %s WHERE idRaids = %s"
                     val = (notify_message.id,  raid_id)
-                    mycursor.execute(sql, val)
-                    mydb.commit()
+                    await self.write_db(sql, val)
 
                 #check to see if raid started over 30 minutes ago, if so, delete
                 elif (raid_time + timedelta(minutes = 30) < now):

@@ -25,11 +25,13 @@ mydb = mysql.connector.connect(
     user = os.getenv('DB_USER'),
     passwd = os.getenv('DB_PASSWD'),
     database = os.getenv('DATABASE'),
-    auth_plugin='mysql_native_password'
+    auth_plugin='mysql_native_password',
+    pool_name='sundance_db_pool',
+    pool_size=3
 )
+mydb.close()
 
-# create object to access DB connection
-mycursor = mydb.cursor()
+
 
 # Create the application instance
 app = Flask(__name__, template_folder="templates")
@@ -74,11 +76,24 @@ def api_oath():
 
     access_token = user_tokens['access_token']
     
+    ###
+    # Need to consider using GetLinkedProfiles using Bungie.net id instead
+    #
+    #
+
+
+
     header = {'X-API-Key':f'{api_key}', 'Authorization':f'Bearer {access_token}'}
     r = requests.get('https://www.bungie.net/Platform/User/GetMembershipsForCurrentUser/', headers = header)
     user_info = r.json()
     del r
     memberID = user_info['Response']['primaryMembershipId']
+
+    # connect to DB
+    mydb1 = mysql.connector.connect(pool_name='sundance_db_pool')
+
+    # create object to access DB connection
+    mycursor = mydb1.cursor()
 
     sql = "UPDATE oauth_tokens SET access_token = %s, expires_in = %s, refresh_token = %s, refresh_expires_in = %s, membership_id = %s WHERE state = %s"
     val = (
@@ -90,7 +105,8 @@ def api_oath():
         state
     )
     mycursor.execute(sql, val)
-    mydb.commit()
+    mydb1.commit()
+    mydb1.close()
 
     # r = requests.get('https://www.bungie.net/Platform/User/GetCurrentBungieNetUser/', headers = header)
     # user_info = r.json()
@@ -122,10 +138,14 @@ def api_auth():
     # generate random state value
     state = randint(1000, 99999)
     
+    mydb2 = mysql.connector.connect(pool_name='sundance_db_pool')
+    mycursor = mydb2.cursor()
+
     sql = 'REPLACE INTO `oauth_tokens` SET `discordID` = %s, state = %s'
     val = (discordID,  state)
     mycursor.execute(sql, val)
-    mydb.commit()
+    mydb2.commit()
+    mydb2.close()
 
     # add code to generate random statecode
     # add statecode to end of url + "&state=statecode"
