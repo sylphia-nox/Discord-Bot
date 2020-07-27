@@ -28,7 +28,6 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
             # if we got an error message back, set OAuth to False and continue
             if (access_token == "refresh token expired" or access_token == "token not found"):
                 OAuth = False
-                print(access_token)
         
         # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
         player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, OAuth, access_token)
@@ -49,16 +48,23 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.message.delete()
 
     @commands.command(name = 'next_power', help = "`~next_power <steam_name> <class>` Class should be warlock/hunter/titan (not case sensitive).")
-    async def next_power(self, ctx, steam_name: str, character: str, platform: int = 3):
+    async def next_power(self, ctx, steam_name: str, character: str, platform: int = 3, OAuth = True):
         
         # get memberID and membershipType
         player_info = await destiny_helpers.get_member_info(steam_name, platform)
         
+        if OAuth:
+            # get access token for discordID/memberID combo
+            access_token = await destiny_helpers.get_user_token(ctx.message.author.id, player_info[0])
+            # if we got an error message back, set OAuth to False and continue
+            if (access_token == "refresh token expired" or access_token == "token not found"):
+                OAuth = False
+
         # get player character info
-        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character)
+        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, OAuth, access_token)
         
         # declare list to hold items and get items
-        items = await destiny_helpers.get_player_items(player_char_info)
+        items = await destiny_helpers.get_player_items(player_char_info, OAuth, access_token)
         
         # get highest light for each slot
         high_items = await destiny_helpers.get_max_power_list(items)
@@ -66,7 +72,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # get message to send to channel
         embed = await destiny_helpers.format_power_message(high_items, player_char_info, steam_name)
         
-        embed = await destiny_helpers.calculate_next_step(high_items, player_char_info, embed)
+        embed = await destiny_helpers.calculate_next_step(high_items, player_char_info, embed, OAuth, access_token)
         
 
         # send message to channel
