@@ -18,15 +18,23 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
     # this command shows a user their current power, highest power level of each equipement piece, and needed power to hit the next level.
     @commands.command(name = 'power', help = "`~power <steam_name> <class>` Class should be warlock/hunter/titan (not case sensitive).")
-    async def power(self, ctx, steam_name: str, character: str, platform: int = 3):
-        # get memberID and membershipType
+    async def power(self, ctx, steam_name: str, character: str, platform: int = 3, OAuth = True):
+        # get [memberID, membershipType]
         player_info = await destiny_helpers.get_member_info(steam_name, platform)
+
+        if OAuth:
+            # get access token for discordID/memberID combo
+            access_token = await destiny_helpers.get_user_token(ctx.message.author.id, player_info[0])
+            # if we got an error message back, set OAuth to False and continue
+            if (access_token == "refresh token expired" or access_token == "token not found"):
+                OAuth = False
+                print(access_token)
         
-        # get player character info
-        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character)
+        # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
+        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, OAuth, access_token)
 
         # declare list to hold items and get items
-        items = await destiny_helpers.get_player_items(player_char_info)
+        items = await destiny_helpers.get_player_items(player_char_info, OAuth, access_token)
         
         # get highest light for each slot
         high_items = await destiny_helpers.get_max_power_list(items)
