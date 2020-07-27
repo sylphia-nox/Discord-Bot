@@ -664,6 +664,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             else:
                 return "refresh token expired"
         else:
+            print (sql_return)
             return "token not found"
 
 def setup(bot):
