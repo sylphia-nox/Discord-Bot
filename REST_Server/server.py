@@ -73,9 +73,9 @@ def api_oath():
     sql = "UPDATE oauth_tokens SET access_token = %s, expires_in = %s, refresh_token = %s, refresh_expires_in = %s, membership_id = %s WHERE state = %s"
     val = (
         user_tokens['access_token'], 
-        datetime.now() + timedelta(minutes = int(user_tokens['expires_in'])), 
+        datetime.now() + timedelta(seconds = int(user_tokens['expires_in'])), 
         user_tokens['refresh_token'],
-        datetime.now() + timedelta(minutes = int(user_tokens['refresh_expires_in'])), 
+        datetime.now() + timedelta(seconds = int(user_tokens['refresh_expires_in'])), 
         user_tokens['membership_id'],
         state
     )
