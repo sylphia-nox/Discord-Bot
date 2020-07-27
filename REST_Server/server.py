@@ -34,11 +34,11 @@ def api_oath():
         return "Error: No id field provided. Please specify an id."
 
     message = f'{bot_oauth}:{bot_secret}'
-    message_bytes = message.encode('ascii')
-    base64_bytes = base64.b64encode(message_bytes)
-    id_and_secret = base64_bytes.decode('ascii')
+    #message_bytes = message.encode('ascii')
+    base64_bytes = base64.b64encode(message)
+    #id_and_secret = base64_bytes.decode('ascii')
 
-    r = requests.post('https://www.bungie.net/platform/app/oauth/token/', data = {'Authorization':f'Basic {id_and_secret}', 'Content-Type':'application/x-www-form-urlencoded', 'grant_type':f'authorization_code&code={auth_code}'})
+    r = requests.post('https://www.bungie.net/platform/app/oauth/token/', data = {'Authorization':f'Basic {base64_bytes}', 'Content-Type':'application/x-www-form-urlencoded', 'grant_type':f'authorization_code&code={auth_code}'})
 
     user_tokens = r.json()
     print(user_tokens)
