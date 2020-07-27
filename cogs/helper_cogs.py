@@ -288,6 +288,15 @@ class helper_cogs(commands.Cog, name='Utilities'):
         # return results
         return sqlreturn
 
+    # helper function to write to db
+    async def write_db(self, query: str, *args):
+        global mycursor
+        global mydb
+
+        
+        mycursor.execute(query, *args)
+        mydb.commit()
+
     # helper utility to create Raid notification posts
     async def raid_notifiation_check(self):
         global mycursor

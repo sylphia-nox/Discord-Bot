@@ -8,6 +8,8 @@ import os
 import json
 import errors
 import numpy as np
+import base64
+from datetime import datetime, timedelta
 
 class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'): 
     
@@ -35,6 +37,21 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             'Accept-Encoding': 'gzip'
         }
         base_url = "https://www.bungie.net/platform"
+
+        # load bot OAuth info
+        bot_oauth = os.getenv('DESTINY_OATH_CLIENT_ID')
+        bot_secret = os.getenv('BOT_SECRET')
+        
+        # declare global
+        global id_and_secret
+
+        # encode bot ID and secret
+        message = f'{bot_oauth}:{bot_secret}'
+        message_bytes = message.encode('ascii')
+        base64_bytes = base64.b64encode(message_bytes)
+        id_and_secret = base64_bytes.decode('ascii')
+
+        
 
         # load helper cogs.
         global helpers
@@ -644,6 +661,29 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             options_list.append(probabilities)
 
         return options_list
+
+    # helper function to update oauth
+    async def refresh_token(self, user_oauth_tokens):
+
+        
+
+        header = {'Authorization':f'Basic {id_and_secret}', 'Content-Type':'application/x-www-form-urlencoded'}
+        data = {'grant_type':'refresh_token','refresh_token':f'{user_oauth_tokens[4]}'}
+
+        r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
+
+        user_tokens = r.json()
+
+        sql = "UPDATE oauth_tokens SET access_token = %s, expires_in = %s, refresh_token = %s, refresh_expires_in = %s, membership_id = %s WHERE discordID = %s"
+        val = (
+            user_tokens['access_token'], 
+            datetime.now() + timedelta(seconds = int(user_tokens['expires_in'])), 
+            user_tokens['refresh_token'],
+            datetime.now() + timedelta(seconds = int(user_tokens['refresh_expires_in'])), 
+            user_tokens['membership_id'],
+            user_oauth_tokens[0]
+        )
+        await helpers.write_db(sql, val)
 
 
 def setup(bot):
