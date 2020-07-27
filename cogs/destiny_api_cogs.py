@@ -17,7 +17,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
 
     # this command shows a user their current power, highest power level of each equipement piece, and needed power to hit the next level.
-    @commands.command(name = 'power', help = "`~power <steam_name> <class> Class should be warlock/hunter/titan (not case sensitive).")
+    @commands.command(name = 'power', help = "`~power <steam_name> <class>` Class should be warlock/hunter/titan (not case sensitive).")
     async def power(self, ctx, steam_name: str, character: str, platform: int = 3):
         # get memberID and membershipType
         player_info = await destiny_helpers.get_member_info(steam_name, platform)
@@ -40,7 +40,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # delete command message to keep channels clean
         await ctx.message.delete()
 
-    @commands.command(name = 'next_power', help = "`~next_power <steam_name> <class> Class should be warlock/hunter/titan (not case sensitive).")
+    @commands.command(name = 'next_power', help = "`~next_power <steam_name> <class>` Class should be warlock/hunter/titan (not case sensitive).")
     async def next_power(self, ctx, steam_name: str, character: str, platform: int = 3):
         
         # get memberID and membershipType
@@ -73,6 +73,19 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
     async def reload_manifest(self, ctx):
          # load manifest
         await destiny_helpers.get_manifest()
+
+        # delete command message to keep channels clean
+        await ctx.message.delete()
+
+    # this command sends users a url to authenticate with Bungie.net.
+    @commands.command(name = 'authenticate', help = "`~authenticate`, Bot will DM you a link to authenticate with Bungie.net")
+    async def authenticate(self, ctx):
+        discordID = ctx.message.author.id
+        
+        url = f'https://destiny.scarfi.me:5000/api/v1/authenticate?id={discordID}'
+
+        await ctx.message.author.create_dm()
+        await ctx.message.author.dm_channel.send(f'Please use the below link to authenticate with Bungie.net:\n{url}')
 
         # delete command message to keep channels clean
         await ctx.message.delete()
