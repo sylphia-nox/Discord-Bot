@@ -43,9 +43,8 @@ def api_oath():
 
     r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
 
-    print(r)
-    #user_tokens = r.json()
-    #print(user_tokens)
+    user_tokens = r.json()
+    print(user_tokens)
 
     # Use the jsonify function from Flask to convert our list of
     # Python dictionaries to the JSON format.
