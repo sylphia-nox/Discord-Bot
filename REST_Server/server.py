@@ -17,6 +17,7 @@ load_dotenv()
 
 bot_oauth = os.getenv('DESTINY_OATH_CLIENT_ID')
 bot_secret = os.getenv('BOT_SECRET')
+api_key = os.getenv('DESTINY_API_KEY')
 
 # create DB connection
 mydb = mysql.connector.connect(
@@ -69,6 +70,15 @@ def api_oath():
     r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
 
     user_tokens = r.json()
+    del r
+
+    access_token = user_tokens['access_token']
+    
+    header = {'X-API-Key':f'{api_key}', 'Authorization':f'Bearer {access_token}'}
+    r = requests.get('https://www.bungie.net/Platform/User/GetMembershipsForCurrentUser/', headers = header)
+    user_info = r.json()
+    del r
+    memberID = user_info['Response']['primaryMembershipId']
 
     sql = "UPDATE oauth_tokens SET access_token = %s, expires_in = %s, refresh_token = %s, refresh_expires_in = %s, membership_id = %s WHERE state = %s"
     val = (
@@ -76,11 +86,23 @@ def api_oath():
         datetime.now() + timedelta(seconds = int(user_tokens['expires_in'])), 
         user_tokens['refresh_token'],
         datetime.now() + timedelta(seconds = int(user_tokens['refresh_expires_in'])), 
-        user_tokens['membership_id'],
+        memberID,
         state
     )
     mycursor.execute(sql, val)
     mydb.commit()
+
+    # r = requests.get('https://www.bungie.net/Platform/User/GetCurrentBungieNetUser/', headers = header)
+    # user_info = r.json()
+    # del r
+
+    # bungieName = user_info['Response'].get('displayName', 'Bungie account name not found')
+    # steamName = user_info['Response'].get('steamDisplayName', "No Steam name found")
+    # xboxName = user_info['Response'].get('xboxDisplayName', "No Xbox name found")
+    # psnName = user_info['Response'].get('psnDisplayName', "No PSN name found")
+    # stadiaName = user_info['Response'].get('stadiaDisplayName', "No Stadia name found")
+
+    
 
     # Use the jsonify function from Flask to convert our list of
     # Python dictionaries to the JSON format.
