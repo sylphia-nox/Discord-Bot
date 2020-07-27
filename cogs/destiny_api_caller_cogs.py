@@ -1,0 +1,77 @@
+# this cog provides the backend functionality for destiny_api_cogs.py and interacts with the Bungie.net APIs.  It relies on helper_cogs.py for some functionality.
+
+from discord.ext import commands
+from dotenv import load_dotenv
+import discord
+import requests
+import os
+import json
+import errors
+import numpy as np
+import base64
+from datetime import datetime, timedelta
+
+class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'): 
+    
+    # this method is called on loading of the cog.
+    def __init__(self, bot):
+        self.bot = bot
+
+        # load environment file into environment variables
+        load_dotenv()
+
+        #declare global varibles for API calls
+        global api_key
+        global HEADERS
+        global base_url
+        
+        # create HEADERS and base_url
+        api_key = os.getenv('DESTINY_API_KEY')
+        bot_name = os.getenv('BOT_NAME')
+        bot_version = os.getenv('BOT_VERSION')
+        client_id = os.getenv('DESTINY_OATH_CLIENT_ID')
+        email = os.getenv('EMAIL')
+        HEADERS = {
+            'X-API-Key': api_key,  
+            'User-Agent': bot_name + "/" + bot_version + " AppId/" + client_id + " (+https://github.com/michaelScarfi/Discord-Bot;" + email + ")",
+            'Accept-Encoding': 'gzip'
+        }
+        base_url = "https://www.bungie.net/platform"
+
+        # load bot OAuth info
+        bot_oauth = os.getenv('DESTINY_OATH_CLIENT_ID')
+        bot_secret = os.getenv('BOT_SECRET')
+        
+        # declare global
+        global id_and_secret
+
+        # encode bot ID and secret
+        message = f'{bot_oauth}:{bot_secret}'
+        message_bytes = message.encode('ascii')
+        base64_bytes = base64.b64encode(message_bytes)
+        id_and_secret = base64_bytes.decode('ascii')
+
+        
+
+        # load helper cogs.
+        global helpers
+        helpers = self.bot.get_cog('Utilities')
+        if(helpers is None):
+            print(f'Fatal error, Destiny_api_helper_cogs failed to load helper_cogs.py')
+
+    # helper function to call get on Bungie.net api's
+    async def get(self, api_url):
+        #make request for membership ID
+        url = base_url + api_url
+        r = requests.get(url, headers = HEADERS)
+
+        #convert the json object we received into a Python dictionary object
+        #and print the name of the item
+        get_return = r.json()
+        del r
+
+        return get_return
+
+def setup(bot):
+    bot.add_cog(destiny_api_caller_cogs(bot))
+

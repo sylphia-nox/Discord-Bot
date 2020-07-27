@@ -59,6 +59,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         if(helpers is None):
             print(f'Fatal error, Destiny_api_helper_cogs failed to load helper_cogs.py')
 
+        # load api cogs.
+        global api
+        api = self.bot.get_cog('cogs.destiny_api_caller_cogs')
+        if(api is None):
+            print(f'Fatal error, Destiny_api_helper_cogs failed to load destiny_api_caller_cogs')
+
         # load manifests
         self.initialize_manifest()
 
@@ -73,9 +79,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     # helper function to initialize manifest file when cog is loaded, non async version of get_manifest
     def initialize_manifest(self):
         global manifest
-        r = requests.get("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
-        manifest = r.json()
-        del r
+
+        manifest = api.get_simple("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
         print('Manifest Initialized')
 
     # this helper function generates the formatted message for the ~power command
@@ -664,9 +669,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
     # helper function to update oauth
     async def refresh_token(self, user_oauth_tokens):
-
-        
-
         header = {'Authorization':f'Basic {id_and_secret}', 'Content-Type':'application/x-www-form-urlencoded'}
         data = {'grant_type':'refresh_token','refresh_token':f'{user_oauth_tokens[4]}'}
 
@@ -674,13 +676,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         user_tokens = r.json()
 
-        sql = "UPDATE oauth_tokens SET access_token = %s, expires_in = %s, refresh_token = %s, refresh_expires_in = %s, membership_id = %s WHERE discordID = %s"
+        sql = "UPDATE oauth_tokens SET access_token = %s, expires_in = %s, refresh_token = %s, refresh_expires_in = %s WHERE discordID = %s"
         val = (
             user_tokens['access_token'], 
             datetime.now() + timedelta(seconds = int(user_tokens['expires_in'])), 
             user_tokens['refresh_token'],
             datetime.now() + timedelta(seconds = int(user_tokens['refresh_expires_in'])), 
-            user_tokens['membership_id'],
             user_oauth_tokens[0]
         )
         await helpers.write_db(sql, val)
