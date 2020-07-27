@@ -56,4 +56,4 @@ def api_auth():
 
 # If we're running in stand alone mode, run the application
 if __name__ == '__main__':
-    app.run(debug=True, host = '0.0.0.0', ssl_context = 'adhoc')
+    app.run(debug=True, host = '0.0.0.0', ssl_context = 'cer.pem', 'key.pem')
