@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 from random import seed
 from random import randint
 
+load_dotenv()
+
 bot_oauth = os.getenv('DESTINY_OATH_CLIENT_ID')
 bot_secret = os.getenv('BOT_SECRET')
 
