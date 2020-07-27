@@ -8,14 +8,30 @@ import os
 from dotenv import load_dotenv
 import base64
 import requests
+import mysql.connector
+from datetime import datetime, timedelta
+from random import seed
+from random import randint
 
 bot_oauth = os.getenv('DESTINY_OATH_CLIENT_ID')
 bot_secret = os.getenv('BOT_SECRET')
 
+# create DB connection
+mydb = mysql.connector.connect(
+    host = os.getenv('DB_HOST'),
+    user = os.getenv('DB_USER'),
+    passwd = os.getenv('DB_PASSWD'),
+    database = os.getenv('DATABASE'),
+    auth_plugin='mysql_native_password'
+)
+
+# create object to access DB connection
+mycursor = mydb.cursor()
+
 # Create the application instance
 app = Flask(__name__, template_folder="templates")
 authorization_url = f'https://www.bungie.net/en/OAuth/Authorize?client_id={bot_oauth}&response_type=code'
-# &state=33443
+
 
 # Create a URL route in our application for "/"
 @app.route('/', methods=['GET'])
@@ -46,6 +62,12 @@ def api_oath():
     user_tokens = r.json()
     print(user_tokens)
 
+    #sql = "UPDATE raid_plan SET access_token = %s, expires_in = %s, refresh_token = %, refresh_expires_in = %, membership_id = % WHERE state = %s"
+    #val = (f'{user.id}', raid_id)
+    #mycursor.execute(sql, val)
+    #mydb.commit()
+    #now + timedelta(minutes = 70)
+
     # Use the jsonify function from Flask to convert our list of
     # Python dictionaries to the JSON format.
     return render_template('success.html')
@@ -57,21 +79,22 @@ def api_auth():
     # If no ID is provided, display an error in the browser.
     if 'id' in request.args:
         discordID = request.args['id']
-        print(discordID)
     else:
         return "Error: No id field provided. Please specify an id."
 
-   
-
+    seed(datetime.now)
+    # generate random state value
+    state = randint(1000, 99999)
     
-
-
-
+    sql = 'INSERT IGNORE INTO `oauth_tokens` SET `discordID` = %s, state = %s'
+    val = (discordID,  state)
+    mycursor.execute(sql, val)
+    mydb.commit()
 
     # add code to generate random statecode
     # add statecode to end of url + "&state=statecode"
     
-    return redirect(authorization_url)
+    return redirect(authorization_url + f'&state={state}')
     
 
 # If we're running in stand alone mode, run the application
