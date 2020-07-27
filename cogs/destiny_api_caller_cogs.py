@@ -66,7 +66,7 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         
         # if OAuth is set to True, add access token to header
         if OAuth:
-            headers.update('Authorization',f'Bearer {access_token}')
+            headers.update({'Authorization':f'Bearer {access_token}'})
 
         #make request for membership ID
         url = base_url + api_url
