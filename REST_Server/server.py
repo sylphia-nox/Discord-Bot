@@ -118,7 +118,7 @@ def api_auth():
     else:
         return "Error: No id field provided. Please specify an id."
 
-    seed(datetime.now)
+    seed(datetime.now())
     # generate random state value
     state = randint(1000, 99999)
     

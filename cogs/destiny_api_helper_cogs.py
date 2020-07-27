@@ -653,8 +653,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
     # helper function to get Oauth token for user
     async def get_user_token(self, discordID, memberID):
-        print (f'SELECT * FROM oauth_tokens WHERE discordID = {discordID} and membership_id = {memberID}')
-        sql_return = await helpers.query_db(f'SELECT * FROM oauth_tokens WHERE discordID = {discordID} and membership_id = {memberID}')
+        sql = f'SELECT * FROM oauth_tokens WHERE discordID = {discordID} and membership_id = {memberID}'
+        sql_return = await helpers.query_db(sql)
         if sql_return:
             now = datetime.now() + timedelta(minutes = 1)
             # check if access token is expired
