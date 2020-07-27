@@ -51,7 +51,12 @@ def api_oath():
     else:
         return "Error: No id field provided. Please specify an id."
 
-    print(request.args)
+    # Get state code from response to match to requester
+    if 'state' in request.args:
+        state = request.args['state']
+    else:
+        return "Error: No id field provided. Please specify an id."
+
 
     message = f'{bot_oauth}:{bot_secret}'
     message_bytes = message.encode('ascii')
@@ -64,13 +69,18 @@ def api_oath():
     r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
 
     user_tokens = r.json()
-    print(user_tokens)
 
-    #sql = "UPDATE raid_plan SET access_token = %s, expires_in = %s, refresh_token = %, refresh_expires_in = %, membership_id = % WHERE state = %s"
-    #val = (f'{user.id}', raid_id)
-    #mycursor.execute(sql, val)
-    #mydb.commit()
-    #now + timedelta(minutes = 70)
+    sql = "UPDATE oauth_tokens SET access_token = %s, expires_in = %s, refresh_token = %s, refresh_expires_in = %s, membership_id = %s WHERE state = %s"
+    val = (
+        user_tokens['access_token'], 
+        datetime.now() + timedelta(minutes = int(user_tokens['expires_in'])), 
+        user_tokens['refresh_token'],
+        datetime.now() + timedelta(minutes = int(user_tokens['refresh_expires_in'])), 
+        user_tokens['membership_id'],
+        state
+    )
+    mycursor.execute(sql, val)
+    mydb.commit()
 
     # Use the jsonify function from Flask to convert our list of
     # Python dictionaries to the JSON format.
@@ -90,7 +100,7 @@ def api_auth():
     # generate random state value
     state = randint(1000, 99999)
     
-    sql = 'INSERT IGNORE INTO `oauth_tokens` SET `discordID` = %s, state = %s'
+    sql = 'REPLACE INTO `oauth_tokens` SET `discordID` = %s, state = %s'
     val = (discordID,  state)
     mycursor.execute(sql, val)
     mydb.commit()
