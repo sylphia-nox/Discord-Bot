@@ -36,9 +36,9 @@ def api_oath():
     message = f'{bot_oauth}:{bot_secret}'
     message_bytes = message.encode('ascii')
     base64_bytes = base64.b64encode(message_bytes)
-    #id_and_secret = base64_bytes.decode('ascii')
+    id_and_secret = base64_bytes.decode('ascii')
 
-    header = {'Authorization':f'Basic {base64_bytes}', 'Content-Type':'application/x-www-form-urlencoded'}
+    header = {'Authorization':f'Basic {id_and_secret}', 'Content-Type':'application/x-www-form-urlencoded'}
     data = {'grant_type':'authorization_code','code':f'{auth_code}'}
 
     r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
