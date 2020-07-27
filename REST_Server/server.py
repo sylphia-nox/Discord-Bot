@@ -11,7 +11,7 @@ bot_oauth = os.getenv('DESTINY_OATH_CLIENT_ID')
 
 # Create the application instance
 app = Flask(__name__, template_folder="templates")
-authorization_url = f'https://www.bungie.net/en/OAuth/Authorize?client_id={bot_oauth}&response_type=code&state=33443'
+authorization_url = f'https://www.bungie.net/en/OAuth/Authorize?client_id={bot_oauth}&response_type=code'
 
 # Create a URL route in our application for "/"
 @app.route('/', methods=['GET'])
@@ -35,7 +35,7 @@ def api_oath():
     else:
         return "Error: No id field provided. Please specify an id."
 
-    
+    print(request.args)
 
     # Use the jsonify function from Flask to convert our list of
     # Python dictionaries to the JSON format.
