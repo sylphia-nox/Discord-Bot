@@ -187,12 +187,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         for user in get_user_return['Response']:
             try:
                 if(user['displayName'] == name):
-                    print('Found matching user')
+                    
                     # get member ID for user
                     memberID = user['membershipId']
 
                     # get membershipType
                     membershipType = user['membershipType']
+                    print(f'Found matching user {memberID} {membershipType}')
             except IndexError:
                 raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
 
