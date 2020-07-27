@@ -22,8 +22,6 @@ class helper_cogs(commands.Cog, name='Utilities'):
     def __init__(self, bot):
         self.bot = bot
 
-        global mycursor
-        global mydb
         global sun_chan_code
         global raid_chan_code
         global bot_admin_code
@@ -39,9 +37,6 @@ class helper_cogs(commands.Cog, name='Utilities'):
             pool_size=5
         )
         mydb.close()
-
-        # create object to access DB connection
-        mycursor = mydb.cursor()
 
         # set channel codes, raid channel is where Raids are published, sun channel is for diagnostic messages
         sun_chan_code = int(os.getenv('SUN_CHAN_CODE'))
