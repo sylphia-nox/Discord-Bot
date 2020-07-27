@@ -34,7 +34,7 @@ def api_oath():
         return "Error: No id field provided. Please specify an id."
 
     message = f'{bot_oauth}:{bot_secret}'
-    message_bytes = message.encode('ascii')
+    message_bytes = message.encode('utf-8')
     base64_bytes = base64.b64encode(message_bytes)
     #id_and_secret = base64_bytes.decode('ascii')
 
