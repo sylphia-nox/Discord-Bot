@@ -93,7 +93,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         url = f'https://destiny.scarfi.me:5000/api/v1/authenticate?id={discordID}'
 
         await ctx.message.author.create_dm()
-        await ctx.message.author.dm_channel.send(f'Please use the below link to authenticate with Bungie.net:\n{url}')
+        await ctx.message.author.dm_channel.send(f'Please use the below link to authenticate with Bungie.net.  It may freeze on the final page, please give it time to finish.\n{url}')
 
         # delete command message to keep channels clean
         await ctx.message.delete()

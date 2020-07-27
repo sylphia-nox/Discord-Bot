@@ -187,6 +187,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         for user in get_user_return['Response']:
             try:
                 if(user['displayName'] == name):
+                    print('Found matching user')
                     # get member ID for user
                     memberID = user['membershipId']
 
@@ -198,6 +199,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # could not get exact match, return first results
         if(memberID == ""):
             try: 
+                print('could not find user')
                 # get member ID for user
                 memberID = get_user_return['Response'][0]['membershipId']
 
