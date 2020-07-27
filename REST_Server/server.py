@@ -38,7 +38,10 @@ def api_oath():
     base64_bytes = base64.b64encode(message_bytes)
     #id_and_secret = base64_bytes.decode('ascii')
 
-    r = requests.post('https://www.bungie.net/platform/app/oauth/token/', data = {'Authorization':f'Basic {base64_bytes}', 'Content-Type':'application/x-www-form-urlencoded', 'grant_type':f'authorization_code&code={auth_code}'})
+    header = {'Authorization':f'Basic {base64_bytes}', 'Content-Type':'application/x-www-form-urlencoded'}
+    data = {'grant_type':f'authorization_code&code={auth_code}'}
+
+    r = requests.post('https://www.bungie.net/platform/app/oauth/token/', header = header, data = data)
 
     user_tokens = r.json()
     print(user_tokens)
