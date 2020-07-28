@@ -110,8 +110,8 @@ def api_oath():
     del user_tokens
 
     icon_base_url = "https://www.bungie.net"        # url from api will be something like: /img/theme/bungienet/icons/steamLogo.png
-    display_name = user_info['Response'][0].get('displayName',  '')
-    icon = user_info['Response'][0].get('iconPath', '')
+    display_name = user_info['Response']['destinyMemberships'][0].get('displayName',  '')
+    icon = user_info['Response']['destinyMemberships'][0].get('iconPath', '')
     icon_url = icon_base_url + icon
     del user_info
 
