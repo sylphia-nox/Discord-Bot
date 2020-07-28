@@ -1,12 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Success!</title>
-</head>
-<body>
-    <h2>
-        You have successfully authenticated with Bungie.net
-    </h2>
-</body>
+    <head>
+        <title>Successful</title>
+        <!-- Bootstrap core CSS -->
+        <!--link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"-->
+        <link rel="stylesheet" href="../static/css/main.css">
+
+        <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;900&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+        <link rel="icon" href="https://drive.google.com/uc?export=view&id=1GRYmllW4Ig9LvsNldcOyU3rpbZPb6fD_">
+    </head>
+
+    <body class="main">
+        <div>
+            <h2>
+                You have successfully authenticated with Bungie.net
+            </h2>
+            <h1>
+                <img src="https://www.bungie.net/{{icon_url}}" alt="Icon not found" style="width:25px;height:25px;"> 
+                <more>
+                    {{name}}
+                </more>
+            </h1>
+
+
+        </div>
+    </body>
 </html>

@@ -107,22 +107,18 @@ def api_oath():
     mycursor.execute(sql, val)
     mydb1.commit()
     mydb1.close()
+    del user_tokens
 
-    # r = requests.get('https://www.bungie.net/Platform/User/GetCurrentBungieNetUser/', headers = header)
-    # user_info = r.json()
-    # del r
+    icon_base_url = "https://www.bungie.net"        # url from api will be something like: /img/theme/bungienet/icons/steamLogo.png
+    display_name = user_info['Response'][0].get('displayName',  '')
+    icon = user_info['Response'][0].get('iconPath', '')
+    icon_url = icon_base_url + icon
+    del user_info
 
-    # bungieName = user_info['Response'].get('displayName', 'Bungie account name not found')
-    # steamName = user_info['Response'].get('steamDisplayName', "No Steam name found")
-    # xboxName = user_info['Response'].get('xboxDisplayName', "No Xbox name found")
-    # psnName = user_info['Response'].get('psnDisplayName', "No PSN name found")
-    # stadiaName = user_info['Response'].get('stadiaDisplayName', "No Stadia name found")
-
-    
 
     # Use the jsonify function from Flask to convert our list of
     # Python dictionaries to the JSON format.
-    return render_template('success.html')
+    return render_template('success.html', icon_url = icon_url, name = display_name)
 
 @app.route('/api/v1/authenticate', methods=['GET'])
 def api_auth():
