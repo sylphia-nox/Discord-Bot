@@ -34,12 +34,12 @@ sm {
 /* Control the left side */
 .left {
     left: 0;
-    width: 680px;
+    width: 780px;
   }
   
   /* Control the right side */
 .right {
-    left: 700px;
+    left: 800px;
     width: 200px;
   }
 
