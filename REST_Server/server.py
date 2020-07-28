@@ -155,4 +155,4 @@ def api_auth():
 
 # If we're running in stand alone mode, run the application
 if __name__ == '__main__':
-    app.run(debug=True, host = '0.0.0.0', ssl_context = ('cert.pem', 'key.pem'))
+    app.run(debug=True, host = '0.0.0.0', ssl_context = ('/etc/letsencrypt/live/destiny.scarfi.me/fullchyain.pem', '/etc/letsencrypt/live/destiny.scarfi.me/privkey.pem'))
