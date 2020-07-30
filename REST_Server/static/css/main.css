@@ -1,10 +1,12 @@
 .main {
     color: rgb(216, 216, 216);
     font-family: 'Roboto', sans-serif;
-    max-width: 800px;
     background-color: rgb(49, 50, 51);
 }
 
+a {
+    color: rgb(25, 144, 255);
+}
 
 h5 {
     font-size: 120%;
@@ -23,24 +25,28 @@ sm {
 
 /* Split the screen in half */
 .split {
-    height: 100%;
+    height: 100%hv;
     padding: 10px;
-    position: fixed;
+    position: absolute;
     z-index: 1;
     top: 0;
-    overflow-x: hidden;
   }
   
 /* Control the left side */
 .left {
-    left: 0;
-    width: 780px;
+    padding: 10px;
+    float: left;
+    width: 75%;
+    height: 100%;
+    overflow: scroll;
   }
   
   /* Control the right side */
 .right {
-    left: 800px;
-    width: 200px;
+    padding: 10px;
+    float: left;
+    width: 20%;
+    height: 100%
   }
 
 .margin {
@@ -51,4 +57,26 @@ sm {
 
 .skills {
     font-family: 'Roboto', sans-serif;
+}
+
+
+
+html{
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    background-image: url("https://drive.google.com/uc?export=view&id=15VDpoO9l-NS7lSoIf7Wfe2AcdjYr24Rk");
+    background-color: #1d1d1d;
+    background-size: cover;
+    backdrop-filter: blur(6px);
+    height: 100%;
+}
+
+.center {
+    margin: auto;
+    width: 1000px;
+    position: relative;
+    height: 100%;
 }
