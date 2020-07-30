@@ -87,7 +87,8 @@ def api_oath():
     r = requests.get('https://www.bungie.net/Platform/User/GetMembershipsForCurrentUser/', headers = header)
     user_info = r.json()
     del r
-    memberID = user_info['Response']['primaryMembershipId']
+    memberID = user_info['Response']['destinyMemberships'][0].get('membershipId')
+    memberID = user_info['Response'].get('primaryMembershipId', memberID)
 
     # connect to DB
     mydb1 = mysql.connector.connect(pool_name='sundance_db_pool')
@@ -109,10 +110,9 @@ def api_oath():
     mydb1.close()
     del user_tokens
 
-    icon_base_url = "https://www.bungie.net"        # url from api will be something like: /img/theme/bungienet/icons/steamLogo.png
+            # url from api will be something like: /img/theme/bungienet/icons/steamLogo.png
     display_name = user_info['Response']['destinyMemberships'][0].get('displayName',  '')
-    icon = user_info['Response']['destinyMemberships'][0].get('iconPath', '')
-    icon_url = icon_base_url + icon
+    icon_url = user_info['Response']['destinyMemberships'][0].get('iconPath', '')
     del user_info
 
 
