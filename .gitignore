@@ -133,3 +133,6 @@ test.py
 bungie_test.py
 bungie_test2.py
 test_api_return.json
+
+# shell files
+*.sh
