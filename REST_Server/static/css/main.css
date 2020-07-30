@@ -25,8 +25,8 @@ sm {
 
 /* Split the screen in half */
 .split {
-    height: 100%hv;
-    padding: 10px;
+    height: 100%;
+    
     position: absolute;
     z-index: 1;
     top: 0;
@@ -34,7 +34,8 @@ sm {
   
 /* Control the left side */
 .left {
-    padding: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
     float: left;
     width: 75%;
     height: 100%;
@@ -43,7 +44,8 @@ sm {
   
   /* Control the right side */
 .right {
-    padding: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
     float: left;
     width: 20%;
     height: 100%
