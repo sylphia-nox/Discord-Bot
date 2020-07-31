@@ -312,7 +312,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # now that we know this is an instanced item, get its ID to get the items power level
                 itemInstanceID = str(item['itemInstanceId'])
                 # run api call to get power level
-                power_level = item_info[itemInstanceID]['primaryStat']['value']
+                try:
+                    power_level = item_info[itemInstanceID]['primaryStat']['value']
+                except:
+                    power_leve = 0
 
                 items_list.append([itemInstanceID, itemType, itemSubType, power_level])
 

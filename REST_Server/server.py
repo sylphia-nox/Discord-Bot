@@ -44,6 +44,16 @@ def home():
   
     return render_template('home.html')
 
+@app.route('/analysis', methods=['GET'])
+def analysis():
+    
+    return render_template('analysis.html')
+
+@app.route('/resume', methods=['GET'])
+def resume():
+    
+    return render_template('resume.html')
+
 @app.route('/api/v1/oauth', methods=['GET'])
 def api_oath():
     # Check if an ID was provided as part of the URL.
@@ -52,13 +62,13 @@ def api_oath():
     if 'code' in request.args:
         auth_code = request.args['code']
     else:
-        return "Error: No id field provided. Please specify an id."
+        return "Error: Field missing."
 
     # Get state code from response to match to requester
     if 'state' in request.args:
         state = request.args['state']
     else:
-        return "Error: No id field provided. Please specify an id."
+        return "Error: Field missing."
 
 
     message = f'{bot_oauth}:{bot_secret}'
@@ -125,10 +135,13 @@ def api_auth():
     # Check if an ID was provided as part of the URL.
     # If ID is provided, assign it to a variable.
     # If no ID is provided, display an error in the browser.
-    if 'id' in request.args:
-        discordID = request.args['id']
-    else:
-        return "Error: No id field provided. Please specify an id."
+    try:
+        if 'id' in request.args:
+            discordID = long (request.args['id'])
+        else:
+            return "Error: There was a problem with the generated link.  Please try again."
+    except:
+        return "Error in input."
 
     seed(datetime.now())
     # generate random state value
@@ -147,6 +160,8 @@ def api_auth():
     # add statecode to end of url + "&state=statecode"
     
     return redirect(authorization_url + f'&state={state}')
+
+
     
 
 # If we're running in stand alone mode, run the application
