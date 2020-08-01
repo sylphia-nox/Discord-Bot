@@ -8,6 +8,9 @@ import os
 import json
 import errors
 import numpy as np
+import base64
+from datetime import datetime, timedelta
+from dateutil.parser import parse
 
 class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'): 
     
@@ -36,11 +39,32 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         }
         base_url = "https://www.bungie.net/platform"
 
+        # load bot OAuth info
+        bot_oauth = os.getenv('DESTINY_OATH_CLIENT_ID')
+        bot_secret = os.getenv('BOT_SECRET')
+        
+        # declare global
+        global id_and_secret
+
+        # encode bot ID and secret
+        message = f'{bot_oauth}:{bot_secret}'
+        message_bytes = message.encode('ascii')
+        base64_bytes = base64.b64encode(message_bytes)
+        id_and_secret = base64_bytes.decode('ascii')
+
+        
+
         # load helper cogs.
         global helpers
         helpers = self.bot.get_cog('Utilities')
         if(helpers is None):
             print(f'Fatal error, Destiny_api_helper_cogs failed to load helper_cogs.py')
+
+        # load api cogs.
+        global api
+        api = self.bot.get_cog('Destiny API Utilities')
+        if(api is None):
+            print(f'Fatal error, Destiny_api_helper_cogs failed to load destiny_api_caller_cogs')
 
         # load manifests
         self.initialize_manifest()
@@ -49,16 +73,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def get_manifest(self):
         # grab manifest file for items
         global manifest
-        r = requests.get("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
-        manifest = r.json()
-        del r
+        manifest = await api.get_simple_async("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
 
     # helper function to initialize manifest file when cog is loaded, non async version of get_manifest
     def initialize_manifest(self):
         global manifest
-        r = requests.get("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
-        manifest = r.json()
-        del r
+
+        manifest = api.get_simple("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
         print('Manifest Initialized')
 
     # this helper function generates the formatted message for the ~power command
@@ -160,29 +181,26 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         memberID = ""
 
         #make request for membership ID
-        url = base_url + f'/Destiny2/SearchDestinyPlayer/{platform}/{name}/'
-        r = requests.get(url, headers = HEADERS)
-
-        #convert the json object we received into a Python dictionary object
-        #and print the name of the item
-        get_user_return = r.json()
-        del r
+        get_user_return = await api.get(f'/Destiny2/SearchDestinyPlayer/{platform}/{name}/')
 
         # check to get user with exact display name, not full-proof but should reduce issues with grabbing the wrong player
         for user in get_user_return['Response']:
             try:
                 if(user['displayName'] == name):
+                    
                     # get member ID for user
                     memberID = user['membershipId']
 
                     # get membershipType
                     membershipType = user['membershipType']
+                    print(f'Found matching user {memberID} {membershipType}')
             except IndexError:
                 raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
 
         # could not get exact match, return first results
         if(memberID == ""):
             try: 
+                print('could not find user')
                 # get member ID for user
                 memberID = get_user_return['Response'][0]['membershipId']
 
@@ -199,7 +217,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return [memberID, membershipType]
 
     # helper function to get player info as player[memberID, membershipType, class_type, char_ids]
-    async def get_player_char_info(self, memberID, membershipType, character: str):
+    async def get_player_char_info(self, memberID, membershipType, character: str, OAuth = False, access_token = ""):
         global base_url
 
         # convert character as string to int, 0 = Titan, 1 = Hunter, 2 = Warlock
@@ -213,10 +231,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             raise errors.NotaDestinyClass("Class name not recognized, please input a valid Destiny class")
 
         # make request for player info, getting character info.
-        url = base_url + f'/Destiny2/{membershipType}/Profile/{memberID}/?components=200'
-        r = requests.get(url, headers = HEADERS)
-        get_characters_return = r.json()
-        del r
+        get_characters_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/?components=200', OAuth, access_token)
 
         # get character IDs and confirm user has a character of the requested class
         char_ids = []
@@ -241,7 +256,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return player_char_info
 
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
-    async def get_player_items(self, player_char_info):
+    async def get_player_items(self, player_char_info, OAuth = False, access_token = ""):
         global manifest
 
         # declare list to hold items
@@ -254,10 +269,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         char_ids = player_char_info[3]
 
         # get all items and info for items
-        url = base_url + f'/Destiny2/{membershipType}/Profile/{memberID}/?components=102, 201, 205, 300'
-        r = requests.get(url, headers = HEADERS)
-        json_return = r.json()
-        del r
+        json_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/?components=102, 201, 205, 300', OAuth, access_token)
        
         # pull out item_info
         global item_info
@@ -273,7 +285,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 items = await self.parse_json_for_item_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type)
                 items = await self.parse_json_for_item_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type)
         except KeyError:
-            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory.")
+            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
         
 
         # deleting variable to save memory usage.
@@ -300,7 +312,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # now that we know this is an instanced item, get its ID to get the items power level
                 itemInstanceID = str(item['itemInstanceId'])
                 # run api call to get power level
-                power_level = item_info[itemInstanceID]['primaryStat']['value']
+                try:
+                    power_level = item_info[itemInstanceID]['primaryStat']['value']
+                except:
+                    power_leve = 0
 
                 items_list.append([itemInstanceID, itemType, itemSubType, power_level])
 
@@ -308,7 +323,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return items_list
 
     # helper function to get milestones for a character
-    async def get_player_milestones(self, player_char_info):
+    async def get_player_milestones(self, player_char_info, OAuth = False, access_token = ""):
         global manifest
 
         # declare list to hold items
@@ -320,10 +335,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         char_id = player_char_info[4]
 
         # get all items and info for items
-        url = base_url + f'/Destiny2/{membershipType}/Profile/{memberID}/Character/{char_id}/?components=202'
-        r = requests.get(url, headers = HEADERS)
-        json_return = r.json()
-        del r
+        json_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/Character/{char_id}/?components=202', OAuth, access_token)
         
         # try to get list of milestones from return, if privacy is an issue this should fail with a KeyError
         try:
@@ -331,7 +343,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             milestones = json_return['Response']['progressions']['data']['milestones']
             del json_return
         except KeyError:
-            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory.")
+            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
         
         # get list of pinnacle activities from DB
         pinnacle_activity_info = await helpers.query_db('SELECT * FROM `pinnacle_milestone_info`')
@@ -347,7 +359,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return active_pinnacles
 
     # helper function to determine where the player is in the powergrind and what steps to take 
-    async def calculate_next_step(self, high_items, player_char_info, embed):
+    async def calculate_next_step(self, high_items, player_char_info, embed, OAuth = False, access_token = ""):
         # get current power level boundaries
         sql_return = await helpers.query_db("SELECT `field_one`, `field_two`, `field_three` FROM `current_info` WHERE `name` = 'power_levels'")
         power_level_brackets = sql_return[0]
@@ -440,7 +452,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         power_difference.append(item - current_play_pow)
 
                     # get active milestones and milestone info
-                    active_milestones = await self.get_player_milestones(player_char_info)
+                    active_milestones = await self.get_player_milestones(player_char_info, OAuth, access_token)
 
                     # get probability array (returns each possible activity with percent change of increasing +2, +1, or +0, final row is if the pinnacle is a +1 or +2)
                     probability_array = await self.options(power_difference, active_milestones)
@@ -645,6 +657,22 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         return options_list
 
+    # helper function to get Oauth token for user
+    async def get_user_token(self, discordID, memberID):
+        sql = f'SELECT * FROM oauth_tokens WHERE discordID = {discordID} and membership_id = {memberID}'
+        sql_return = await helpers.query_db(sql)
+        if sql_return:
+            now = datetime.now() + timedelta(minutes = 1)
+            # check if access token is expired
+            if now < parse(sql_return[0][3]):
+                return sql_return[0][2]
+            elif now < parse(sql_return[0][5]):
+                return await api.refresh_token(sql_return[0])
+            else:
+                return "refresh token expired"
+        else:
+            print (sql_return)
+            return "token not found"
 
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))

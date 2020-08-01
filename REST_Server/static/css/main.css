@@ -1,0 +1,139 @@
+.main {
+    color: rgb(216, 216, 216);
+    font-family: 'Roboto', sans-serif;
+    background-color: rgb(49, 50, 51);
+}
+
+a {
+    color: rgb(25, 144, 255);
+}
+
+h5 {
+    font-size: 120%;
+}
+
+t {
+    font-size: 120%;
+    font-style: italic;
+    font-weight: bold;
+    font-family: 'Lato', sans-serif;
+}
+
+sm {
+    font-size: 95%;
+}
+
+  
+/* Control the left side */
+.left {
+    padding-left: 10px;
+    padding-right: 10px;
+    float: left;
+    width: 75%;
+    height: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+  }
+  
+  /* Control the right side */
+.right {
+    padding-left: 10px;
+    padding-right: 10px;
+    float: left;
+    width: 20%;
+    height: 100%
+  }
+
+.margin {
+    color: rgb(49, 50, 51);
+    background-color: rgb(216, 216, 216);
+    font-family: 'Lato', sans-serif;
+}
+
+.skills {
+    font-family: 'Roboto', sans-serif;
+}
+
+
+
+html{
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    background-image: url("https://drive.google.com/uc?export=view&id=15VDpoO9l-NS7lSoIf7Wfe2AcdjYr24Rk");
+    background-color: #1d1d1d;
+    background-size: cover;
+    backdrop-filter: blur(6px);
+    height: 100%;
+    margin: 0px
+}
+
+.center {
+    margin: auto;
+    width: 1000px;
+    position: relative;
+    height: 100%;
+}
+
+.titleBox { 
+    font-family: 'Roboto', sans-serif;
+    background-color: rgb(216, 216, 216);
+    margin: auto;
+    width: 50%;
+    height: 15%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%);
+    padding: 10px;
+}
+
+.title {
+    background-color: rgb(49, 50, 51);
+    color: rgb(216, 216, 216);
+    display: flex;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    height: 100%;
+}
+
+.titleText {
+    font-size: 350%;
+    font-style: bold;
+    height: auto;
+    letter-spacing: 2px;
+    margin: 0;
+    padding: 0;
+}
+
+
+@media screen and (max-width: 1000px) {
+    .titleBox{
+        width: 60%;
+    }
+}
+
+@media screen and (max-width: 800px) {
+    .titleBox{
+        width: 70%;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .titleBox{
+        width: 100%;
+        margin-left: 0px;
+        margin-right: 0px;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    .titleText {
+        font-size: 200%
+    }
+}
