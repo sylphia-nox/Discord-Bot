@@ -103,9 +103,6 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
   
     # async helper function to update global admin_role_codes for 
     async def update_admin_role_codes(self):
-        global admin_role_codes
-        
-
         sqlreturn = await helpers.query_db('SELECT `admin_role_code` FROM `guilds`;')
         self.admin_role_codes = [] 
         for val in sqlreturn: 
