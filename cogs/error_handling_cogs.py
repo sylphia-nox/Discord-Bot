@@ -6,6 +6,7 @@ import errors
 from discord.ext import commands
 from datetime import datetime
 from dotenv import load_dotenv
+from json import JSONDecodeError
 
 class error_handling_cogs(commands.Cog):
 
@@ -61,6 +62,14 @@ class error_handling_cogs(commands.Cog):
         elif (ctx.message.content.split()[0][1] == "~"):
             #not an error do nothing 
             print(f'not an error.  Someone was using cross-out notation.')
+
+        elif isinstance(error, JSONDecodeError):
+            #grab time for error message
+            now = datetime.now().time()
+            
+            await admin.create_dm()
+            await admin.dm_channel.send(f'JSON decode error occured at {now}')
+            raise error
 
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
         else:
