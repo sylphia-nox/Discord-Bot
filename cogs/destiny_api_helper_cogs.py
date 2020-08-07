@@ -74,7 +74,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # grab manifest file for items
         global manifest
         full_manifest = await api.get("/Destiny2/Manifest/")
-        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['DestinyInventoryItemLiteDefinition']
+        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
 
         manifest = await api.get_simple_async("https://www.bungie.net/" + manifest_url)
 
@@ -82,7 +82,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     def initialize_manifest(self):
         global manifest
         full_manifest = api.get_sync("/Destiny2/Manifest/")
-        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['DestinyInventoryItemLiteDefinition']
+        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
 
 
         manifest = api.get_simple("https://www.bungie.net/" + manifest_url)
