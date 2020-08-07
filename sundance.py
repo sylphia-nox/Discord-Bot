@@ -67,7 +67,7 @@ async def unload_cog(ctx, module : str):
 #this event dictates the actions the bot takes when it connects.
 @bot.event
 async def on_ready():
-    bot.owner_id = os.getenv('BOT_ADMIN_CODE')
+    bot.owner_id = int(os.getenv('BOT_ADMIN_CODE'))
 
 
     print(f'{bot.user.name} has connected to Discord!')
