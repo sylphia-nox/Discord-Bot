@@ -53,7 +53,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         sqlreturn = await self.query_db(sql_statement)
         sqlreturn = sqlreturn[0]
         note = sqlreturn[14]
-        raid_chan_code = sqlreturn[15]
+        raid_chan_code = int(sqlreturn[15])
 
         # parse return to change values of None to "" and change ID values to tag format and store them in new array: raid_spots
         raid_spots = []
@@ -240,7 +240,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 channel_id = int(sql_return[0][0])
 
             if (sql_return[0][1] is not None):
-                destiny_folk = f'<@{sql_return[0][1]}>' 
+                destiny_folk = f'<@&{sql_return[0][1]}>' 
             else:
                 destiny_folk = '@here'
         except IndexError:
@@ -358,7 +358,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
                         sql_return = await self.query_db(f'SELECT `destiny_folk` FROM `guilds` WHERE `guildID` = {raid[12]};')
 
                         if (sql_return[0][0] is not None):
-                            destiny_folk = f'<@{sql_return[0][0]}>' 
+                            destiny_folk = f'<@&{sql_return[0][0]}>' 
                         else:
                             destiny_folk = '@here'
 
