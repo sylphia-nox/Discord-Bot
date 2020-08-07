@@ -234,10 +234,10 @@ class helper_cogs(commands.Cog, name='Utilities'):
     async def create_raid(self, raid_number: int, raid_time: str, note: str, creater_id, server_id, channel_id):
         # check if the server has a raid channel setup, otherwise use channel from command
         sql_return = self.query_db(f'SELECT `raid_chan`, `destiny_folk` FROM `guilds` WHERE `guildID` = {server_id};')
-        if not (sql_return[0][0] is None):
+        if (sql_return[0][0] is not None):
             channel_id = int(sql_return[0][0])
 
-        if not (sql_return[0][1] is None):
+        if (sql_return[0][1] is not None):
             destiny_folk = f'<@{sql_return[0][1]}>' 
         else:
             destiny_folk = '@here'
@@ -353,7 +353,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
                         # check if the server has a raid channel setup, otherwise use channel from command
                         sql_return = self.query_db(f'SELECT `destiny_folk` FROM `guilds` WHERE `guildID` = {raid[12]};')
 
-                        if not (sql_return[0][0] is None):
+                        if (sql_return[0][0] is not None):
                             destiny_folk = f'<@{sql_return[0][0]}>' 
                         else:
                             destiny_folk = '@here'
