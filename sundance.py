@@ -35,7 +35,33 @@ async def reload_cog(ctx, module : str):
         await ctx.send('\N{PISTOL}')
         await ctx.send('{}: {}'.format(type(e).__name__, e))
     else:
-        await ctx.send('\N{OK HAND SIGN}')
+        await ctx.send('Cog reloaded')
+
+# command to reload cogs
+@bot.command(name='load_cog', hidden=True)
+@commands.is_owner()
+async def load_cog(ctx, module : str):
+    """Reloads a module."""
+    try:
+        bot.load_extension(module)
+    except Exception as e:
+        await ctx.send('\N{PISTOL}')
+        await ctx.send('{}: {}'.format(type(e).__name__, e))
+    else:
+        await ctx.send('Cog loaded')
+
+# command to reload cogs
+@bot.command(name='unload_cog', hidden=True)
+@commands.is_owner()
+async def unload_cog(ctx, module : str):
+    """Reloads a module."""
+    try:
+        bot.unload_extension(module)
+    except Exception as e:
+        await ctx.send('\N{PISTOL}')
+        await ctx.send('{}: {}'.format(type(e).__name__, e))
+    else:
+        await ctx.send('Cog unloaded')
 
 
 #this event dictates the actions the bot takes when it connects.
