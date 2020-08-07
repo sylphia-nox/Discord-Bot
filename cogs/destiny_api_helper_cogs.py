@@ -75,6 +75,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         global manifest
         full_manifest = await api.get("/Destiny2/Manifest/")
         manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
+        del full_manifest
 
         manifest = await api.get_simple_async("https://www.bungie.net/" + manifest_url)
 
@@ -83,7 +84,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         global manifest
         full_manifest = api.get_sync("/Destiny2/Manifest/")
         manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
-
+        del full_manifest
 
         manifest = api.get_simple("https://www.bungie.net/" + manifest_url)
         print('Manifest Initialized')
@@ -321,7 +322,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 try:
                     power_level = item_info[itemInstanceID]['primaryStat']['value']
                 except:
-                    power_leve = 0
+                    power_level = 0
 
                 items_list.append([itemInstanceID, itemType, itemSubType, power_level])
 

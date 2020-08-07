@@ -46,7 +46,7 @@ class error_handling_cogs(commands.Cog):
         #because we only have role checks we know if the checks fail it was a role error
         elif isinstance(error, commands.errors.CheckFailure):
             await ctx.message.author.create_dm()
-            await ctx.message.author.dm_channel.send(f'You do not have the correct role to use {command_name}.')
+            await ctx.message.author.dm_channel.send(f'You do not have access to use {command_name}.')
 
         #checking if the input was bad
         elif isinstance(error, commands.BadArgument):
@@ -66,7 +66,7 @@ class error_handling_cogs(commands.Cog):
         elif isinstance(error, JSONDecodeError):
             #grab time for error message
             now = datetime.now().time()
-            
+
             await admin.create_dm()
             await admin.dm_channel.send(f'JSON decode error occured at {now}')
             raise error
