@@ -6,16 +6,11 @@ import discord
 
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
-from cogs.helper_cogs import helper_cogs
 
 class admin_cogs(commands.Cog, name='Admin Commands'):
     
     # get admin role code for command checks.
-    sqlreturn = helper_cogs.query_db_sync(None, 'SELECT `admin_role_code` FROM `guilds`;')
     admin_role_codes = [] 
-    for val in sqlreturn: 
-        if val[0] != None : 
-            admin_role_codes.append(int(val[0])) 
 
     # this method runs on cog load
     def __init__(self, bot):
@@ -26,6 +21,8 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         helpers = self.bot.get_cog('Utilities')
         if(helpers is None):
             print(f'Fatal error, admin_cogs failed to load helper_cogs.py')
+
+        self.initialize_admin_role_codes()
 
      
 
@@ -80,7 +77,7 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await ctx.message.delete()
 
     # this command allows a server admin to configure the raid_channel
-    @commands.command(name='setup_raid_posts', hidden = True)
+    @commands.command(name='setup_raid_posts')
     @commands.has_permissions(administrator = True)
     async def setup_raid_posts(self, ctx, admin_role: discord.Role, destiny_folk: discord.Role,  channel: discord.TextChannel = None):
         if channel is None:
@@ -91,13 +88,29 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         # call utility to setup channel
         await helpers.setup_server(channel_id, admin_role.id, destiny_folk.id, ctx.guild.id)
 
+        # update admin_role_codes
+        await self.update_admin_role_codes()
+
         # delete command message to keep channels clean
         await ctx.message.delete()
 
-        # reload the cog to reset decorator values
-        self.bot.reload_extension("cogs.admin_cogs")
 
-    
+    # syncronous method to initialize admin role codes on cog load.
+    def initialize_admin_role_codes(self):
+        sqlreturn = helpers.query_db_sync('SELECT `admin_role_code` FROM `guilds`;')
+        self.admin_role_codes = [] 
+        for val in sqlreturn: 
+            if val[0] != None : 
+                self.admin_role_codes.append(int(val[0])) 
+        print (self.admin_role_codes)
+
+    # async helper function to update global admin_role_codes for 
+    async def update_admin_role_codes(self):
+        sqlreturn = await helpers.query_db('SELECT `admin_role_code` FROM `guilds`;')
+        self.admin_role_codes = [] 
+        for val in sqlreturn: 
+            if val[0] != None: 
+                self.admin_role_codes.append(int(val[0]))
 
 
 
