@@ -76,7 +76,7 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
 
     # this command allows a server admin to configure the raid_channel
     @commands.command(name='setup_raid_posts', hidden = True)
-    @commands.has_permissions(Administrator = True)
+    @commands.has_permissions(administrator = True)
     async def setup_raid_posts(self, ctx, admin_role: discord.Role, destiny_folk: discord.Role,  channel: discord.TextChannel = None):
         if channel is None:
             channel_id = "null"
