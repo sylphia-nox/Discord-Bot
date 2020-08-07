@@ -318,8 +318,11 @@ class helper_cogs(commands.Cog, name='Utilities'):
             # send sql to db.
             mycursor.execute(query, *args)
             mydb.commit()
+            row = mycursor.lastrowid
         finally:
             mydb.close()
+
+        return row
 
     # helper utility to create Raid notification posts
     async def raid_notifiation_check(self):
@@ -375,6 +378,19 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 #check to see if raid started over 30 minutes ago, if so, delete
                 elif (raid_time + timedelta(minutes = 30) < now):
                     await self.delete_raid(raid_id)
+
+    async def purge_oauth_DB(self):
+        guild = self.bot.guilds[0]
+        members = guild.members
+
+        sqlreturn = await self.query_db('SELECT `discordID` FROM `oauth_tokens` where `access_token` is null;')
+        members_actual = (np.transpose(sqlreturn))[0]
+
+        for member in members:
+            if not member in members_actual:
+                await self.write_db('DELETE FROM `oauth_tokens` WHERE `discordID` = %s', [member])
+
+        
 
 
 def setup(bot):

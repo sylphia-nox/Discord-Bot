@@ -41,15 +41,17 @@ async def reload_cog(ctx, module : str):
 #this event dictates the actions the bot takes when it connects.
 @bot.event
 async def on_ready():
-    print(f'{bot.user.name} has connected to Discord!')
+    bot.owner_id = os.getenv('BOT_ADMIN_CODE')
 
-    guild = bot.guilds[0]
+
+    print(f'{bot.user.name} has connected to Discord!')
+    print(f'{bot.user} is connected to the following guild:\n')
+    for guild in bot.guilds:
+        print (f'{guild.name}(id: {guild.id})\n')
+    
 
     #code to confirm the bot has connected to the proper server
-    print (
-        f'{bot.user} is connected to the following guild:\n'
-        f'{guild.name}(id: {guild.id})\n'
-    )
+    
 
     # Setting `Listening ` status
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
