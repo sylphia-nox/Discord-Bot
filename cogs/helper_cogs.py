@@ -72,7 +72,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         requirements = f'{sqlreturn[2]} requires {sqlreturn[12]} and a light level of {sqlreturn[13]}'
 
         # check optional message
-        if not (note is ""):
+        if note != "":
             details += f'{note}\n'
 
         # update post with text
@@ -80,14 +80,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
     # helper function to ask user what raid they want to run
     async def which_raid_question(self, user):
-        # declare global variable used in function
-        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
-        mycursor = mydb.cursor()
-
         # grab the list of Raid names from DB
-        mycursor.execute(f'SELECT idRaids, name FROM raid_info')
-        sqlreturn = mycursor.fetchall()
-        mydb.close()
+        sqlreturn = await self.query_db(f'SELECT idRaids, name FROM raid_info')
 
         # DM user list of Raids
         await user.create_dm()
@@ -216,7 +210,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
             raid_time = parse(new_time, fuzzy=True)
 
             #update DB with "when" value
-            sql = "UPDATE raid_plan SET time = %s WHERE idRaids = %s and server_id = %s"
+            sql = "UPDATE raid_plan SET time = %s WHERE id = %s and server_id = %s"
             val = (f'{raid_time.strftime("%I:%M %p %m/%d")}', raid_id, server_id)
             await self.write_db(sql, val)
 
@@ -278,6 +272,21 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
     # helper utility to query the DB
     async def query_db(self, query: str):
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb.cursor()
+
+        try:
+            # query DB and grab results
+            mycursor.execute(query)
+            sqlreturn = mycursor.fetchall()
+        finally:
+            mydb.close()
+
+        # return results
+        return sqlreturn
+
+    # non-async helper utility to query the DB
+    def query_db_sync(self, query: str):
         mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
         mycursor = mydb.cursor()
 
@@ -359,8 +368,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
                     notify_message = message
 
                     #add notify message ID to DB
-                    sql = "UPDATE raid_plan SET notify_message_ID = %s WHERE idRaids = %s"
-                    val = (notify_message.id,  raid_id)
+                    sql = "UPDATE raid_plan SET notify_message_ID = %s WHERE id = %s and `server_id` = %s"
+                    val = (notify_message.id,  raid_id, {raid[12]})
                     await self.write_db(sql, val)
 
                 #check to see if raid started over 30 minutes ago, if so, delete
@@ -380,7 +389,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
     # helper function to write info into DB for guilds
     async def setup_server(self, channel, admin_role, destiny_folk, server_id):
-        sql = 'REPLACE INTO `guilds` SET `guildID` = %s, raid_chan = %s, admin_role_code = %s, destiny_folk = %s'
+        sql = 'REPLACE INTO guilds(guildID, raid_chan, admin_role_code, destiny_folk) VALUES(%s, %s, %s, %s);'
         val = (
             server_id,
             channel,
