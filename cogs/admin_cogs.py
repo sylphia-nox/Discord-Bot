@@ -10,7 +10,6 @@ from discord.ext import commands, tasks
 class admin_cogs(commands.Cog, name='Admin Commands'):
     
     # get admin role code for command checks.
-    global admin_role_codes
     admin_role_codes = ["null"]
 
     # this method runs on cog load
@@ -96,13 +95,11 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
 
     # syncronous method to initialize admin role codes on cog load.
     def initialize_admin_role_codes(self):
-        
-        print(self.admin_role_codes)
         sqlreturn = helpers.query_db_sync('SELECT `admin_role_code` FROM `guilds`;')
-        admin_role_codes = [] 
+        self.admin_role_codes = [] 
         for val in sqlreturn: 
             if val[0] != None : 
-                admin_role_codes.append(int(val[0])) 
+                self.admin_role_codes.append(int(val[0])) 
   
     # async helper function to update global admin_role_codes for 
     async def update_admin_role_codes(self):
@@ -110,10 +107,10 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         
 
         sqlreturn = await helpers.query_db('SELECT `admin_role_code` FROM `guilds`;')
-        admin_role_codes = [] 
+        self.admin_role_codes = [] 
         for val in sqlreturn: 
-            if val[0] != None : 
-                admin_role_codes.append(int(val[0]))
+            if val[0] != None: 
+                self.admin_role_codes.append(int(val[0]))
 
 
 
