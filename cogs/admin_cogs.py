@@ -10,6 +10,7 @@ from discord.ext import commands, tasks
 class admin_cogs(commands.Cog, name='Admin Commands'):
     
     # get admin role code for command checks.
+    global admin_role_codes
     admin_role_codes = []
 
     # this method runs on cog load
