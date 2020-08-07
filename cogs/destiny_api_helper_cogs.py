@@ -81,7 +81,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     # helper function to initialize manifest file when cog is loaded, non async version of get_manifest
     def initialize_manifest(self):
         global manifest
-        full_manifest = await api.get("/Destiny/Manifest/")
+        full_manifest = api.get_sync("/Destiny/Manifest/")
         manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['DestinyInventoryItemLiteDefinition']
 
 

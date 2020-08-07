@@ -75,6 +75,21 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         #convert the json object we received into a Python dictionary object and return that object
         return r.json()
 
+    def get_sync(self, api_url, OAuth = False, access_token = ""):
+        # create copy of HEADERS to ensure we do not permanently modify HEADERS
+        headers = HEADERS.copy()
+        
+        # if OAuth is set to True, add access token to header
+        if OAuth:
+            headers.update({'Authorization':f'Bearer {access_token}'})
+
+        #make request for membership ID
+        url = base_url + api_url
+        r = requests.get(url, headers = headers)
+
+        #convert the json object we received into a Python dictionary object and return that object
+        return r.json()
+
     # helper function to call get without header or base url
     async def get_simple_async(self, url):
         r = requests.get(url)
