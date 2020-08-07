@@ -100,6 +100,7 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         for val in sqlreturn: 
             if val[0] != None : 
                 self.admin_role_codes.append(int(val[0])) 
+        print (self.admin_role_codes)
   
     # async helper function to update global admin_role_codes for 
     async def update_admin_role_codes(self):
