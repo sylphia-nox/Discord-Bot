@@ -22,16 +22,6 @@ class user_cogs(commands.Cog, name='User Commands'):
         if(helpers is None):
             print(f'Fatal error, user_cogs failed to load helper_cogs.py')
 
-        # global variables to allow the bot to know if raid setup is ongoing and its state
-        global raid_setup_active
-        global raid_setup_step
-        global raid_setup_what
-
-        raid_setup_active = False
-        raid_setup_step = "what"
-        raid_setup_what = 1
-
-
 
     # this command creates a new raid post, user needs to respond to DMs to complete setup.
     @commands.command(name='raid', help='Type ~raid and the bot will create a new raid post for you')
@@ -104,7 +94,7 @@ class user_cogs(commands.Cog, name='User Commands'):
             await raid_setup_user.dm_channel.send(f'Raid creation has timed out, please start again.')           
         
         # create raid and raid post
-        await helpers.create_raid(raid_number, raid_time, note, raid_setup_user, server_id, channel_id)
+        await helpers.create_raid(raid_number, raid_time, note, raid_setup_user.id, server_id, channel_id)
 
         # DM user that raid setup is complete
         await raid_setup_user.dm_channel.send(f'raid setup complete')
@@ -128,6 +118,7 @@ class user_cogs(commands.Cog, name='User Commands'):
     # command to allow a user to leave the raid, it will remove the user from the first spot it finds them in.
     @commands.command(name='leave', help='type ~leave # and you will be removed from that raid')
     async def leave(self, ctx, raid_id: int):
+        
         # call utility
         await helpers.remove_user(ctx.message.author, raid_id, ctx.guild.id, ctx.message.author)
 

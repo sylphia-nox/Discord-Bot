@@ -266,7 +266,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
             raid_number,
             server_id,
             channel_id,
-            f'{message.id}',
+            message.id,
             creater_id,
             note 
         )
