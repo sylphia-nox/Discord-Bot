@@ -11,11 +11,12 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
     
     # get admin role code for command checks.
     global admin_role_codes
-    admin_role_codes = []
+    admin_role_codes = ["null"]
 
     # this method runs on cog load
     def __init__(self, bot):
         self.bot = bot
+
 
         global helpers
         helpers = self.bot.get_cog('Utilities')
@@ -95,8 +96,8 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
 
     # syncronous method to initialize admin role codes on cog load.
     def initialize_admin_role_codes(self):
-        global admin_role_codes
-
+        
+        print(self.admin_role_codes)
         sqlreturn = helpers.query_db_sync('SELECT `admin_role_code` FROM `guilds`;')
         admin_role_codes = [] 
         for val in sqlreturn: 
@@ -106,6 +107,7 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
     # async helper function to update global admin_role_codes for 
     async def update_admin_role_codes(self):
         global admin_role_codes
+        
 
         sqlreturn = await helpers.query_db('SELECT `admin_role_code` FROM `guilds`;')
         admin_role_codes = [] 
