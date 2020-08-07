@@ -6,6 +6,7 @@ import os
 import discord
 import mysql.connector
 import traceback
+import errors
 
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
@@ -234,13 +235,16 @@ class helper_cogs(commands.Cog, name='Utilities'):
     async def create_raid(self, raid_number: int, raid_time: str, note: str, creater_id, server_id, channel_id):
         # check if the server has a raid channel setup, otherwise use channel from command
         sql_return = await self.query_db(f'SELECT `raid_chan`, `destiny_folk` FROM `guilds` WHERE `guildID` = {server_id};')
-        if (sql_return[0][0] is not None):
-            channel_id = int(sql_return[0][0])
+        try:
+            if (sql_return[0][0] != "null"):
+                channel_id = int(sql_return[0][0])
 
-        if (sql_return[0][1] is not None):
-            destiny_folk = f'<@{sql_return[0][1]}>' 
-        else:
-            destiny_folk = '@here'
+            if (sql_return[0][1] is not None):
+                destiny_folk = f'<@{sql_return[0][1]}>' 
+            else:
+                destiny_folk = '@here'
+        except IndexError:
+            raise errors.SetupIncomplete("Setup has not been completed on this server, you cannot create raid posts until the admin configures that functionality.")
 
         #create raid post
         raid_chan = self.bot.get_channel(channel_id)
@@ -262,7 +266,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
             raid_number,
             server_id,
             channel_id,
-            message.id,
+            f'{message.id}',
             creater_id,
             note 
         )
