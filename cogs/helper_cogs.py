@@ -377,7 +377,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
                     #add notify message ID to DB
                     sql = "UPDATE raid_plan SET notify_message_ID = %s WHERE id = %s and `server_id` = %s"
-                    val = (notify_message.id,  raid_id, {raid[12]})
+                    val = (notify_message.id,  raid_id, raid[12])
                     await self.write_db(sql, val)
 
 
