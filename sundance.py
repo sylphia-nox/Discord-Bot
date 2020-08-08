@@ -17,9 +17,8 @@ import numpy as np
 #load environment variables
 load_dotenv()
 
-#set Bot and Server Token variables
+#set Bot Token variables
 BotToken = os.getenv('BOT_TOKEN')
-ServerToken = os.getenv('SERVER_TOKEN')
 
 #create bot object
 bot = commands.Bot(command_prefix='~')
@@ -81,6 +80,13 @@ async def on_ready():
 
     # Setting `Listening ` status
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
+
+
+@bot.event
+async def on_guild_join(guild):
+    owner = guild.owner
+    await owner.create_dm()
+    await owner.dm_channel.send(f'Thank you for adding Sundance to the Server! \nPlease use `~setup_raid_posts @admin_role @Destiny_folk #raid_chan` to configure the bot.\nYou will need to include 2 roles, the raid_chan is optional.  The two roles are for raid post admins and then the role of the server that should be tagged for raid posts.\nThe final argument is to specify the channel to user for posting raids.')
 
 #load cogs
 bot.load_extension('cogs.helper_cogs')

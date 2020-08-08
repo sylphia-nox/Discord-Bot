@@ -80,7 +80,7 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await ctx.message.delete()
 
     # this command allows a server admin to configure the raid_channel
-    @commands.command(name='setup_raid_posts')
+    @commands.command(name='setup_raid_posts', help ='type ~setup_raid_posts @admin_role @destiny_folk #raid_chan, raid_chan is optional, admin_role is for raid posts, destiny_folk is the group to tag (can be @everyone)')
     @commands.has_permissions(administrator = True)
     async def setup_raid_posts(self, ctx, admin_role: discord.Role, destiny_folk: discord.Role,  channel: discord.TextChannel = None):
         if channel is None:

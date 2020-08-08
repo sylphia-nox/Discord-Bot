@@ -256,7 +256,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         if not (sql_return[0][0] is None):
             raid_id = int(sql_return[0][0]) + 1
         else:
-            raid_id = 0
+            raid_id = 1
 
         #insert raid into DB, currently only setting Raid key and message ID
         sql = "INSERT INTO raid_plan (`id`, `time`, `what`, `server_id`, `channel_id`, `message_id`, `creater_id`, `note`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
@@ -336,8 +336,12 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 #raid_id and channel_id will be used repeatedly so setting it to a variable
                 raid_id = raid[0]
 
+                #check to see if raid started over 30 minutes ago, if so, delete
+                if (raid_time + timedelta(minutes = 30) < now):
+                    await self.delete_raid(raid_id, int(raid[12]))
+
                 #check if raid is starting under 70 minutes from now and does not have a notification message already
-                if (raid_time <= (now + timedelta(minutes = 70))) and raid[10] is None:
+                elif (raid_time <= (now + timedelta(minutes = 70))) and raid[10] is None:
         
                     #creating int value so the function knows how many people are in the raid
                     raid_members = 0
@@ -376,9 +380,6 @@ class helper_cogs(commands.Cog, name='Utilities'):
                     val = (notify_message.id,  raid_id, {raid[12]})
                     await self.write_db(sql, val)
 
-                #check to see if raid started over 30 minutes ago, if so, delete
-                elif (raid_time + timedelta(minutes = 30) < now):
-                    await self.delete_raid(raid_id, int(raid[12]))
 
     async def purge_oauth_DB(self):
         guild = self.bot.guilds[0]

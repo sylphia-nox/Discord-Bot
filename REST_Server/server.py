@@ -54,6 +54,11 @@ def resume():
     
     return render_template('resume.html')
 
+@app.route('/sundance', methods=['GET'])
+def sundance():
+  
+    return render_template('sundance.html')
+
 @app.route('/api/v1/oauth', methods=['GET'])
 def api_oath():
     # Check if an ID was provided as part of the URL.
@@ -120,7 +125,7 @@ def api_oath():
     mydb1.close()
     del user_tokens
 
-            # url from api will be something like: /img/theme/bungienet/icons/steamLogo.png
+    # url from api will be something like: /img/theme/bungienet/icons/steamLogo.png
     display_name = user_info['Response']['destinyMemberships'][0].get('displayName',  '')
     icon_url = user_info['Response']['destinyMemberships'][0].get('iconPath', '')
     del user_info
