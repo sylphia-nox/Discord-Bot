@@ -58,6 +58,11 @@ class error_handling_cogs(commands.Cog):
             await ctx.message.author.create_dm()
             await ctx.message.author.dm_channel.send(f'Missing arguments for command: {command_name}, type `~help {command_name}` for more information.')
 
+        #checking if user tried to run server commands through DMs
+        elif isinstance(error, commands.NoPrivateMessage):
+            await ctx.message.author.create_dm()
+            await ctx.message.author.dm_channel.send(f'Command {command_name} cannot be run in via DMs.  It must be run in a Server.')
+
         #check if user was trying to cross-out text and so triggered the bot.  If so, this is not an error.
         elif (ctx.message.content.split()[0][1] == "~"):
             #not an error do nothing 

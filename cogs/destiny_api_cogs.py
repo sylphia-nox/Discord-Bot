@@ -1,5 +1,6 @@
 # this cog defines the commands that interact with the Destiny 2 APIs, it relies on destiny_api_helper_cogs.py for functionality.
 
+from discord import ChannelType
 from discord.ext import commands
 from datetime import datetime
 
@@ -17,7 +18,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
 
     # this command shows a user their current power, highest power level of each equipement piece, and needed power to hit the next level.
-    @commands.command(name = 'power', help = "`~power<class> optional:<steam_name>` Class should be warlock/hunter/titan (not case sensitive).")
+    @commands.command(name = 'power', help = "`~power<class> optional:<steam_name>` Steam_name is needed if you have not authenticated.  Class should be warlock/hunter/titan (not case sensitive). Advanced ~power <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
     async def power(self, ctx, character: str, steam_name: str = "", platform: int = 3, OAuth = True):
 
         if steam_name == "":
@@ -48,11 +49,11 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # send message to channel
         await ctx.send(embed = embed)
 
-        # delete command message to keep channels clean if not a dm
-        if not isinstance(ctx.channel, discord.channel.DMChannel):
+        # delete command message to keep channels clean if not a dm and bot has permissions
+        if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
             await ctx.message.delete()
 
-    @commands.command(name = 'level', help = "`~level <class> optional:<steam_name>` Class should be warlock/hunter/titan (not case sensitive).")
+    @commands.command(name = 'level', help = "`~level <class> optional:<steam_name>` Steam_name is needed if you have not authenticated. Class should be warlock/hunter/titan (not case sensitive).  Advanced ~level <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
     async def level(self, ctx, character: str, steam_name: str = "", platform: int = 3, OAuth = True):
         
         if steam_name == "":
@@ -86,8 +87,8 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # send message to channel
         await ctx.send(embed = embed)
         
-        # delete command message to keep channels clean if not a dm
-        if not isinstance(ctx.channel, discord.channel.DMChannel):
+        # delete command message to keep channels clean if not a dm and bot has permissions
+        if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
             await ctx.message.delete()
 
 
@@ -97,8 +98,8 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
          # load manifest
         await destiny_helpers.get_manifest()
 
-        # delete command message to keep channels clean if not a dm
-        if not isinstance(ctx.channel, discord.channel.DMChannel):
+        # delete command message to keep channels clean if not a dm and bot has permissions
+        if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
             await ctx.message.delete()
 
     # this command sends users a url to authenticate with Bungie.net.
@@ -111,8 +112,8 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.message.author.create_dm()
         await ctx.message.author.dm_channel.send(f'Please use the below link to authenticate with Bungie.net.  It may freeze on the final page, please give it time to finish.\n{url}')
 
-        # delete command message to keep channels clean if not a dm
-        if not isinstance(ctx.channel, discord.channel.DMChannel):
+        # delete command message to keep channels clean if not a dm and bot has permissions
+        if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
             await ctx.message.delete()
     
 
