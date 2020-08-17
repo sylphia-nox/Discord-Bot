@@ -248,7 +248,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 displayName = account.get('LastSeenDisplayName')
                 break
 
-        return [memberID, membershipType, displayName]
+        return [memberID, membershipType, displayName, token]
 
 
     # helper function to get player info as player[memberID, membershipType, class_type, char_ids]
