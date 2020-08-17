@@ -243,7 +243,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         memberID = user_info['Response']['destinyMemberships'][0].get('membershipId')
         memberID = user_info['Response'].get('primaryMembershipId', memberID)
         for account in user_info['Response']['destinyMemberships']:
-            if account.get('membershipID') == memberID:
+            if int(account.get('membershipId')) == int(memberID):
                 membershipType = account.get('membershipType')
                 displayName = account.get('LastSeenDisplayName')
                 break
