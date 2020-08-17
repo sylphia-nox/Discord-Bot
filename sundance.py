@@ -68,17 +68,16 @@ async def unload_cog(ctx, module : str):
 async def on_ready():
     bot.owner_id = int(os.getenv('BOT_ADMIN_CODE'))
 
-
+    # Display connected servers
     print(f'{bot.user.name} has connected to Discord!')
     print(f'{bot.user} is connected to the following guild:\n')
     for guild in bot.guilds:
         print (f'{guild.name}(id: {guild.id})\n')
     
 
-    #code to confirm the bot has connected to the proper server
     
 
-    # Setting `Listening ` status
+    # Setting `Listening` status
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
 
 
@@ -86,7 +85,9 @@ async def on_ready():
 async def on_guild_join(guild):
     owner = guild.owner
     await owner.create_dm()
-    await owner.dm_channel.send(f'Thank you for adding Sundance to the Server! \nPlease use `~setup_raid_posts @admin_role @Destiny_folk #raid_chan` to configure the bot.\nYou will need to include 2 roles, the raid_chan is optional.  The two roles are for raid post admins and then the role of the server that should be tagged for raid posts.\nThe final argument is to specify the channel to user for posting raids.')
+    await owner.dm_channel.send(f'Thank you for adding Sundance to the Server!\nPlease use `~setup_raid_posts @admin_role @Destiny_folk #raid_chan` to configure the bot.\nYou will need to include 2 roles, the raid_chan is optional.  The two roles are for raid post admins and then the role of the server that should be tagged for raid posts.\nThe final argument is to specify the channel to user for posting raids.')
+    print(f'Bot added to server: {guild.name} ({guild.id})')
+
 
 #load cogs
 bot.load_extension('cogs.helper_cogs')
