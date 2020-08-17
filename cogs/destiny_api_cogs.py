@@ -90,7 +90,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.send(embed = embed)
         
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.message.channel.permissions_for(self.bot.user).manage_messages:
             await ctx.message.delete()
 
 
@@ -101,7 +101,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await destiny_helpers.get_manifest()
 
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.message.channel.permissions_for(self.bot.user).manage_messages:
             await ctx.message.delete()
 
     # this command sends users a url to authenticate with Bungie.net.
@@ -115,7 +115,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.message.author.dm_channel.send(f'Please use the below link to authenticate with Bungie.net.  It may freeze on the final page, please give it time to finish.\n{url}')
 
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.message.channel.permissions_for(self.bot.user).manage_messages:
             await ctx.message.delete()
     
 
