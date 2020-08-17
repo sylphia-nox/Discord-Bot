@@ -117,9 +117,9 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
             message += f'{guild.name}(id: {guild.id})\n'
         await ctx.message.channel.send(message)
 
-    @commands.command(name='bot_update', brief = '`~bot_update`', help = "`~bot_update`: sends a DM to server owners.")
+    @commands.command(name='public_update', brief = '`~bot_update`', help = "`~bot_update`: sends a DM to server owners.")
     @commands.is_owner()
-    async def bot_update(self, ctx, message: str):
+    async def public_update(self, ctx, message: str):
         # Display connected servers
         for guild in self.bot.guilds:
             owner = guild.owner
