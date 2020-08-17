@@ -54,6 +54,11 @@ def resume():
     
     return render_template('resume.html')
 
+@app.route('/sundance', methods=['GET'])
+def sundance():
+  
+    return render_template('sundance.html')
+
 @app.route('/api/v1/oauth', methods=['GET'])
 def api_oath():
     # Check if an ID was provided as part of the URL.
@@ -120,7 +125,7 @@ def api_oath():
     mydb1.close()
     del user_tokens
 
-            # url from api will be something like: /img/theme/bungienet/icons/steamLogo.png
+    # url from api will be something like: /img/theme/bungienet/icons/steamLogo.png
     display_name = user_info['Response']['destinyMemberships'][0].get('displayName',  '')
     icon_url = user_info['Response']['destinyMemberships'][0].get('iconPath', '')
     del user_info
@@ -143,23 +148,34 @@ def api_auth():
     except:
         return "Error in input."
 
-    seed(datetime.now())
-    # generate random state value
-    state = randint(1000, 99999)
-    
     mydb2 = mysql.connector.connect(pool_name='sundance_db_pool')
     mycursor = mydb2.cursor()
 
-    sql = 'REPLACE INTO `oauth_tokens` SET `discordID` = %s, state = %s'
-    val = (discordID,  state)
-    mycursor.execute(sql, val)
-    mydb2.commit()
-    mydb2.close()
+    mycursor.execute('SELECT count(*) FROM `oauth_tokens` WHERE `access_token` is null;')
+    sqlreturn = mycursor.fetchall()
+    null_rows = int(sqlreturn[0][0])
 
-    # add code to generate random statecode
-    # add statecode to end of url + "&state=statecode"
-    
-    return redirect(authorization_url + f'&state={state}')
+    if (null_rows < 10):
+
+
+        seed(datetime.now())
+        # generate random state value
+        state = randint(1000, 99999)
+        
+        
+
+        sql = 'REPLACE INTO `oauth_tokens` SET `discordID` = %s, state = %s'
+        val = (discordID,  state)
+        mycursor.execute(sql, val)
+        mydb2.commit()
+        mydb2.close()
+
+        # add code to generate random statecode
+        # add statecode to end of url + "&state=statecode"
+        
+        return redirect(authorization_url + f'&state={state}')
+    else:
+        return "Too many invalid values in DB.  These are periodically cleaned.  Please try again later."
 
 
     

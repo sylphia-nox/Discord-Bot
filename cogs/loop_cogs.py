@@ -36,7 +36,10 @@ class loop_cogs(commands.Cog):
         print(f'loop check {now}')
 
         # run utility
-        await helpers.raid_notifiation_check()
+        await helpers.raid_notification_check()
+
+        # run purge OAuth
+        await helpers.purge_oauth_DB()
 
     #function ensure bot is started and ready before running loop
     @notify.before_loop

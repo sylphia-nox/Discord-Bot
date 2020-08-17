@@ -45,3 +45,19 @@ class NoCharacterOfClass(Error):
         self.payload = payload # you could add more args
     def __str__(self):
         return str(self.message)
+
+class SetupIncomplete(Error):
+    # Raised if the user does not provide a valid Destiny class in their input
+    def __init__(self, message, payload=None):
+        self.message = message
+        self.payload = payload # you could add more args
+    def __str__(self):
+        return str(self.message)
+
+class OauthError(Error):
+    # Raised if the user does not provide a valid Destiny class in their input
+    def __init__(self, message, payload=None):
+        self.message = message
+        self.payload = payload # you could add more args
+    def __str__(self):
+        return str(self.message)

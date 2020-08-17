@@ -73,13 +73,20 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def get_manifest(self):
         # grab manifest file for items
         global manifest
-        manifest = await api.get_simple_async("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
+        full_manifest = await api.get("/Destiny2/Manifest/")
+        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
+        del full_manifest
+
+        manifest = await api.get_simple_async("https://www.bungie.net/" + manifest_url)
 
     # helper function to initialize manifest file when cog is loaded, non async version of get_manifest
     def initialize_manifest(self):
         global manifest
+        full_manifest = api.get_sync("/Destiny2/Manifest/")
+        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
+        del full_manifest
 
-        manifest = api.get_simple("https://www.bungie.net/common/destiny2_content/json/en/DestinyInventoryItemLiteDefinition-fdddf2ca-57f5-4da0-88d9-10be10a553d5.json")
+        manifest = api.get_simple("https://www.bungie.net/" + manifest_url)
         print('Manifest Initialized')
 
     # this helper function generates the formatted message for the ~power command
@@ -214,7 +221,35 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         del get_user_return
 
         # return memberID and membershipType
-        return [memberID, membershipType]
+        return [memberID, membershipType, name]
+
+    # helper function to get player info using Oauth token, returns [memberID, membershipType, displayName]
+    async def get_member_info_Oauth(self, discordID):
+        sql = f'SELECT `access_token`, `expires_in`, `refresh_token`, `refresh_expires_in`, `membership_id` FROM oauth_tokens WHERE discordID = {discordID};'
+        sql_return = await helpers.query_db(sql)
+        if sql_return:
+            now = datetime.now() + timedelta(minutes = 1)
+            # check if access token is expired
+            if now < parse(sql_return[0][1]):
+                token = sql_return[0][0]
+            elif now < parse(sql_return[0][3]):
+                token = await api.refresh_token(discordID)
+            else:
+                raise errors.OauthError("Oauth Error, please authenticate or provide the account name in the command.")
+        else:
+            raise errors.OauthError("Oauth Error, please authenticate or provide the account name in the command.")
+
+        user_info = await api.get("/User/GetMembershipsForCurrentUser/", True, access_token = token)
+        memberID = user_info['Response']['destinyMemberships'][0].get('membershipId')
+        memberID = user_info['Response'].get('primaryMembershipId', memberID)
+        for account in user_info['Response']['destinyMemberships']:
+            if account.get('membershipID') == memberID:
+                membershipType = account.get('membershipType')
+                displayName = account.get('LastSeenDisplayName')
+                break
+
+        return [memberID, membershipType, displayName]
+
 
     # helper function to get player info as player[memberID, membershipType, class_type, char_ids]
     async def get_player_char_info(self, memberID, membershipType, character: str, OAuth = False, access_token = ""):
@@ -315,7 +350,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 try:
                     power_level = item_info[itemInstanceID]['primaryStat']['value']
                 except:
-                    power_leve = 0
+                    power_level = 0
 
                 items_list.append([itemInstanceID, itemType, itemSubType, power_level])
 
