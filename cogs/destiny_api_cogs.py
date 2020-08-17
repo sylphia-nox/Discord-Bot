@@ -18,11 +18,12 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
 
     # this command shows a user their current power, highest power level of each equipement piece, and needed power to hit the next level.
-    @commands.command(name = 'power', help = "`~power<class> optional:<steam_name>` Steam_name is needed if you have not authenticated.  Class should be warlock/hunter/titan (not case sensitive). Advanced ~power <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
+    @commands.command(name = 'power', brief = "`~power <class> <steam_name:optional>`", help = "`~power<class> optional:<steam_name>` Steam_name is needed if you have not authenticated.  Class should be warlock/hunter/titan (not case sensitive). Advanced ~power <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
     async def power(self, ctx, character: str, steam_name: str = "", platform: int = 3, OAuth = True):
 
         if steam_name == "":
             player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
+            access_token = player_info[3]
         else:
             # get [memberID, membershipType, displayName]
             player_info = await destiny_helpers.get_member_info(steam_name, platform)
@@ -53,11 +54,12 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
             await ctx.message.delete()
 
-    @commands.command(name = 'level', help = "`~level <class> optional:<steam_name>` Steam_name is needed if you have not authenticated. Class should be warlock/hunter/titan (not case sensitive).  Advanced ~level <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
+    @commands.command(name = 'level', brief = "`~level <class> <steam_name:optional>`", help = "`~level <class> optional:<steam_name>` Steam_name is needed if you have not authenticated. Class should be warlock/hunter/titan (not case sensitive).  Advanced ~level <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
     async def level(self, ctx, character: str, steam_name: str = "", platform: int = 3, OAuth = True):
         
         if steam_name == "":
             player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
+            access_token = player_info[3]
         else:
             # get [memberID, membershipType, displayName]
             player_info = await destiny_helpers.get_member_info(steam_name, platform)
@@ -79,7 +81,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         high_items = await destiny_helpers.get_max_power_list(items)
         
         # get message to send to channel
-        embed = await destiny_helpers.format_power_message(high_items, player_char_info, steam_name)
+        embed = await destiny_helpers.format_power_message(high_items, player_char_info, player_info[2])
         
         embed = await destiny_helpers.calculate_next_step(high_items, player_char_info, embed, OAuth, access_token)
         
@@ -103,7 +105,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
             await ctx.message.delete()
 
     # this command sends users a url to authenticate with Bungie.net.
-    @commands.command(name = 'authenticate', help = "`~authenticate`, Bot will DM you a link to authenticate with Bungie.net")
+    @commands.command(name = 'authenticate', brief = "~authenticate",  help = "`~authenticate`, Bot will DM you a link to authenticate with Bungie.net")
     async def authenticate(self, ctx):
         discordID = ctx.message.author.id
         
