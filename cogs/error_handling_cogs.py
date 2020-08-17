@@ -7,6 +7,7 @@ from discord.ext import commands
 from datetime import datetime
 from dotenv import load_dotenv
 from json import JSONDecodeError
+from discord import ChannelType
 
 class error_handling_cogs(commands.Cog):
 
@@ -89,14 +90,17 @@ class error_handling_cogs(commands.Cog):
             await admin.create_dm()
             await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {error.__traceback__}\nError: ' + '{}: {}'.format(type(error).__name__, error))
 
-            await ctx.message.delete()
+            # delete command message to keep channels clean if not a dm and bot has permissions
+            if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
+                await ctx.message.delete()
             raise error
 
 
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
         if(ctx.message.content.split()[0][1] != "~"):
-            #delete message that caused error to keep channels clean
-            await ctx.message.delete()
+            # delete command message to keep channels clean if not a dm and bot has permissions
+            if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
+                await ctx.message.delete()
             
 
     #this event catches errors from event coroutines 
