@@ -91,7 +91,7 @@ class error_handling_cogs(commands.Cog):
             await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {error.__traceback__}\nError: ' + '{}: {}'.format(type(error).__name__, error))
 
             # delete command message to keep channels clean if not a dm and bot has permissions
-            if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
+            if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.text.manage_messages:
                 await ctx.message.delete()
             raise error
 
@@ -99,7 +99,7 @@ class error_handling_cogs(commands.Cog):
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
         if(ctx.message.content.split()[0][1] != "~"):
             # delete command message to keep channels clean if not a dm and bot has permissions
-            if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
+            if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.text.manage_messages:
                 await ctx.message.delete()
             
 

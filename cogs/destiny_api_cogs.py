@@ -51,7 +51,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.send(embed = embed)
 
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.text.manage_messages:
             await ctx.message.delete()
 
     @commands.command(name = 'level', brief = "`~level <class> <steam_name:optional>`", help = "`~level <class> optional:<steam_name>` Steam_name is needed if you have not authenticated. Class should be warlock/hunter/titan (not case sensitive).  Advanced ~level <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
@@ -90,7 +90,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.send(embed = embed)
         
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.message.channel.permissions_for(self.bot.user).manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.text.manage_messages:
             await ctx.message.delete()
 
 
@@ -115,7 +115,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.message.author.dm_channel.send(f'Please use the below link to authenticate with Bungie.net.  It may freeze on the final page, please give it time to finish.\n{url}')
 
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.message.channel.permissions_for(self.bot.user).manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.message.channel.guild.me.guild_permissions.text.manage_messages:
             await ctx.message.delete()
     
 
