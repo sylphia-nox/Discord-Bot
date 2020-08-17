@@ -329,58 +329,56 @@ class helper_cogs(commands.Cog, name='Utilities'):
         sqlreturn = await self.query_db(sql)
 
         for raid in sqlreturn:
-            if(raid[1]is not None):
-                #converting time to a dateutil object to allow comparison
-                raid_time = parse(raid[1], fuzzy=True) 
-                print(f'raid time: {raid_time} | now: {now}')
+            
+            #converting time to a dateutil object to allow comparison
+            raid_time = parse(raid[1], fuzzy=True) 
 
-                #raid_id and channel_id will be used repeatedly so setting it to a variable
-                raid_id = raid[0]
+            #raid_id and channel_id will be used repeatedly so setting it to a variable
+            raid_id = raid[0]
 
-                #check to see if raid started over 30 minutes ago, if so, delete
-                if ((raid_time + timedelta(minutes = 30)) < now):
-                    print(f'deleting raid')
-                    await self.delete_raid(int(raid_id), int(raid[12]))
+            #check to see if raid started over 30 minutes ago, if so, delete
+            if (raid_time + timedelta(minutes = 30) < now):
+                await self.delete_raid(raid_id, int(raid[12]))
 
-                #check if raid is starting under 70 minutes from now and does not have a notification message already
-                elif (raid_time <= (now + timedelta(minutes = 70))) and raid[10] is None:
-        
-                    #creating int value so the function knows how many people are in the raid
-                    raid_members = 0
+            #check if raid is starting under 70 minutes from now and does not have a notification message already
+            elif (raid_time <= (now + timedelta(minutes = 70))) and raid[10] is None:
+    
+                #creating int value so the function knows how many people are in the raid
+                raid_members = 0
 
-                    #beginning of notification message
-                    notify = f'Notification: Raid {raid_id} is starting soon. If you are tagged then you are currently scheduled to raid.\n'
-                    
-                    #adding users to notification message and checking how many people we have
-                    for i in range(8):
-                        if(raid[i+2] != None and raid_members < 6):
-                            raid_members += 1
-                            notify =  notify + f'<@{raid[i+2]}> '
+                #beginning of notification message
+                notify = f'Notification: Raid {raid_id} is starting soon. If you are tagged then you are currently scheduled to raid.\n'
+                
+                #adding users to notification message and checking how many people we have
+                for i in range(8):
+                    if(raid[i+2] != None and raid_members < 6):
+                        raid_members += 1
+                        notify =  notify + f'<@{raid[i+2]}> '
 
-                    #adding a @here mention if we are missing people
-                    if (raid_members < 6):
+                #adding a @here mention if we are missing people
+                if (raid_members < 6):
 
-                        # check if the server has a raid channel setup, otherwise use channel from command
-                        sql_return = await self.query_db(f'SELECT `destiny_folk` FROM `guilds` WHERE `guildID` = {raid[12]};')
+                    # check if the server has a raid channel setup, otherwise use channel from command
+                    sql_return = await self.query_db(f'SELECT `destiny_folk` FROM `guilds` WHERE `guildID` = {raid[12]};')
 
-                        if (sql_return[0][0] is not None):
-                            destiny_folk = f'<@&{sql_return[0][0]}>' 
-                        else:
-                            destiny_folk = '@here'
+                    if (sql_return[0][0] is not None):
+                        destiny_folk = f'<@&{sql_return[0][0]}>' 
+                    else:
+                        destiny_folk = '@here'
 
-                        notify = notify + f'\n{destiny_folk} we still need {6-raid_members} fireteam member(s) for the raid.'
-                    
-                    #notify everyone in the raid and ping @here if we need someone
-                    raid_chan = self.bot.get_channel(int(raid[11]))
-                    message = await raid_chan.send(notify)
+                    notify = notify + f'\n{destiny_folk} we still need {6-raid_members} fireteam member(s) for the raid.'
+                
+                #notify everyone in the raid and ping @here if we need someone
+                raid_chan = self.bot.get_channel(int(raid[11]))
+                message = await raid_chan.send(notify)
 
-                    #get raid post message object and set global variable
-                    notify_message = message
+                #get raid post message object and set global variable
+                notify_message = message
 
-                    #add notify message ID to DB
-                    sql = "UPDATE raid_plan SET notify_message_ID = %s WHERE id = %s and `server_id` = %s"
-                    val = (notify_message.id,  raid_id, raid[12])
-                    await self.write_db(sql, val)
+                #add notify message ID to DB
+                sql = "UPDATE raid_plan SET notify_message_ID = %s WHERE id = %s and `server_id` = %s"
+                val = (notify_message.id,  raid_id, raid[12])
+                await self.write_db(sql, val)
 
 
     async def purge_oauth_DB(self):
