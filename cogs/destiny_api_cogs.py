@@ -17,17 +17,21 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
 
     # this command shows a user their current power, highest power level of each equipement piece, and needed power to hit the next level.
-    @commands.command(name = 'power', help = "`~power <steam_name> <class>` Class should be warlock/hunter/titan (not case sensitive).")
-    async def power(self, ctx, steam_name: str, character: str, platform: int = 3, OAuth = True):
-        # get [memberID, membershipType]
-        player_info = await destiny_helpers.get_member_info(steam_name, platform)
+    @commands.command(name = 'power', help = "`~power<class> optional:<steam_name>` Class should be warlock/hunter/titan (not case sensitive).")
+    async def power(self, ctx, character: str, steam_name: str = "", platform: int = 3, OAuth = True):
 
-        if OAuth:
-            # get access token for discordID/memberID combo
-            access_token = await destiny_helpers.get_user_token(ctx.message.author.id, player_info[0])
-            # if we got an error message back, set OAuth to False and continue
-            if (access_token == "refresh token expired" or access_token == "token not found"):
-                OAuth = False
+        if steam_name == "":
+            player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
+        else:
+            # get [memberID, membershipType, displayName]
+            player_info = await destiny_helpers.get_member_info(steam_name, platform)
+
+            if OAuth:
+                # get access token for discordID/memberID combo
+                access_token = await destiny_helpers.get_user_token(ctx.message.author.id, player_info[0])
+                # if we got an error message back, set OAuth to False and continue
+                if (access_token == "refresh token expired" or access_token == "token not found"):
+                    OAuth = False
         
         # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
         player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, OAuth, access_token)
@@ -39,7 +43,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         high_items = await destiny_helpers.get_max_power_list(items)
 
         # get formatted message string
-        embed = await destiny_helpers.format_power_message(high_items, player_char_info, steam_name)
+        embed = await destiny_helpers.format_power_message(high_items, player_char_info, player_info[2])
 
         # send message to channel
         await ctx.send(embed = embed)
@@ -47,18 +51,21 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # delete command message to keep channels clean
         await ctx.message.delete()
 
-    @commands.command(name = 'next_power', help = "`~next_power <steam_name> <class>` Class should be warlock/hunter/titan (not case sensitive).")
-    async def next_power(self, ctx, steam_name: str, character: str, platform: int = 3, OAuth = True):
+    @commands.command(name = 'level', help = "`~level <class> optional:<steam_name>` Class should be warlock/hunter/titan (not case sensitive).")
+    async def level(self, ctx, character: str, steam_name: str = "", platform: int = 3, OAuth = True):
         
-        # get memberID and membershipType
-        player_info = await destiny_helpers.get_member_info(steam_name, platform)
-        
-        if OAuth:
-            # get access token for discordID/memberID combo
-            access_token = await destiny_helpers.get_user_token(ctx.message.author.id, player_info[0])
-            # if we got an error message back, set OAuth to False and continue
-            if (access_token == "refresh token expired" or access_token == "token not found"):
-                OAuth = False
+        if steam_name == "":
+            player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
+        else:
+            # get [memberID, membershipType, displayName]
+            player_info = await destiny_helpers.get_member_info(steam_name, platform)
+
+            if OAuth:
+                # get access token for discordID/memberID combo
+                access_token = await destiny_helpers.get_user_token(ctx.message.author.id, player_info[0])
+                # if we got an error message back, set OAuth to False and continue
+                if (access_token == "refresh token expired" or access_token == "token not found"):
+                    OAuth = False
 
         # get player character info
         player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, OAuth, access_token)
