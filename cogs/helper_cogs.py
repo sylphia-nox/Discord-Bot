@@ -332,12 +332,14 @@ class helper_cogs(commands.Cog, name='Utilities'):
             if(raid[1]is not None):
                 #converting time to a dateutil object to allow comparison
                 raid_time = parse(raid[1], fuzzy=True) 
+                print(f'raid time: {raid_time} | now: {now}')
 
                 #raid_id and channel_id will be used repeatedly so setting it to a variable
                 raid_id = raid[0]
 
                 #check to see if raid started over 30 minutes ago, if so, delete
                 if ((raid_time + timedelta(minutes = 30)) < now):
+                    print(f'deleting raid')
                     await self.delete_raid(int(raid_id), int(raid[12]))
 
                 #check if raid is starting under 70 minutes from now and does not have a notification message already
