@@ -338,7 +338,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
                 #check to see if raid started over 30 minutes ago, if so, delete
                 if (raid_time + timedelta(minutes = 30) < now):
-                    await self.delete_raid(raid_id, raid[12])
+                    await self.delete_raid(int(raid_id), int(raid[12]))
 
                 #check if raid is starting under 70 minutes from now and does not have a notification message already
                 elif (raid_time <= (now + timedelta(minutes = 70))) and raid[10] is None:
