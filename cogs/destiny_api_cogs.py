@@ -48,8 +48,9 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # send message to channel
         await ctx.send(embed = embed)
 
-        # delete command message to keep channels clean
-        await ctx.message.delete()
+        # delete command message to keep channels clean if not a dm
+        if not isinstance(ctx.channel, discord.channel.DMChannel):
+            await ctx.message.delete()
 
     @commands.command(name = 'level', help = "`~level <class> optional:<steam_name>` Class should be warlock/hunter/titan (not case sensitive).")
     async def level(self, ctx, character: str, steam_name: str = "", platform: int = 3, OAuth = True):
@@ -85,8 +86,9 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # send message to channel
         await ctx.send(embed = embed)
         
-        # delete command message to keep channels clean
-        await ctx.message.delete()
+        # delete command message to keep channels clean if not a dm
+        if not isinstance(ctx.channel, discord.channel.DMChannel):
+            await ctx.message.delete()
 
 
     @commands.command(name = 'reload_manifest', hidden = True)
@@ -95,8 +97,9 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
          # load manifest
         await destiny_helpers.get_manifest()
 
-        # delete command message to keep channels clean
-        await ctx.message.delete()
+        # delete command message to keep channels clean if not a dm
+        if not isinstance(ctx.channel, discord.channel.DMChannel):
+            await ctx.message.delete()
 
     # this command sends users a url to authenticate with Bungie.net.
     @commands.command(name = 'authenticate', help = "`~authenticate`, Bot will DM you a link to authenticate with Bungie.net")
@@ -108,8 +111,9 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.message.author.create_dm()
         await ctx.message.author.dm_channel.send(f'Please use the below link to authenticate with Bungie.net.  It may freeze on the final page, please give it time to finish.\n{url}')
 
-        # delete command message to keep channels clean
-        await ctx.message.delete()
+        # delete command message to keep channels clean if not a dm
+        if not isinstance(ctx.channel, discord.channel.DMChannel):
+            await ctx.message.delete()
     
 
 def setup(bot):
