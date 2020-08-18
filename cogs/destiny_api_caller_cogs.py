@@ -102,9 +102,9 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
 
 
     # helper function to update oauth
-    async def refresh_token(self, user_oauth_tokens):
+    async def refresh_token(self, refresh_token, discordID):
         header = {'Authorization':f'Basic {id_and_secret}', 'Content-Type':'application/x-www-form-urlencoded'}
-        data = {'grant_type':'refresh_token','refresh_token':f'{user_oauth_tokens[4]}'}
+        data = {'grant_type':'refresh_token','refresh_token':f'{refresh_token}'}
 
         r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
 
@@ -116,7 +116,7 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
             datetime.now() + timedelta(seconds = int(user_tokens['expires_in'])), 
             user_tokens['refresh_token'],
             datetime.now() + timedelta(seconds = int(user_tokens['refresh_expires_in'])), 
-            user_oauth_tokens[0]
+            discordID
         )
         # write new values to DB
         await helpers.write_db(sql, val)

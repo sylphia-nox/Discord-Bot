@@ -233,7 +233,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             if now < parse(sql_return[0][1]):
                 token = sql_return[0][0]
             elif now < parse(sql_return[0][3]):
-                token = await api.refresh_token(discordID)
+                token = await api.refresh_token(sql_return[0][2], discordID)
             else:
                 raise errors.OauthError("Oauth Error, please authenticate or provide the account name in the command.")
         else:
@@ -243,12 +243,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         memberID = user_info['Response']['destinyMemberships'][0].get('membershipId')
         memberID = user_info['Response'].get('primaryMembershipId', memberID)
         for account in user_info['Response']['destinyMemberships']:
-            if account.get('membershipID') == memberID:
+            if int(account.get('membershipId')) == int(memberID):
                 membershipType = account.get('membershipType')
                 displayName = account.get('LastSeenDisplayName')
                 break
 
-        return [memberID, membershipType, displayName]
+        return [memberID, membershipType, displayName, token]
 
 
     # helper function to get player info as player[memberID, membershipType, class_type, char_ids]
@@ -702,7 +702,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             if now < parse(sql_return[0][3]):
                 return sql_return[0][2]
             elif now < parse(sql_return[0][5]):
-                return await api.refresh_token(sql_return[0])
+                return await api.refresh_token(sql_return[0][4], discordID)
             else:
                 return "refresh token expired"
         else:

@@ -30,8 +30,9 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
      
 
     # this is a utility command to refresh a raid post based on data in MySQL DB
-    @commands.command(name='refresh', help='type ~refresh and the raid info will be refreshed')
+    @commands.command(name='refresh', hidden = True)
     @commands.has_any_role(*admin_role_codes)
+    @commands.guild_only()
     async def refresh(self, ctx, raid_id: int):
         # call utility
         await helpers.print_raid(raid_id, ctx.guild.id)
@@ -40,8 +41,9 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await ctx.message.delete()
 
     # this command allows a user with certain privileges to delete Raids
-    @commands.command(name='delete', help='type ~delete #, this command is only available to admin users.')
+    @commands.command(name='delete', brief = "`~delete <raid #>`", help='type ~delete #, this command is only available to admin users.')
     @commands.has_any_role(*admin_role_codes)
+    @commands.guild_only()
     async def delete(self, ctx, raid_id: int):
         # call utility
         await helpers.delete_raid(raid_id, ctx.guild.id)
@@ -50,8 +52,9 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await ctx.message.delete()
 
     # this command allows an admin user to add someone to a raid post
-    @commands.command(name='add', help='type add @usertag # #, where # # is the raid ID followed by the spot to add them to that raid.')
+    @commands.command(name='add', brief = "`~add @usertag <raid #> <spot #>`", help='type add @usertag # #, where # # is the raid ID followed by the spot to add them to that raid.')
     @commands.has_any_role(*admin_role_codes)
+    @commands.guild_only()
     async def add(self, ctx, user: discord.Member, raid_id: int, spot_id: int):
         # call add user utility
         await helpers.add_user_to_raid(user, raid_id, ctx.guild.id, ctx.message.author, spot_id)
@@ -60,8 +63,9 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await ctx.message.delete()
 
     # this command allows an admin user to remove someone from a raid post
-    @commands.command(name='remove', help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
+    @commands.command(name='remove', brief = "`~remove @usertag <spot number>`", help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
     @commands.has_any_role(*admin_role_codes)
+    @commands.guild_only()
     async def remove(self, ctx, user: discord.Member, raid_id: int):
         # call utility
         await helpers.remove_user(user, raid_id, ctx.guild.id, ctx.message.author)
@@ -70,8 +74,9 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await ctx.message.delete()
 
     # this command allows an admin user to reschedule a raid
-    @commands.command(name='reschedule', hidden = True)
+    @commands.command(name='reschedule', brief = "`~reschedule <new time>`", help = 'type `~reschedule <new time>`, new time must be a parsable time or date/time.')
     @commands.has_any_role(*admin_role_codes)
+    @commands.guild_only()
     async def reschedule(self, ctx, raid_id: int, new_time: str):
         # call utility to change time
         await helpers.change_raid_time(ctx.message.author, raid_id, ctx.guild.id, new_time)
@@ -80,13 +85,18 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await ctx.message.delete()
 
     # this command allows a server admin to configure the raid_channel
-    @commands.command(name='setup_raid_posts', help ='type ~setup_raid_posts @admin_role @destiny_folk #raid_chan, raid_chan is optional, admin_role is for raid posts, destiny_folk is the group to tag (can be @everyone)')
+    @commands.command(name='setup', brief = "`~setup @admin_role @destiny_folk #raid_chan`",help ='`~setup @admin_role @destiny_folk #raid_chan` all arguments are optional but roles will default to the guild default role.  If any roles are mentioned, they will be set sequentially.  Admin_role controls who has power to change raid posts, destiny_folk is the group that is tagged in raid posts.  Raid_chan is where raid posts will be posted (if none is set it will post in the channel where the ~raid command is used.) ')
     @commands.has_permissions(administrator = True)
-    async def setup_raid_posts(self, ctx, admin_role: discord.Role, destiny_folk: discord.Role,  channel: discord.TextChannel = None):
+    @commands.guild_only()
+    async def setup_raid_posts(self, ctx, admin_role: discord.Role = None, destiny_folk: discord.Role = None,  channel: discord.TextChannel = None):
         if channel is None:
             channel_id = "null"
         else:
             channel_id = channel.id
+        if admin_role is None: admin_role = ctx.guild.default_role
+        if destiny_folk is None: destiny_folk = ctx.guild.default_role
+
+        
 
         # call utility to setup channel
         await helpers.setup_server(channel_id, admin_role.id, destiny_folk.id, ctx.guild.id)
@@ -98,10 +108,24 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         self.bot.reload_extension("cogs.admin_cogs")
 
     
+    @commands.command(name='servers', brief = '`~servers`', help = "`~servers`: displays servers connected to Sundance.")
+    @commands.is_owner()
+    async def servers(self, ctx):
+        # Display connected servers
+        message = f'{self.bot.user} is connected to the following guild:\n'
+        for guild in self.bot.guilds:
+            message += f'{guild.name}(id: {guild.id})\n'
+        await ctx.message.channel.send(message)
 
-
-
-
+    @commands.command(name='public_update', brief = '`~bot_update`', help = "`~bot_update`: sends a DM to server owners.")
+    @commands.is_owner()
+    async def public_update(self, ctx, message: str):
+        # Display connected servers
+        for guild in self.bot.guilds:
+            owner = guild.owner
+            await owner.create_dm()
+            await owner.dm_channel.send(message)
+        
 
 def setup(bot):
     bot.add_cog(admin_cogs(bot))

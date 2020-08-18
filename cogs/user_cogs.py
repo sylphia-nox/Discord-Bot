@@ -25,6 +25,7 @@ class user_cogs(commands.Cog, name='User Commands'):
 
     # this command creates a new raid post, user needs to respond to DMs to complete setup.
     @commands.command(name='raid', help='Type ~raid and the bot will create a new raid post for you')
+    @commands.guild_only()
     async def raid(self, ctx):
         # setting global variable values for new raid setup
         raid_setup_user = ctx.message.author
@@ -108,6 +109,7 @@ class user_cogs(commands.Cog, name='User Commands'):
 
     # this command allows a user to join a raid.
     @commands.command(name='join', help='type ~join # # First number is the raid id to join followed by the spot you would like to take (1-6 for primary 7-8 for backup)')
+    @commands.guild_only()
     async def join(self, ctx, raid_id: int, spot: int):
         # call utility
         await helpers.add_user_to_raid(ctx.message.author, raid_id, ctx.guild.id, ctx.message.author, spot)
@@ -117,6 +119,7 @@ class user_cogs(commands.Cog, name='User Commands'):
 
     # command to allow a user to leave the raid, it will remove the user from the first spot it finds them in.
     @commands.command(name='leave', help='type ~leave # and you will be removed from that raid')
+    @commands.guild_only()
     async def leave(self, ctx, raid_id: int):
         
         # call utility

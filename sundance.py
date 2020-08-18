@@ -85,7 +85,7 @@ async def on_ready():
 async def on_guild_join(guild):
     owner = guild.owner
     await owner.create_dm()
-    await owner.dm_channel.send(f'Thank you for adding Sundance to the Server!\nPlease use `~setup_raid_posts @admin_role @Destiny_folk #raid_chan` to configure the bot.\nYou will need to include 2 roles, the raid_chan is optional.  The two roles are for raid post admins and then the role of the server that should be tagged for raid posts.\nThe final argument is to specify the channel to user for posting raids.')
+    await owner.dm_channel.send(f'Thank you for adding Sundance to the Server!\nPlease use `~setup @admin_role @Destiny_folk #raid_chan` to configure the bot.\nIf you do not specify the roles, they will be set to the servers default role.  The two roles are for raid post admins and then the role of the server that should be tagged for raid posts.\nThe final argument is to specify the channel to user for posting raids.')
     print(f'Bot added to server: {guild.name} ({guild.id})')
 
 

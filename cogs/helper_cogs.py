@@ -183,22 +183,27 @@ class helper_cogs(commands.Cog, name='Utilities'):
         sqlreturn = sqlreturn[0]
         raid_chan_code = int(sqlreturn[2])
 
-        #grab message object to delete using the message_ID stored in DB
-        raid_message = await self.bot.get_channel(raid_chan_code).fetch_message(sqlreturn[0])
-
-        #delete raid post
-        await raid_message.delete()
-
-        #delete notify message if it exists
-        if(sqlreturn[1] != None):
-            #grab message object to delete using the message_ID stored in DB
-            notify_message = await self.bot.get_channel(raid_chan_code).fetch_message(sqlreturn[1])
-            await notify_message.delete()
-
         #delete raid from DB
         sql = "DELETE FROM raid_plan WHERE id = %s and `server_id` = %s"
         val = (raid_id, server_id)
         await self.write_db(sql, val)
+
+        try:
+            #grab message object to delete using the message_ID stored in DB
+            raid_message = await self.bot.get_channel(raid_chan_code).fetch_message(sqlreturn[0])
+
+            #delete raid post
+            await raid_message.delete()
+
+            #delete notify message if it exists
+            if(sqlreturn[1] != None):
+                #grab message object to delete using the message_ID stored in DB
+                notify_message = await self.bot.get_channel(raid_chan_code).fetch_message(sqlreturn[1])
+                await notify_message.delete()
+        except:
+            print(f'Error deleting raid posts.  Server {server_id}')
+
+        
         
 
     # helper utility to change the raid time.
@@ -325,11 +330,11 @@ class helper_cogs(commands.Cog, name='Utilities'):
         now = datetime.now()
 
         #pull current information on raids and times.
-        sql = f'SELECT id, time, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, notify_message_ID, channel_id, server_id FROM raid_plan WHERE id IS NOT Null'
+        sql = f'SELECT id, time, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two, notify_message_ID, channel_id, server_id FROM raid_plan WHERE id IS NOT Null;'
         sqlreturn = await self.query_db(sql)
 
         for raid in sqlreturn:
-            if(raid[1]is not None):
+            if(raid[1] is not None):
                 #converting time to a dateutil object to allow comparison
                 raid_time = parse(raid[1], fuzzy=True) 
 

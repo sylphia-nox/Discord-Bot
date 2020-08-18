@@ -7,6 +7,7 @@ from discord.ext import commands
 from datetime import datetime
 from dotenv import load_dotenv
 from json import JSONDecodeError
+from discord import ChannelType
 
 class error_handling_cogs(commands.Cog):
 
@@ -42,6 +43,11 @@ class error_handling_cogs(commands.Cog):
             await ctx.message.author.create_dm()
             await ctx.message.author.dm_channel.send(f'{str(error)}')
             print(f'Custom error: {str(error)}')
+
+        #checking if user tried to run server commands through DMs
+        elif isinstance(error, commands.NoPrivateMessage):
+            await ctx.message.author.create_dm()
+            await ctx.message.author.dm_channel.send(f'Command {command_name} cannot be run in via DMs.  It must be run in a Server.')
 
         #because we only have role checks we know if the checks fail it was a role error
         elif isinstance(error, commands.errors.CheckFailure):
@@ -84,14 +90,17 @@ class error_handling_cogs(commands.Cog):
             await admin.create_dm()
             await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {error.__traceback__}\nError: ' + '{}: {}'.format(type(error).__name__, error))
 
-            await ctx.message.delete()
+            # delete command message to keep channels clean if not a dm and bot has permissions
+            if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
+                await ctx.message.delete()
             raise error
 
 
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
         if(ctx.message.content.split()[0][1] != "~"):
-            #delete message that caused error to keep channels clean
-            await ctx.message.delete()
+            # delete command message to keep channels clean if not a dm and bot has permissions
+            if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
+                await ctx.message.delete()
             
 
     #this event catches errors from event coroutines 
