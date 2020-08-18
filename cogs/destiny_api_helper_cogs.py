@@ -709,6 +709,138 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             print (sql_return)
             return "token not found"
 
+    # helper function to update the plug DB info.
+    def update_plugs(self):
+        full_manifest = api.get_sync("/Destiny2/Manifest/")
+        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition']
+        del full_manifest
+
+        item_manifest = api.get_simple("https://www.bungie.net/" + manifest_url)
+
+        total = 0
+
+        for key, item in item_manifest.items():
+            if "plug" in item:
+                # print("found plug:" + f'{item["hash"]}')
+                if item["plug"]["plugCategoryIdentifier"] == "intrinsics":
+                    stats = item["investmentStats"]
+                    values = []
+                    if stats:
+                        isPlug = True
+                    
+                        for stat in stats:
+                            category = int(stat["statTypeHash"])
+                            if category == 2996146975:
+                                category = "mobility"
+                            elif category == 392767087:
+                                category = "recovery"
+                            elif category == 1943323491:
+                                category = "resilience"
+                            elif category == 1735777505:
+                                category = "discipline"
+                            elif category == 144602215:
+                                category = "intellect"
+                            elif category == 4244567218:
+                                category = "strength"
+                            else:
+                                isPlug = False
+                            
+                            value = int(stat["value"])
+                            values.append([category, value])
+
+                        if isPlug:
+                            sql = f'REPLACE INTO `plugs` (`hash`, `{values[0][0]}`, `{values[1][0]}`, `{values[2][0]}`) ' + 'VALUES (%s, %s, %s, %s)'
+                            vals = [int(key), values[0][1], values[1][1], values[2][1]]
+
+                            helpers.write_db_sync(sql, vals)
+
+    # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
+    async def get_player_armor(self, player_char_info, OAuth = False, access_token = ""):
+        global manifest
+
+        # declare list to hold items
+        items = []
+
+        # get variable information from list, doing this way for ease of reading code.
+        memberID = player_char_info[0]
+        membershipType = player_char_info[1]
+        class_type = player_char_info[2]
+        char_ids = player_char_info[3]
+
+        # get all items and info for items
+        json_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/?components=102, 201, 205, 305', OAuth, access_token)
+       
+        # pull out armor item info
+        global armor_sockets
+        armor_sockets = json_return['Response']['itemComponents']['sockets']['data']
+        
+        # if user has privacy on, the json will not have the 'data' tag, so we can use this assignment to raise a PrivacySettings exception
+        try:
+            # parse vault items
+            items = await self.parse_json_for_item_info(json_return['Response']['profileInventory']['data']['items'], items, class_type)
+
+            # parse equiped and unequiped items
+            for id in char_ids:
+                items = await self.parse_json_for_item_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type)
+                items = await self.parse_json_for_item_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type)
+        except KeyError:
+            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
+        
+
+        # deleting variable to save memory usage.
+        del armor_sockets
+        del json_return
+
+        return items
+
+    # helper function to parse JSON, returns items[] that can be equiped by class_type
+    async def parse_json_for_armor_info(self, json, items_list, class_type):
+        global manifest
+
+        for item in json:
+            itemHash = str(item['itemHash'])
+            itemType = manifest[itemHash]['itemType']
+            itemClassType = manifest[itemHash]['classType']
+            # check if the item can be used by the specified character
+            if itemType == 2 and itemClassType == class_type:
+                if(itemType == 2):
+                    itemSubType = manifest[itemHash]['itemSubType']
+
+                # now that we know this is an instanced item, get its ID to get the items power level
+                itemInstanceID = str(item['itemInstanceId'])
+                # run api call to get power cap
+                try:
+                    power_cap = manifest[itemHash]['quality']['versions'][0]['powerCapHash']
+                    exotic = int(manifest[itemHash]['inventory']['tierType']) == 6
+                except:
+                    power_cap = 0
+                    exotic = False
+
+                item_stats = await self.get_armor_stats(itemInstanceID)
+
+                items_list.append([itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats])
+
+        del json
+        return items_list
+
+    async def get_armor_stats(self, itemID):
+        sockets = armor_sockets[itemID]['sockets']
+        intrinsic_sockets = []
+        stats = [0,0,0,0,0,0]
+        for socket in sockets:
+            if "plugHash" in socket and (socket["isEnabled"] == 'true' and socket["isVisible"] == 'true'):
+                intrinsic_sockets.append(socket["plugHash"])
+        if len(intrinsic_sockets) == 4:
+            select = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(recovery,0) as `recovery`, IFNULL(resilience,0) as `resilience`, IFNULL(discipline,0) as `discipline`, IFNULL(intellect,0) as `intellect`, IFNULL(strength,0) as `strength` FROM plugs '
+            where = f'WHERE hash = {intrinsic_sockets[0]} OR hash = {intrinsic_sockets[1]} OR hash = {intrinsic_sockets[2]} OR hash = {intrinsic_sockets[2]};'
+            sql = select + where
+            plugs = await helpers.query_db(sql)
+            for plug in plugs:
+                for i, stat in plug.enumerate():
+                    stats[i] += int(stat)
+
+        return stats
+
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))
 

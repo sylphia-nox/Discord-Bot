@@ -324,6 +324,21 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
         return row
 
+    # helper function to write to db not async
+    def write_db_sync(self, query: str, *args):
+        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
+        mycursor = mydb.cursor()
+
+        try:
+            # send sql to db.
+            mycursor.execute(query, *args)
+            mydb.commit()
+            row = mycursor.lastrowid
+        finally:
+            mydb.close()
+
+        return row
+
     # helper utility to create Raid notification posts
     async def raid_notification_check(self):
         #grab current time.

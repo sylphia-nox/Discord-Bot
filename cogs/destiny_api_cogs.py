@@ -118,6 +118,25 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
             await ctx.message.delete()
     
+    # this command provides users with optimized gear to maximize stats.
+    @commands.command(name = 'optimize', hidden = True)
+    async def optimize(self, ctx, character, trait1: str, trait2: str, trait3: str, traction: bool = False, friends: bool = False):
+        player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
+        access_token = player_info[3]
+        
+        # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
+        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
+
+        # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats]
+        armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token)
+        
+        highest_roll = 0
+        for piece in armor:
+            total_stat = sum(piece[5])
+            if total_stat > highest_roll:
+                highest_roll = total_stat
+
+        await ctx.message.channel.send(highest_roll)
 
 def setup(bot):
     bot.add_cog(destiny_api_cogs(bot))
