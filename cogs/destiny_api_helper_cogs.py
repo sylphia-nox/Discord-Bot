@@ -771,18 +771,17 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         json_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/?components=102, 201, 205, 305', OAuth, access_token)
        
         # pull out armor item info
-        global armor_sockets
         armor_sockets = json_return['Response']['itemComponents']['sockets']['data']
         
         # if user has privacy on, the json will not have the 'data' tag, so we can use this assignment to raise a PrivacySettings exception
         try:
             # parse vault items
-            items = await self.parse_json_for_item_info(json_return['Response']['profileInventory']['data']['items'], items, class_type)
+            items = await self.parse_json_for_armor_info(json_return['Response']['profileInventory']['data']['items'], items, class_type, armor_sockets)
 
             # parse equiped and unequiped items
             for id in char_ids:
-                items = await self.parse_json_for_item_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type)
-                items = await self.parse_json_for_item_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type)
+                items = await self.parse_json_for_armor_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type, armor_sockets)
+                items = await self.parse_json_for_armor_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type, armor_sockets)
         except KeyError:
             raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
         
@@ -794,7 +793,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return items
 
     # helper function to parse JSON, returns items[] that can be equiped by class_type
-    async def parse_json_for_armor_info(self, json, items_list, class_type):
+    async def parse_json_for_armor_info(self, json, items_list, class_type, armor_sockets):
         global manifest
 
         for item in json:
@@ -816,14 +815,14 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     power_cap = 0
                     exotic = False
 
-                item_stats = await self.get_armor_stats(itemInstanceID)
+                item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
 
                 items_list.append([itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats])
 
         del json
         return items_list
 
-    async def get_armor_stats(self, itemID):
+    async def get_armor_stats(self, itemID, armor_sockets):
         sockets = armor_sockets[itemID]['sockets']
         intrinsic_sockets = []
         stats = [0,0,0,0,0,0]
