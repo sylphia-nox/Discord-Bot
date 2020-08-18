@@ -802,8 +802,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             itemClassType = manifest[itemHash]['classType']
             # check if the item can be used by the specified character
             if itemType == 2 and itemClassType == class_type:
-                if(itemType == 2):
-                    itemSubType = manifest[itemHash]['itemSubType']
+                itemSubType = manifest[itemHash]['itemSubType']
 
                 # now that we know this is an instanced item, get its ID to get the items power level
                 itemInstanceID = str(item['itemInstanceId'])

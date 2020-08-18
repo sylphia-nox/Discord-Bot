@@ -132,6 +132,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         
         highest_roll = 0
         for piece in armor:
+            await ctx.message.channel.send(piece[5])
             total_stat = sum(piece[5])
             if total_stat > highest_roll:
                 highest_roll = total_stat
