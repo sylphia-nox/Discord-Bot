@@ -830,7 +830,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 intrinsic_sockets.append(socket["plugHash"])
         if len(intrinsic_sockets) == 4:
             select = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(recovery,0) as `recovery`, IFNULL(resilience,0) as `resilience`, IFNULL(discipline,0) as `discipline`, IFNULL(intellect,0) as `intellect`, IFNULL(strength,0) as `strength` FROM plugs '
-            where = f'WHERE hash = {intrinsic_sockets[0]} OR hash = {intrinsic_sockets[1]} OR hash = {intrinsic_sockets[2]} OR hash = {intrinsic_sockets[2]};'
+            where = f'WHERE hash = {intrinsic_sockets[0]} OR hash = {intrinsic_sockets[1]} OR hash = {intrinsic_sockets[2]} OR hash = {intrinsic_sockets[3]};'
             sql = select + where
             plugs = await helpers.query_db(sql)
             for plug in plugs:
