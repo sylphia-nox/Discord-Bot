@@ -834,7 +834,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             sql = select + where
             plugs = await helpers.query_db(sql)
             for plug in plugs:
-                for i, stat in plug.enumerate():
+                for i, stat in enumerate(plug):
                     stats[i] += int(stat)
 
         return stats
