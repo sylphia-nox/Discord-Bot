@@ -826,7 +826,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         intrinsic_sockets = []
         stats = [0,0,0,0,0,0]
         for socket in sockets:
-            if "plugHash" in socket and (socket["isEnabled"] == 'true' and socket["isVisible"] == 'true'):
+            if "plugHash" in socket and (socket["isEnabled"] == 'true' and socket["isVisible"] == 'false'):
                 intrinsic_sockets.append(socket["plugHash"])
         if len(intrinsic_sockets) == 4:
             select = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(recovery,0) as `recovery`, IFNULL(resilience,0) as `resilience`, IFNULL(discipline,0) as `discipline`, IFNULL(intellect,0) as `intellect`, IFNULL(strength,0) as `strength` FROM plugs '
