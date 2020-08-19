@@ -983,6 +983,14 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         temp_item_df = item_df    
 
+        # calculate cost for swapping each item and add to DF
+        costs = []
+        for row in calc_item_df.itertuples(index=False):
+            # calculate cost and append to list
+            costs.append(high_values[int(row.itemSubType)] - int(row['desired_total']))
+
+        calc_item_df['cost'] = costs
+
         # remove all items that result in a reduction in potential tiers if we have too many items.
         if(len(temp_item_df.index) > 100):
             temp_item_df = temp_item_df[temp_item_df.cost <= (true_surplus)]
@@ -1012,7 +1020,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # calculate scores
             primary_scores = []
             trait3_scores = []
-            costs = []
 
             for row in calc_item_df.itertuples(index=False):
                 # create temp copy of high_items for manipulation
@@ -1041,16 +1048,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                 if(primary_score < highest_primary_score):
                     highest_primary_score == primary_score
-
-                # calculate cost and append to list
-                costs.append(high_values[int(row.itemSubType)] - int(row['desired_total']))
-
-
                 
             # del temp_test_items to save resources
             del temp_test_items
 
-            calc_item_df['cost'] = costs
+            
             calc_item_df['primary_score'] = primary_scores
             calc_item_df['trait3_score'] = trait3_scores
 
