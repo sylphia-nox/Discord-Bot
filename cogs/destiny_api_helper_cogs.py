@@ -1262,7 +1262,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         items = items_df.values.tolist()
         for i, item in enumerate(items):
-            items[i][5] = eval(item[5])
+            items[i][5] = item[5].tolist()
         
         return items
 
