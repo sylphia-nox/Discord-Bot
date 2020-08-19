@@ -1021,8 +1021,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         temp_test_items = []
         for item in high_items:
             temp_test_items.append([item[5][trait1-1], item[5][trait2-1], item[5][trait3-1], 0])
-        print("temp_test_items")
-        print(temp_test_items)
 
         # if we get any piece that increases the tier by at least one we want to reduce surplus by the highest primary_score * 10 since we now know we can hit higher tiers.
         surplus = true_surplus # could set to true_surplus - 10 for a much stricter check process.
@@ -1163,7 +1161,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     else:
                                         boots_active = False
                                 # reset slot to default
-                                temp_stats[3] = high_items[3]
+                                temp_stats[3] = temp_test_items[3]
                                 temp_id[3] = high_item_ids[3]
                                 # loop succes, iterate
                                 chest_i +=1
@@ -1171,7 +1169,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                             else:
                                 chest_active = False
                         # reset slot to default
-                        temp_stats[2] = high_items[2]
+                        temp_stats[2] = temp_test_items[2]
                         temp_id[2] = high_item_ids[2]
                         # loop succes, iterate
                         arms_i +=1
@@ -1179,7 +1177,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     else:
                         arms_active = False
                 # reset slot to default
-                temp_stats[1] = high_items[1]
+                temp_stats[1] = temp_test_items[1]
                 temp_id[1] = high_item_ids[1]
                 # loop succes, iterate
                 helmet_i += 1
@@ -1266,11 +1264,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         if power_cap != 0:
             items_df = items_df[items_df.power_cap >= power_cap]
             items_df = items_df.reset_index(drop=True)
-        print(items[0])
+        
         items = items_df.values.tolist()
         # for i, item in enumerate(items):
         #     items[i][5] = item[5].tolist()
-        print(items[0])
         # ['6917529199136795552', 2, 28, 0, False, [14, 7, 12, 2, 18, 10], '4177973942']
         return items
 
