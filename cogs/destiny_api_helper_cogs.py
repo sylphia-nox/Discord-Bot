@@ -12,6 +12,7 @@ import pandas as pd
 import base64
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from ast import literal_eval
 
 class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'): 
     
@@ -1262,7 +1263,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         items = items_df.values.tolist()
         for i, items in enumerate(items):
-            items[i][5] = items[i][5].tolist()
+            items[i][5] = literal_eval(items[i][5])
         
         return items
 
