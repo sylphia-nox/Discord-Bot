@@ -1069,7 +1069,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 calc_item_df = calc_item_df.reset_index(drop=True)
             # if still not under 100 remove items that will not results in increase and will leave no surplus for other armor pieces
             if(len(calc_item_df.index) > 100):
-                calc_item_df = calc_item_df[not (calc_item_df.primary_score == 0 and calc_item_df.cost >= (true_surplus-10))]
+                calc_item_df = calc_item_df[~((calc_item_df.primary_score == 0) & (calc_item_df.cost >= (true_surplus-10)))]
                 calc_item_df = calc_item_df.reset_index(drop=True)
             if(len(calc_item_df.index) > 100):
                 calc_item_df = calc_item_df.sort_values(by=['primary_score','cost','trait3_score'], ascending=[False, True, False])
@@ -1249,11 +1249,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     
     async def filter_armor(self, items, exotic_hash: int = 0, power_cap: int = 0):
         items_df = pd.DataFrame(items, columns = ['id', 'itemType', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
+        items_df = items_df.reset_index(drop=True)
         if exotic_hash != 0:
             #  [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
             exotic_slot = items_df[items_df.itemHash.astype(int) == exotic_hash].iloc[0]['itemSubType']
-            items_df = items_df[not (items_df.exotic is True and items_df.itemHash != exotic_hash)]
-            items_df = items_df[not (items_df.itemSubType == exotic_slot and items_df.itemHash != exotic_hash)]
+            items_df = items_df[~((items_df.exotic is True) & (items_df.itemHash != exotic_hash))]
+            items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash != exotic_hash))]
             items_df = items_df.reset_index(drop=True)
         if power_cap != 0:
             items_df = items_df[items_df.power_cap >= power_cap]
