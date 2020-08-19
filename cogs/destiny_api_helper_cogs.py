@@ -1074,10 +1074,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             high_item_ids.append(item[0])
 
         # declare variables for the most unpythonic looping ever.
-        helmets = calc_item_df[int(calc_item_df.itemSubType) == 0].sort_values(by='cost', ascending=True)
-        arms = calc_item_df[int(calc_item_df.itemSubType) == 1].sort_values(by='cost', ascending=True)
-        chests = calc_item_df[int(calc_item_df.itemSubType) == 2].sort_values(by='cost', ascending=True)
-        boots = calc_item_df[int(calc_item_df.itemSubType) == 3].sort_values(by='cost', ascending=True)
+        helmets = calc_item_df[calc_item_df.itemSubType == '0'].sort_values(by='cost', ascending=True)
+        arms = calc_item_df[calc_item_df.itemSubType == '1'].sort_values(by='cost', ascending=True)
+        chests = calc_item_df[calc_item_df.itemSubType == '2'].sort_values(by='cost', ascending=True)
+        boots = calc_item_df[calc_item_df.itemSubType == '3'].sort_values(by='cost', ascending=True)
 
         print(f'Helmets length: {len(helmets.index)}')
 
