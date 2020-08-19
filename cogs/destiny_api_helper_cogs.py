@@ -1153,24 +1153,24 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     else:
                                         boots_active = False
                                 # reset slot to default
-                                temp_stats[3] = temp_test_items[3]
-                                temp_id[3] = high_item_ids[3]
+                                temp_stats[3] = temp_test_items[3].copy()
+                                temp_id[3] = high_item_ids[3].copy()
                                 # loop succes, iterate
                                 chest_i +=1
                             # exiting chest loop
                             else:
                                 chest_active = False
                         # reset slot to default
-                        temp_stats[2] = temp_test_items[2]
-                        temp_id[2] = high_item_ids[2]
+                        temp_stats[2] = temp_test_items[2].copy()
+                        temp_id[2] = high_item_ids[2].copy()
                         # loop succes, iterate
                         arms_i +=1
                     # exiting arms loop
                     else:
                         arms_active = False
                 # reset slot to default
-                temp_stats[1] = temp_test_items[1]
-                temp_id[1] = high_item_ids[1]
+                temp_stats[1] = temp_test_items[1].copy()
+                temp_id[1] = high_item_ids[1].copy()
                 # loop succes, iterate
                 helmet_i += 1
             # exiting helmet loop
@@ -1178,11 +1178,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 helmet_active = False
 
         # we now have a list of every item combination with stat values.           
-        results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head()
+        results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head(20)
         pd.set_option('display.max_columns', 500)
         pd.set_option('display.width', 1000)
         pd.set_option('display.max_colwidth', 150) 
-        print(results_df)
+        print(results_df.head(20))
         return results_df
 
     # helper function to calculate scores input [trait1, trait2, trait3]
