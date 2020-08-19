@@ -93,7 +93,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         manifest = api.get_simple("https://www.bungie.net/" + manifest_url)
         power_caps = api.get_simple("https://www.bungie.net/" + power_cap_url)
         print('Manifests Initialized')
-        print(power_caps)
 
 
     # this helper function generates the formatted message for the ~power command
@@ -802,7 +801,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def parse_json_for_armor_info(self, json, items_list, class_type, armor_sockets):
         global manifest
         global power_caps
-
+        print(power_caps)
 
         for item in json:
             itemHash = str(item['itemHash'])
@@ -817,11 +816,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # run api call to get power cap
                 try:
                     power_cap_hash = manifest[itemHash]['quality']['versions'][0]['powerCapHash']
-                    print(power_cap_hash)
+                    #print(power_cap_hash)
                     power_cap = power_caps[power_cap_hash]['powerCap']
-                    print(power_cap)
+                    #print(power_cap)
                     exotic = int(manifest[itemHash]['inventory']['tierType']) == 6
-                    print(exotic)
+                    #print(exotic)
                 except:
                     power_cap = 0
                     exotic = False
@@ -1193,9 +1192,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         pd.set_option('display.width', 1000)
         print(results_df)
         return results_df
-
-
-
 
     # helper function to calculate scores input [trait1, trait2, trait3]
     async def calculate_scores(self, items, stat1_goal, stat2_goal, stat3_goal):
