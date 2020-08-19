@@ -1259,11 +1259,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         if power_cap != 0:
             items_df = items_df[items_df.power_cap >= power_cap]
             items_df = items_df.reset_index(drop=True)
-
+        print(items[0])
         items = items_df.values.tolist()
         # for i, item in enumerate(items):
         #     items[i][5] = item[5].tolist()
-        print (items)
+        print(items[0])
+        # ['6917529199136795552', 2, 28, 0, False, [14, 7, 12, 2, 18, 10], '4177973942']
         return items
 
 
