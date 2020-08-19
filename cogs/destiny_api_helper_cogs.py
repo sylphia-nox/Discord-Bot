@@ -206,7 +206,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                     # get membershipType
                     membershipType = user['membershipType']
-                    print(f'Found matching user {memberID} {membershipType}')
             except IndexError:
                 raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
 
@@ -602,7 +601,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     message += "Do +1 activities first.\n"
                     message += f'+1 activity(s) with the best chance of raising your light level ({max_prob*100:.1f}%):\n'
 
-                    # iterate through list and print out activities with prob matching top probability and at +1 power
+                    # iterate through list and concatenate activities with prob matching top probability and at +1 power
                     for i, activity_prob in enumerate(probability_array):
                         if activity_prob[1] == max_prob and activity_prob[3] == 1:
                             message += f'- {active_milestones[i][2]}\n'
@@ -620,7 +619,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 if(max_prob != 0):
                     message += f'+2 activity(s) with the best chance of raising one of your equipement slots by 2:\n'
 
-                    # iterate through list and print out activities with prob matching top probability and at +2 power
+                    # iterate through list and concatenate activities with prob matching top probability and at +2 power
                     for i, activity_prob in enumerate(probability_array):
                         if activity_prob[0] == max_prob and activity_prob[3] == 2:
                             message += f'- {active_milestones[i][2]} | +2: {activity_prob[0]*100:.1f}%, +1: {activity_prob[1]*100:.1f}%\n'
@@ -634,7 +633,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         max_prob = np.max(valid_probs)
                         message += f'+1 activity(s) with the best chance of raising your light level ({max_prob*100:.1f}%):\n'
 
-                        # iterate through list and print out activities with prob matching top probability and at +1 power
+                        # iterate through list and concatenate activities with prob matching top probability and at +1 power
                         for i, activity_prob in enumerate(probability_array):
                             if activity_prob[1] == max_prob and activity_prob[3] == 1:
                                 message += f'- {active_milestones[i][2]}\n'
@@ -644,7 +643,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         valid_probs = prob_array[1][(prob_array[3] == 2)]
                         max_prob = np.max(valid_probs)
                         message += f'+2 activity(s) with the best chance of raising a gear slot by +1 ({max_prob*100:.1f}%):\n'
-                        # iterate through list and print out activities with prob matching top probability and at +1 power
+                        # iterate through list and concatenate out activities with prob matching top probability and at +1 power
                         for i, activity_prob in enumerate(probability_array):
                             if activity_prob[1] == max_prob and activity_prob[3] == 1:
                                 message += f'- {active_milestones[i][2]}\n'
@@ -726,7 +725,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         for key, item in item_manifest.items():
             if "plug" in item:
-                # print("found plug:" + f'{item["hash"]}')
                 if item["plug"]["plugCategoryIdentifier"] == "intrinsics":
                     stats = item["investmentStats"]
                     values = []
@@ -847,10 +845,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
             # if we have dupe plugs the SQL will not return that so we need to add them in.
             if intrinsic_sockets[0] == intrinsic_sockets[1]:
-                # I want to see if this is possible so adding in a print statement
                 plugs.insert(0, plugs[0])
             elif intrinsic_sockets[2] == intrinsic_sockets[3]:
-                # I want to see if this is possible so adding in a print statement
                 plugs.insert(2, plugs[2])
 
             # iterate through plugs to get total stat values
@@ -912,8 +908,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     # this function returns a list of optimized gear
     async def optimize_armor(self, items, trait1, trait2, trait3, traction: bool = False, friends: bool = False):
         high_items, items, high_values = await self.get_max_stat_items(items, trait1, trait2)
-        print(len(items))
-        print(high_items[0])
     
         #setup variables to work with, setting to 90 due to masterworking
         stat1_goal = 90
@@ -999,7 +993,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         for row in temp_item_df.itertuples(index=False):
             # calculate cost and append to list
             cost = high_values[int(row.itemSubType)] - int(row.desired_total)
-            # print(f'Reference points: {high_values[int(row.itemSubType)]}, DF points: {int(row.desired_total)}, Cost: {cost}')
+            
             costs.append(cost)
 
         temp_item_df['cost'] = costs
@@ -1089,11 +1083,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         arms = calc_item_df[calc_item_df.itemSubType.astype(int) == 1].sort_values(by='cost', ascending=True)
         chests = calc_item_df[calc_item_df.itemSubType.astype(int) == 2].sort_values(by='cost', ascending=True)
         boots = calc_item_df[calc_item_df.itemSubType.astype(int) == 3].sort_values(by='cost', ascending=True)
-
-        #print(f'Items: {len(calc_item_df.index)}')        
-
+    
+        # adjust surplus based on known potential tier gains
         surplus = surplus - (highest_primary_score *10)
-        #print(f'surplus: {surplus}')
 
         temp_combo_list = []
         helmet_active = True
@@ -1111,7 +1103,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
             # calculate cost
             cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
-            #print(f'testing helmet: {helmet_i+1} with cost: {cost}')
+            
             # if cost is less than surplus continue, otherwise, we will exit current loop level.
             if(cost <= surplus):
                 # repeat down to the bottom
@@ -1186,7 +1178,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 helmet_active = False
 
         # we now have a list of every item combination with stat values.           
-        results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score']).sort_values(by=['prim_score','trait3_score','cost'], ascending=[False, False, True]).head()
+        results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head()
         pd.set_option('display.max_columns', 500)
         pd.set_option('display.width', 1000)
         print(results_df)
@@ -1257,17 +1249,16 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             items_df = items_df[~((items_df.exotic is True) & (items_df.itemHash.astype(int) != exotic_hash))]
             items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash.astype(int) != exotic_hash))]
             items_df = items_df.reset_index(drop=True)
-            print(len(items_df.index))
+            
         if power_cap != 0:
             items_df = items_df[items_df.power_cap >= power_cap]
             items_df = items_df.reset_index(drop=True)
-            print(len(items_df.index))
+            
         
         items = items_df.values.tolist()
-        print (items[0])
-        # for i, item in enumerate(items):
-        #     items[i][5] = item[5].tolist()
-        # ['6917529199136795552', 2, 28, 0, False, [14, 7, 12, 2, 18, 10], '4177973942']
+        
+        
+
         return items
 
 
