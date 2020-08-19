@@ -93,6 +93,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         manifest = api.get_simple("https://www.bungie.net/" + manifest_url)
         power_caps = api.get_simple("https://www.bungie.net/" + power_cap_url)
         print('Manifests Initialized')
+        print(power_caps)
 
 
     # this helper function generates the formatted message for the ~power command
