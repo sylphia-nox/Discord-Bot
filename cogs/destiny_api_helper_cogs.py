@@ -912,6 +912,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def optimize_armor(self, items, trait1, trait2, trait3, traction: bool = False, friends: bool = False):
         high_items, items, high_values = await self.get_max_stat_items(items, trait1, trait2)
         print(len(items))
+        print(items[0])
         #setup variables to work with, setting to 90 due to masterworking
         stat1_goal = 90
         stat2_goal = 90
@@ -1199,6 +1200,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         stat3 = 0
 
         # get stat values for best armor
+        print(items[0])
         for item in items:
             stat1 += item[0]
             stat2 += item[1] 
