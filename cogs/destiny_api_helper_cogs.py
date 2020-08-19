@@ -1021,6 +1021,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         temp_test_items = []
         for item in high_items:
             temp_test_items.append([item[5][trait1-1], item[5][trait2-1], item[5][trait3-1], 0])
+        print("temp_test_items")
+        print(temp_test_items[0])
 
         # if we get any piece that increases the tier by at least one we want to reduce surplus by the highest primary_score * 10 since we now know we can hit higher tiers.
         surplus = true_surplus # could set to true_surplus - 10 for a much stricter check process.
@@ -1039,6 +1041,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                 # add test item to test_items
                 test_items.append([row.trait1, row.trait2, row.trait3])
+                print(test_items[0])
 
                 # get deficiency values
                 primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(test_items, stat1_goal, stat2_goal, stat3_goal)
