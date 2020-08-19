@@ -1079,10 +1079,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         chests = calc_item_df[calc_item_df.itemSubType.astype(int) == 2].sort_values(by='cost', ascending=True)
         boots = calc_item_df[calc_item_df.itemSubType.astype(int) == 3].sort_values(by='cost', ascending=True)
 
-        print(f'Helmets length: {len(helmets.index)}')
+        print(f'Items: {len(calc_item_df.index)}')        
 
         surplus = surplus - (highest_primary_score *10)
-        
+        print(f'surplus: {surplus})
+
         temp_combo_list = []
         helmet_active = True
         helmet_i = -1
@@ -1099,7 +1100,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
             # calculate cost
             cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
-
+            print(f'testing helmet: {helmet_i+1} with cost: {cost}')
             # if cost is less than surplus continue, otherwise, we will exit current loop level.
             if(cost <= surplus):
                 # repeat down to the bottom
@@ -1142,7 +1143,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                         
                                         # store scores
                                         temp_combo_list.append([[temp_id[0][0], temp_id[1][0], temp_id[2][0], temp_id[3][0]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score])
-
+                                        print('added item')
                                         # loop succes, iterate
                                         boots_i += 1
                                     # exiting boots loop
