@@ -1249,7 +1249,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     
     async def filter_armor(self, items, exotic_hash: int = 0, power_cap: int = 0):
         items_df = pd.DataFrame(items, columns = ['id', 'itemType', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
-        items_df = items_df.reset_index(drop=True)
+
         if exotic_hash != 0:
             #  [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
             exotic_slot = items_df[items_df.itemHash.astype(int) == exotic_hash].iloc[0]['itemSubType']
@@ -1260,11 +1260,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             items_df = items_df[items_df.power_cap >= power_cap]
             items_df = items_df.reset_index(drop=True)
 
-        # items = items_df.values.tolist()
-        # for i, items in enumerate(items):
-        #     items[i][5] = items[i][5].tolist()
-        print(len(items_df.index))
-        return items_df.values.tolist()
+        items = items_df.values.tolist()
+        for i, items in enumerate(items):
+            items[i][5] = items[i][5].tolist()
+        
+        return items
 
 
 def setup(bot):
