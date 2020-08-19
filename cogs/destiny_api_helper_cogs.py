@@ -1353,7 +1353,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             final_stats_message += f'{trait_names[traits[1]-1]}: {stat2_final}\n'
             final_stats_message += f'{trait_names[traits[2]-1]}: {stat3_final}\n'
 
-            embed.add_field(name=f'Armor Set {i+1}:', value='\u200b', inline = False)
+            final_stat_tiers = stat1_final%10 + stat2_final%10 + stat3_final%10
+
+            embed.add_field(name=f'Armor Set {i+1}:', value=f'Total Tiers: {final_stat_tiers}', inline = False)
             embed.add_field(name=f'Armor Pieces:', value = names_message, inline = True)
             embed.add_field(name=f'Base Stats:', value = base_stats_message, inline = True)
             embed.add_field(name=f'Final Stats:', value = final_stats_message, inline = True)
