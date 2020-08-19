@@ -3,6 +3,7 @@
 from discord import ChannelType
 from discord.ext import commands
 from datetime import datetime
+import pandas as pd
 
 class destiny_api_cogs(commands.Cog, name='Destiny Commands'): 
     
@@ -130,25 +131,9 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
         armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token)
         
-        high_stat_armor = await destiny_helpers.get_max_stat_items(armor, trait1, trait2)
+        results_df = await destiny_helpers.optimize_armor(armor, trait1, trait2, trait3, traction = False, friends = False)
 
-        message = "Best Stats:\n"
-        stat1 = 0
-        stat2 = 0
-        for item in high_stat_armor:
-            message += f'{item[5]}\n'
-            stat1 += item[5][trait1-1]
-            stat2 += item[5][trait2-1] 
-        message += f'Trait 1 tier: {int(stat1/10)} Extra points: {stat1%10}'
-        message += f'Trait 2 tier: {int(stat2/10)} Extra points: {stat2%10}'
-
-        # highest_roll = 0
-        # for piece in armor:
-        #     total_stat = sum(piece[5])
-        #     if total_stat > highest_roll:
-        #         highest_roll = total_stat
-
-        await ctx.message.channel.send(message)
+        await ctx.message.channel.send(results_df)
 
 def setup(bot):
     bot.add_cog(destiny_api_cogs(bot))
