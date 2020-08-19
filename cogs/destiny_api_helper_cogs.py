@@ -913,7 +913,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def optimize_armor(self, items, trait1, trait2, trait3, traction: bool = False, friends: bool = False):
         high_items, items, high_values = await self.get_max_stat_items(items, trait1, trait2)
         print(len(items))
-        print(items[0])
+        print(high_items[0])
     
         #setup variables to work with, setting to 90 due to masterworking
         stat1_goal = 90
@@ -1254,8 +1254,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         if exotic_hash != 0:
             #  [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
             exotic_slot = items_df[items_df.itemHash.astype(int) == exotic_hash].iloc[0]['itemSubType']
-            items_df = items_df[~((items_df.exotic is True) & (items_df.itemHash != exotic_hash))]
-            items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash != exotic_hash))]
+            items_df = items_df[~((items_df.exotic is True) & (items_df.itemHash.astype(int) != exotic_hash))]
+            items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash.astype(int) != exotic_hash))]
             items_df = items_df.reset_index(drop=True)
             print(len(items_df.index))
         if power_cap != 0:
