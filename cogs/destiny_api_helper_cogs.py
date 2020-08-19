@@ -12,7 +12,6 @@ import pandas as pd
 import base64
 from datetime import datetime, timedelta
 from dateutil.parser import parse
-from ast import literal_eval
 
 class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'): 
     
@@ -1261,10 +1260,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             items_df = items_df[items_df.power_cap >= power_cap]
             items_df = items_df.reset_index(drop=True)
 
-        items_df['item_stats'] = items_df.item_stats.apply(lambda x: x[1:-1].split(','))
         items = items_df.values.tolist()
         for i, item in enumerate(items):
-            items[i][5] = literal_eval(item[5])
+            items[i][5] = eval(item[5])
         
         return items
 
