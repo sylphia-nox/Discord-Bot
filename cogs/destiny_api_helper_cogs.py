@@ -1263,6 +1263,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             print(len(items_df.index))
         
         items = items_df.values.tolist()
+        print (items[0])
         # for i, item in enumerate(items):
         #     items[i][5] = item[5].tolist()
         # ['6917529199136795552', 2, 28, 0, False, [14, 7, 12, 2, 18, 10], '4177973942']
