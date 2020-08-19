@@ -1341,11 +1341,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             if friends:
                 mobility_boost += 20
             if mobility_boost > 0:
-                if traits[0] == 0:
+                if traits[0] == 1:
                     stat1_final += mobility_boost
-                elif traits[1] == 0:
+                elif traits[1] == 1:
                     stat2_final += mobility_boost
-                elif traits[2] == 0:
+                elif traits[2] == 1:
                     stat3_final += mobility_boost
 
             final_stats_message = ""
