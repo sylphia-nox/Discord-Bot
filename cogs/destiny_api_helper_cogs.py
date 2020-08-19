@@ -1256,11 +1256,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             items_df = items_df[~((items_df.exotic is True) & (items_df.itemHash != exotic_hash))]
             items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash != exotic_hash))]
             items_df = items_df.reset_index(drop=True)
-            print(len(items_df.length))
+            print(len(items_df.index))
         if power_cap != 0:
             items_df = items_df[items_df.power_cap >= power_cap]
             items_df = items_df.reset_index(drop=True)
-            print(len(items_df.length))
+            print(len(items_df.index))
         
         items = items_df.values.tolist()
         # for i, item in enumerate(items):
