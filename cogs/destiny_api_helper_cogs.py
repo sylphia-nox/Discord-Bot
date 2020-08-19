@@ -801,7 +801,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def parse_json_for_armor_info(self, json, items_list, class_type, armor_sockets):
         global manifest
         global power_caps
-        print(power_caps)
+        
 
         for item in json:
             itemHash = str(item['itemHash'])
@@ -815,15 +815,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 itemInstanceID = str(item['itemInstanceId'])
                 # run api call to get power cap
                 try:
-                    power_cap_hash = manifest[itemHash]['quality']['versions'][0]['powerCapHash']
-                    #print(power_cap_hash)
+                    power_cap_hash = str(manifest[itemHash]['quality']['versions'][0]['powerCapHash'])
                     power_cap = power_caps[power_cap_hash]['powerCap']
-                    #print(power_cap)
                     exotic = int(manifest[itemHash]['inventory']['tierType']) == 6
-                    #print(exotic)
                 except:
                     power_cap = 0
                     exotic = False
+                    print('error getting items')
 
                 item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
 
@@ -1258,9 +1256,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             items_df = items_df[~((items_df.exotic is True) & (items_df.itemHash != exotic_hash))]
             items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash != exotic_hash))]
             items_df = items_df.reset_index(drop=True)
+            print(len(items_df.length))
         if power_cap != 0:
             items_df = items_df[items_df.power_cap >= power_cap]
             items_df = items_df.reset_index(drop=True)
+            print(len(items_df.length))
         
         items = items_df.values.tolist()
         # for i, item in enumerate(items):
