@@ -1004,7 +1004,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         calc_item_df['trait3'] = calc_item_df.item_stats.str[trait3-1]
 
         # clear uneeded rows
-        calc_item_df.drop('item_stats', 'itemHash')
+        calc_item_df.drop(['item_stats', 'itemHash'], axis = 1)
 
         # create adjusted list of high_items with only the needed values
         temp_test_items = []
