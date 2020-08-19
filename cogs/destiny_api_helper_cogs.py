@@ -1172,7 +1172,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 helmet_active = False
 
         # we now have a list of every item combination with stat values.           
-        results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score']).sort_values(by=['primary_score','trait3_score','cost'], ascending=[False, False, True]).head()
+        results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score']).sort_values(by=['prim_score','trait3_score','cost'], ascending=[False, False, True]).head()
         return results_df
 
 
