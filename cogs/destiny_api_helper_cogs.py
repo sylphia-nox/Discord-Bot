@@ -1089,47 +1089,54 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         temp_combo_list = []
         helmet_active = True
-        helmet_i = -1
+        helmet_i = 0
         while helmet_active and helmet_i < len(helmets.index):
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
-            temp_stats = temp_test_items.copy()
-            temp_id = high_item_ids.copy()
-            # if value is -1 we want to use the default items, else, substitute item from lists
-            if(helmet_i != -1):
-                # assign stat values
-                temp_stats[0] = [helmets.iloc[helmet_i]['trait1'], helmets.iloc[helmet_i]['trait2'], helmets.iloc[helmet_i]['trait3'], helmets.iloc[helmet_i]['cost']]
-                # store id
-                temp_id[0] = helmets.iloc[helmet_i]['id']
+            temp_stats = [[],[],[],[]]
+            temp_costs = [0,0,0,0]
+            temp_id = []
+            
+            # assign stat values
+            temp_stats[0] = [helmets.iloc[helmet_i]['trait1'], helmets.iloc[helmet_i]['trait2'], helmets.iloc[helmet_i]['trait3']] 
+            temp_costs[0] = helmets.iloc[helmet_i]['cost']
+            # store id
+            temp_id[0] = helmets.iloc[helmet_i]['id']
 
             # calculate cost
-            cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
+            cost = sum(temp_costs)
             
             # if cost is less than surplus continue, otherwise, we will exit current loop level.
             if(cost <= surplus):
                 # repeat down to the bottom
                 arms_active = True
-                arms_i = -1
+                arms_i = 0
                 while arms_active and arms_i < len(arms.index):
-                    if(arms_i != -1):
-                        temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3'], arms.iloc[arms_i]['cost']]
-                        temp_id[1] = arms.iloc[arms_i]['id']
-                    cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
+                    
+                    temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3']]
+                    temp_costs[1] = arms.iloc[arms_i]['cost']
+                    temp_id[1] = arms.iloc[arms_i]['id']
+
+                    cost = sum(temp_costs)
                     if(cost <= surplus):
                         chest_active = True
-                        chest_i = -1
+                        chest_i = 0
                         while chest_active and chest_i < len(chests.index):
-                            if(chest_i != -1):
-                                temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3'], chests.iloc[chest_i]['cost']]
-                                temp_id[2] = chests.iloc[chest_i]['id']
-                            cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
+                            
+                            temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
+                            temp_costs[2] = chests.iloc[chest_i]['cost']
+                            temp_id[2] = chests.iloc[chest_i]['id']
+
+                            cost = sum(temp_costs)
                             if(cost <= surplus):
                                 boots_active = True
-                                boots_i = -1
+                                boots_i = 0
                                 while boots_active and boots_i < len(boots.index):
-                                    if(boots_i != -1):
-                                        temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3'], boots.iloc[boots_i]['cost']]
-                                        temp_id[3] = boots.iloc[boots_i]['id']
-                                    cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
+                                    
+                                    temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3']]
+                                    temp_costs[2] =  boots.iloc[boots_i]['cost']
+                                    temp_id[3] = boots.iloc[boots_i]['id']
+
+                                    cost = sum(temp_costs)
                                     if(cost <= surplus):
                                         # get raw scores
                                         primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
@@ -1153,24 +1160,21 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     else:
                                         boots_active = False
                                 # reset slot to default
-                                temp_stats[3] = temp_test_items[3].copy()
-                                temp_id[3] = high_item_ids[3]
+                                temp_costs[3] = 0
                                 # loop succes, iterate
                                 chest_i +=1
                             # exiting chest loop
                             else:
                                 chest_active = False
                         # reset slot to default
-                        temp_stats[2] = temp_test_items[2].copy()
-                        temp_id[2] = high_item_ids[2]
+                        temp_costs[2] = 0
                         # loop succes, iterate
                         arms_i +=1
                     # exiting arms loop
                     else:
                         arms_active = False
                 # reset slot to default
-                temp_stats[1] = temp_test_items[1].copy()
-                temp_id[1] = high_item_ids[1]
+                temp_costs[1] = 0
                 # loop succes, iterate
                 helmet_i += 1
             # exiting helmet loop
@@ -1183,7 +1187,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         pd.set_option('display.width', 1000)
         pd.set_option('display.max_colwidth', 150) 
         print(results_df.head(20))
-        return results_df
+        return results_df.head()
 
     # helper function to calculate scores input [trait1, trait2, trait3]
     async def calculate_scores(self, items, stat1_goal, stat2_goal, stat3_goal):
