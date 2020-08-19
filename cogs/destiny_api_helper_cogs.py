@@ -979,7 +979,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         item_df = item_df.drop(['itemType','power_cap','exotic'], axis=1)
 
         # adding column containing total value of primary stats and remove any columns with value of 0
-        item_df['desired_total'] = item_df.item_stats[trait1-1] + item_df.item_stats[trait2-1]
+        item_df['desired_total'] = item_df.item_stats.str[trait1-1] + item_df.item_stats.str[trait2-1]
 
         temp_item_df = item_df    
 
@@ -994,9 +994,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # current DF format = ['id', 'itemSubType', [item_stats], 'itemHash', 'desired_total', 'cost']
         # desired dF format = ['id', 'itemSubType', 'desired_total', 'cost', 'trai1', trait2', 'trait3', 'primary_score', 'trait3_score']
         calc_item_df = temp_item_df.copy()
-        calc_item_df['trait1'] = calc_item_df.item_stats[trait1-1]
-        calc_item_df['trait2'] = calc_item_df.item_stats[trait2-1]
-        calc_item_df['trait3'] = calc_item_df.item_stats[trait3-1]
+        calc_item_df['trait1'] = calc_item_df.item_stats.str[trait1-1]
+        calc_item_df['trait2'] = calc_item_df.item_stats.str[trait2-1]
+        calc_item_df['trait3'] = calc_item_df.item_stats.str[trait3-1]
 
         # clear uneeded rows
         calc_item_df.drop('item_stats', 'itemHash')
