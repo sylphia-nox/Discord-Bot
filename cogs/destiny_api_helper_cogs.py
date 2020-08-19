@@ -988,7 +988,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         for row in temp_item_df.itertuples(index=False):
             # calculate cost and append to list
             cost = high_values[row.itemSubType.astype(int)] - row.desired_total.astype(int)
-            print(f'Reference points: {high_values[row.itemSubType.astype(int)]}, DF points: {row.desired_total.astype(int)}, Cost: {cost}'')
+            print(f'Reference points: {high_values[row.itemSubType.astype(int)]}, DF points: {row.desired_total.astype(int)}, Cost: {cost}')
             costs.append(cost)
 
         temp_item_df['cost'] = costs
