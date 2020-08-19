@@ -120,7 +120,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
     
     # this command provides users with optimized gear to maximize stats.
     @commands.command(name = 'optimize', hidden = True)
-    async def optimize(self, ctx, character, trait1: str, trait2: str, trait3: str, traction: bool = False, friends: bool = False):
+    async def optimize(self, ctx, character, trait1 = 1, trait2 = 3, trait3 = 5, traction: bool = False, friends: bool = False):
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
         
@@ -134,7 +134,6 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         for piece in armor:
             total_stat = sum(piece[5])
             if total_stat > highest_roll:
-                await ctx.message.channel.send(piece[5])
                 highest_roll = total_stat
 
         await ctx.message.channel.send(highest_roll)

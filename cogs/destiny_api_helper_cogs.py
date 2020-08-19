@@ -828,11 +828,25 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         for socket in sockets:
             if "plugHash" in socket and (socket["isEnabled"] and not socket["isVisible"]):
                 intrinsic_sockets.append(socket["plugHash"])
+        # confirm we have 4 intrinsic plugs, helps avoid outliers like class items.
         if len(intrinsic_sockets) == 4:
+            # query DB to get plug info
             select = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(recovery,0) as `recovery`, IFNULL(resilience,0) as `resilience`, IFNULL(discipline,0) as `discipline`, IFNULL(intellect,0) as `intellect`, IFNULL(strength,0) as `strength` FROM plugs '
             where = f'WHERE hash = {intrinsic_sockets[0]} OR hash = {intrinsic_sockets[1]} OR hash = {intrinsic_sockets[2]} OR hash = {intrinsic_sockets[3]};'
             sql = select + where
             plugs = await helpers.query_db(sql)
+
+            # if we have dupe plugs the SQL will not return that so we need to add them in.
+            if intrinsic_sockets[0] == intrinsic_sockets[1]:
+                # I want to see if this is possible so adding in a print statement
+                print('Dupe plug found')
+                plugs.insert(0, plugs[0])
+            elif intrinsic_sockets[2] == intrinsic_sockets[3]:
+                # I want to see if this is possible so adding in a print statement
+                print('Dupe plug found')
+                plugs.insert(2, plugs[2])
+
+            # iterate through plugs to get total stat values
             for plug in plugs:
                 for i, stat in enumerate(plug):
                     stats[i] += int(stat)
