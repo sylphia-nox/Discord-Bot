@@ -1251,7 +1251,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         items_df = pd.DataFrame(items, columns = ['id', 'itemType', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
         if exotic_hash != 0:
             #  [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
-            exotic_slot = items_df[items_df.itemHash == exotic_hash].iloc[0]['itemSubType']
+            exotic_slot = items_df[items_df.itemHash.astype(int) == exotic_hash].iloc[0]['itemSubType']
             items_df = items_df[not (items_df.exotic is True and items_df.itemHash != exotic_hash)]
             items_df = items_df[not (items_df.itemSubType == exotic_slot and items_df.itemHash != exotic_hash)]
             items_df = items_df.reset_index(drop=True)
