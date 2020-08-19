@@ -1154,7 +1154,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                         boots_active = False
                                 # reset slot to default
                                 temp_stats[3] = temp_test_items[3].copy()
-                                temp_id[3] = high_item_ids[3].copy()
+                                temp_id[3] = high_item_ids[3]
                                 # loop succes, iterate
                                 chest_i +=1
                             # exiting chest loop
@@ -1162,7 +1162,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                 chest_active = False
                         # reset slot to default
                         temp_stats[2] = temp_test_items[2].copy()
-                        temp_id[2] = high_item_ids[2].copy()
+                        temp_id[2] = high_item_ids[2]
                         # loop succes, iterate
                         arms_i +=1
                     # exiting arms loop
@@ -1170,7 +1170,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         arms_active = False
                 # reset slot to default
                 temp_stats[1] = temp_test_items[1].copy()
-                temp_id[1] = high_item_ids[1].copy()
+                temp_id[1] = high_item_ids[1]
                 # loop succes, iterate
                 helmet_i += 1
             # exiting helmet loop
