@@ -1050,9 +1050,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                 if(primary_score < highest_primary_score):
                     highest_primary_score == primary_score
-                
-            # del temp_test_items to save resources
-            del temp_test_items
 
             
             calc_item_df['primary_score'] = primary_scores
@@ -1091,7 +1088,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         helmet_i = -1
         while helmet_active and helmet_i < len(helmets.index):
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
-            temp_stats = high_items.copy()
+            temp_stats = temp_test_items.copy()
             temp_id = high_item_ids.copy()
             # if value is -1 we want to use the default items, else, substitute item from lists
             if(helmet_i != -1):
