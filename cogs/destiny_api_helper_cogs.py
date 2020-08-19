@@ -1107,24 +1107,24 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 arms_i = -1
                 while arms_active and arms_i < len(arms.index):
                     if(arms_i != -1):
-                        temp_stats[1] = [helmets.iloc[arms_i]['trait1'], helmets.iloc[arms_i]['trait2'], helmets.iloc[arms_i]['trait3'], helmets.iloc[arms_i]['cost']]
-                        temp_id[1] = helmets.iloc[arms_i]['id']
+                        temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3'], arms.iloc[arms_i]['cost']]
+                        temp_id[1] = arms.iloc[arms_i]['id']
                     cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
                     if(cost <= surplus):
                         chest_active = True
                         chest_i = -1
                         while chest_active and chest_i < len(chests.index):
                             if(chest_i != -1):
-                                temp_stats[2] = [helmets.iloc[chest_i]['trait1'], helmets.iloc[chest_i]['trait2'], helmets.iloc[chest_i]['trait3'], helmets.iloc[chest_i]['cost']]
-                                temp_id[2] = helmets.iloc[chest_i]['id']
+                                temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3'], chests.iloc[chest_i]['cost']]
+                                temp_id[2] = chests.iloc[chest_i]['id']
                             cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
                             if(cost <= surplus):
                                 boots_active = True
                                 boots_i = -1
                                 while boots_active and boots_i < len(boots.index):
                                     if(boots_i != -1):
-                                        temp_stats[3] = [helmets.iloc[boots_i]['trait1'], helmets.iloc[boots_i]['trait2'], helmets.iloc[boots_i]['trait3'], helmets.iloc[boots_i]['cost']]
-                                        temp_id[3] = helmets.iloc[boots_i]['id']
+                                        temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3'], boots.iloc[boots_i]['cost']]
+                                        temp_id[3] = boots.iloc[boots_i]['id']
                                     cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
                                     if(cost <= surplus):
                                         # get raw scores
@@ -1141,7 +1141,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                             trait3_score -= 1
                                         
                                         # store scores
-                                        temp_combo_list.append([[temp_id[0][0], temp_id[1][0], temp_id[2][0], temp_id[3][0]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score])
+                                        temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score])
                                         print('added item')
                                         # loop succes, iterate
                                         boots_i += 1
