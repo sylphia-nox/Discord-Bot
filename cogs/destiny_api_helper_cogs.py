@@ -987,7 +987,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         costs = []
         for row in temp_item_df.itertuples(index=False):
             # calculate cost and append to list
-            costs.append(high_values[int(row.itemSubType)] - int(row['desired_total']))
+            costs.append(high_values[int(row.itemSubType)] - int(row.desired_total))
 
         temp_item_df['cost'] = costs
 
@@ -1024,7 +1024,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             for row in calc_item_df.itertuples(index=False):
                 # create temp copy of high_items for manipulation
                 test_items = temp_test_items.copy()
-                test_items.remove(row.itemSubType)
+                test_items.remove(int(row.itemSubType))
 
                 # add test item to test_items
                 test_items.append([row.trait1, row.trait2, row.trait3])
