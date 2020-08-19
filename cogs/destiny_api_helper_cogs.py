@@ -1181,6 +1181,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head()
         pd.set_option('display.max_columns', 500)
         pd.set_option('display.width', 1000)
+        pd.set_option('display.max_colwidth', 150) 
         print(results_df)
         return results_df
 
