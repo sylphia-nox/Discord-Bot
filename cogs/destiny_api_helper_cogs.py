@@ -1272,7 +1272,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return items
 
     # this helper function generates the formatted message for the ~power command
-    async def format_armor_message(self, combo_df, player_char_info, steam_name, traits):
+    async def format_armor_message(self, combo_df, player_char_info, steam_name, traits, traction, friends):
         global manifest
 
         class_type = player_char_info[2]
@@ -1329,11 +1329,34 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             base_stats_message = ""
             base_stats_message += f'{trait_names[traits[0]-1]}: ' + str(combo_df.iloc[i]['stat1']) + '\n'
             base_stats_message += f'{trait_names[traits[1]-1]}: ' + str(combo_df.iloc[i]['stat2']) + '\n' 
-            base_stats_message += f'{trait_names[traits[2]-1]}: ' + str(combo_df.iloc[i]['stat3']) + '\n'   
+            base_stats_message += f'{trait_names[traits[2]-1]}: ' + str(combo_df.iloc[i]['stat3']) + '\n'  
+
+            stat1_final = combo_df.iloc[i]['stat1'] + 10
+            stat2_final = combo_df.iloc[i]['stat2'] + 10
+            stat3_final = combo_df.iloc[i]['stat3'] + 10
+
+            mobility_boost = 0
+            if traction:
+                mobility_boost += 5
+            if friends:
+                mobility_boost += 20
+            if mobility_boost > 0:
+                if traits[0] == 0:
+                    stat1_final += mobility_boost
+                elif traits[1] == 0:
+                    stat2_final += mobility_boost
+                elif traits[2] == 0:
+                    stat3_final += mobility_boost
+
+            final_stats_message = ""
+            final_stats_message += f'{trait_names[traits[0]-1]}: {stat1_final}\n'
+            final_stats_message += f'{trait_names[traits[1]-1]}: {stat2_final}\n'
+            final_stats_message += f'{trait_names[traits[2]-1]}: {stat3_final}\n'
 
             embed.add_field(name=f'Armor Set {i+1}:', value='\u200b', inline = False)
             embed.add_field(name=f'Armor Pieces:', value = names_message, inline = True)
             embed.add_field(name=f'Base Stats:', value = base_stats_message, inline = True)
+            embed.add_field(name=f'Final Stats:', value = final_stats_message, inline = True)
 
         return embed
 

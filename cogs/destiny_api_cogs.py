@@ -137,7 +137,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # get dataframe of optimized items
         results_df = await destiny_helpers.optimize_armor(armor, trait1, trait2, trait3, traction, friends)
 
-        embed = await destiny_helpers.format_armor_message(results_df, player_char_info, player_info[2], [trait1, trait2, trait3])
+        embed = await destiny_helpers.format_armor_message(results_df, player_char_info, player_info[2], [trait1, trait2, trait3], traction, friends)
 
         await ctx.send(embed = embed)
 
