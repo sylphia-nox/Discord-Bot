@@ -1011,7 +1011,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         calc_item_df['trait3'] = calc_item_df.item_stats.str[trait3-1]
 
         # clear uneeded rows
-        calc_item_df.drop(['item_stats', 'itemHash'], axis = 1)
+        calc_item_df.drop('item_stats', axis = 1)
 
         # create adjusted list of high_items with only the needed values
         temp_test_items = []
@@ -1095,10 +1095,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             temp_stats = [[],[],[],[]]
             temp_costs = [0,0,0,0]
             temp_id = [0,0,0,0]
+            temp_hashes = [0,0,0,0]
             
             # assign stat values
             temp_stats[0] = [helmets.iloc[helmet_i]['trait1'], helmets.iloc[helmet_i]['trait2'], helmets.iloc[helmet_i]['trait3']] 
             temp_costs[0] = helmets.iloc[helmet_i]['cost']
+            temp_hashes[0] = helmets.iloc[helmet_i]['itemHash']
             # store id
             temp_id[0] = helmets.iloc[helmet_i]['id']
 
@@ -1114,6 +1116,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     
                     temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3']]
                     temp_costs[1] = arms.iloc[arms_i]['cost']
+                    temp_hashes[1] = arms.iloc[arms_i]['itemHash']
                     temp_id[1] = arms.iloc[arms_i]['id']
 
                     cost = sum(temp_costs)
@@ -1124,6 +1127,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                             
                             temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
                             temp_costs[2] = chests.iloc[chest_i]['cost']
+                            temp_hashes[2] = chests.iloc[chest_i]['itemHash']
                             temp_id[2] = chests.iloc[chest_i]['id']
 
                             cost = sum(temp_costs)
@@ -1134,6 +1138,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     
                                     temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3']]
                                     temp_costs[2] =  boots.iloc[boots_i]['cost']
+                                    temp_hashes[3] = boots.iloc[boots_i]['itemHash']
                                     temp_id[3] = boots.iloc[boots_i]['id']
 
                                     cost = sum(temp_costs)
@@ -1152,7 +1157,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                             trait3_score -= 1
                                         
                                         # store scores
-                                        temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score])
+                                        temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
                                         
                                         # loop succes, iterate
                                         boots_i += 1
@@ -1182,7 +1187,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 helmet_active = False
 
         # we now have a list of every item combination with stat values.           
-        results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head(20)
+        results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score', 'hashes']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head(20)
         pd.set_option('display.max_columns', 500)
         pd.set_option('display.width', 1000)
         pd.set_option('display.max_colwidth', 150) 
@@ -1266,6 +1271,71 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         return items
 
+    # this helper function generates the formatted message for the ~power command
+    async def format_armor_message(self, combo_df, player_char_info, steam_name, traits):
+        global manifest
+
+        class_type = player_char_info[2]
+        emblem = player_char_info[5]
+
+        # get class string
+        if(class_type == 0):
+            class_name = "Titan"
+        elif(class_type == 1):
+            class_name = "Hunter"
+        else:
+            class_name = "Warlock"
+
+        trait_names = ["Mob", "Res", "Rec", "Dis", "Int", "Str"]
+
+        names = []
+        icons = []
+        # get item names for each item in combo
+        # df format: [[ids], 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score', [hashes]]
+        for row in combo_df.itertuples(index=False):
+            # calculate cost and append to list
+            hashes = row.hashes
+            subnames = []
+            subicons = []
+            for hash in hashes:
+                name = manifest[str(hash)]['displayProperties']['name']
+                icon = manifest[str(hash)]['displayProperties']['icon']
+                subnames.append(name)
+                subicons.append(icon)
+            names.append(subnames)
+            icons.append(subicons)
+
+        combo_df['names'] = names
+        combo_df['icons'] = icons
+
+        
+        # create embed
+        embed = discord.Embed(title=f'***{steam_name}: {class_name}***', colour=discord.Colour(0x0033cc))
+
+        # set image to player emblem
+        embed.set_thumbnail(url=emblem)
+
+        # set embed footer
+        embed.set_footer(text="Sundance | created by Michael Scarfi", icon_url="https://drive.google.com/uc?export=view&id=1GRYmllW4Ig9LvsNldcOyU3rpbZPb6fD_")
+
+        combos = len(combo_df.index)%6
+
+        # create message table of armor sets. 
+        for i in range(combos):
+            names_message = ""
+            for name in combo_df.iloc[i]['names']:
+                names_message += f'{name}\n'
+
+            base_stats_message = ""
+            base_stats_message += f'{trait_names[traits[0]-1]}: ' + str(combo_df.iloc[i]['stat1']) + '\n'
+            base_stats_message += f'{trait_names[traits[1]-1]}: ' + str(combo_df.iloc[i]['stat2']) + '\n' 
+            base_stats_message += f'{trait_names[traits[2]-1]}: ' + str(combo_df.iloc[i]['stat3']) + '\n'   
+
+            embed.add_field(name=f'Armor Set {i+1}:', value='\u200b', inline = False)
+            embed.add_field(name=f'Armor Pieces:', value = names_message, inline = True)
+            embed.add_field(name=f'Base Stats:', value = base_stats_message, inline = True)
+
+        return embed
 
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))
