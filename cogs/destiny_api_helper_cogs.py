@@ -83,12 +83,20 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     # helper function to initialize manifest file when cog is loaded, non async version of get_manifest
     def initialize_manifest(self):
         global manifest
+        global power_caps
+
         full_manifest = api.get_sync("/Destiny2/Manifest/")
         manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
+        power_cap_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyPowerCapDefinition']
         del full_manifest
 
         manifest = api.get_simple("https://www.bungie.net/" + manifest_url)
-        print('Manifest Initialized')
+        power_caps = api.get_simple("https://www.bungie.net/" + power_cap_url)
+        print('Manifests Initialized')
+        
+        del full_manifest
+
+        
 
     # this helper function generates the formatted message for the ~power command
     async def format_power_message(self, high_items, player_char_info, steam_name):
@@ -795,6 +803,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     # helper function to parse JSON, returns items[] that can be equiped by class_type
     async def parse_json_for_armor_info(self, json, items_list, class_type, armor_sockets):
         global manifest
+        global power_caps
+
 
         for item in json:
             itemHash = str(item['itemHash'])
@@ -808,7 +818,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 itemInstanceID = str(item['itemInstanceId'])
                 # run api call to get power cap
                 try:
-                    power_cap = manifest[itemHash]['quality']['versions'][0]['powerCapHash']
+                    power_cap_hash = manifest[itemHash]['quality']['versions'][0]['powerCapHash']
+                    power_cap = int(power_caps[power_cap_hash]['powerCap'])
                     exotic = int(manifest[itemHash]['inventory']['tierType']) == 6
                 except:
                     power_cap = 0
@@ -1239,11 +1250,19 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return true_surplus
 
     
+    async def filter_armor(self, items, exotic_hash: int = 0, power_cap: int = 0):
+        items_df = pd.DataFrame(items, columns = ['id', 'itemType', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
+        if exotic_hash != 0:
+            #  [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
+            exotic_slot = items_df[items_df.itemHash == exotic_hash].iloc[0]['itemSubType']
+            items_df = items_df[not (items_df.exotic is True and items_df.itemHash != exotic_hash)]
+            items_df = items_df[not (items_df.itemSubType == exotic_slot and items_df.itemHash != exotic_hash)]
+            items_df = items_df.reset_index(drop=True)
+        if power_cap != 0:
+            items_df = items_df[items_df.power_cap >= power_cap]
+            items_df = items_df.reset_index(drop=True)
 
-        
-
-        
-
+        return items_df.values.tolist()
 
 
 def setup(bot):

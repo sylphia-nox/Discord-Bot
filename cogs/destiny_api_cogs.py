@@ -131,6 +131,10 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
         armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token)
         
+        # filter list to use specific exotic and for sunsetting.
+        armor = await destiny_helpers.filter_armor(armor, 2600992433, 1060)
+
+        # get dataframe of optimized items
         results_df = await destiny_helpers.optimize_armor(armor, trait1, trait2, trait3, traction, friends)
 
         await ctx.message.channel.send(results_df)
