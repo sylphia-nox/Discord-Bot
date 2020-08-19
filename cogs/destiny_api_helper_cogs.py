@@ -1009,7 +1009,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # create adjusted list of high_items with only the needed values
         temp_test_items = []
         for item in high_items:
-            temp_test_items.append([item[5][trait1-1], item[5][trait2-1], item[5][trait3-1]], 0)
+            temp_test_items.append([item[5][trait1-1], item[5][trait2-1], item[5][trait3-1], 0])
 
         # if we get any piece that increases the tier by at least one we want to reduce surplus by the highest primary_score * 10 since we now know we can hit higher tiers.
         surplus = true_surplus # could set to true_surplus - 10 for a much stricter check process.
