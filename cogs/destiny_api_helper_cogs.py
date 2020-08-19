@@ -1082,7 +1082,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         print(f'Items: {len(calc_item_df.index)}')        
 
         surplus = surplus - (highest_primary_score *10)
-        print(f'surplus: {surplus})
+        print(f'surplus: {surplus}')
 
         temp_combo_list = []
         helmet_active = True
