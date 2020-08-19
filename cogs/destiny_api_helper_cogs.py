@@ -1175,8 +1175,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         # we now have a list of every item combination with stat values.           
         results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score']).sort_values(by=['prim_score','trait3_score','cost'], ascending=[False, False, True]).head()
-        results_df.set_option('display.max_columns', 500)
-        results_df.set_option('display.width', 1000)
+        pd.set_option('display.max_columns', 500)
+        pd.set_option('display.width', 1000)
         print(results_df)
         return results_df
 
