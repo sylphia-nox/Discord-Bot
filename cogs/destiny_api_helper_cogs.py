@@ -816,7 +816,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                 item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
 
-                items_list.append([itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats])
+                items_list.append([itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash])
 
         del json
         return items_list
@@ -852,6 +852,40 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     stats[i] += int(stat)
 
         return stats
+
+    # this function returns the armor with the highest stats in the 2 primary stat columns.
+    async def get_max_stat_items(self, items, stat1, stat2):
+        high_items = [[],[],[],[]]
+        high_values = [0,0,0,0]
+        # parse entire list, for each type of item, if current item has a higher power level, update power level to new level.
+        for item in items:
+            # if helmet
+            if item[2] == 26:
+                value = item[5][stat1-1] + item[5][stat2-1]
+                if  value > high_values[0]:
+                    high_values[0] = value
+                    high_items[0] = item
+            # if gauntlets
+            elif item[2] == 27:
+                value = item[5][stat1-1] + item[5][stat2-1]
+                if  value > high_values[1]:
+                    high_values[1] = value
+                    high_items[1] = item
+            # if chest
+            elif item[2] == 28:
+                value = item[5][stat1-1] + item[5][stat2-1]
+                if  value > high_values[2]:
+                    high_values[2] = value
+                    high_items[2] = item
+            # if legs
+            elif item[2] == 29:
+                value = item[5][stat1-1] + item[5][stat2-1]
+                if  value > high_values[3]:
+                    high_values[3] = value
+                    high_items[3] = item
+
+        # return list of best items
+        return high_items
 
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))
