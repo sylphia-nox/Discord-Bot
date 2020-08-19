@@ -1261,9 +1261,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             items_df = items_df.reset_index(drop=True)
 
         items = items_df.values.tolist()
-        for i, item in enumerate(items):
-            items[i][5] = item[5].tolist()
-        
+        # for i, item in enumerate(items):
+        #     items[i][5] = item[5].tolist()
+        print (items)
         return items
 
 
