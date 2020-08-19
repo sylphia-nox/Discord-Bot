@@ -816,12 +816,14 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # run api call to get power cap
                 try:
                     power_cap_hash = manifest[itemHash]['quality']['versions'][0]['powerCapHash']
+                    print(power_cap_hash)
                     power_cap = power_caps[power_cap_hash]['powerCap']
+                    print(power_cap)
                     exotic = int(manifest[itemHash]['inventory']['tierType']) == 6
+                    print(exotic)
                 except:
                     power_cap = 0
                     exotic = False
-                    raise
 
                 item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
 

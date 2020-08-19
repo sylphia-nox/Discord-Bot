@@ -42,7 +42,7 @@ class error_handling_cogs(commands.Cog):
         if isinstance(error, errors.Error):
             await ctx.message.author.create_dm()
             await ctx.message.author.dm_channel.send(f'{str(error)}')
-            print(f'Custom error: {str(error)}')
+            print(f'Error: {str(error)}')
 
         #checking if user tried to run server commands through DMs
         elif isinstance(error, commands.NoPrivateMessage):
@@ -86,9 +86,9 @@ class error_handling_cogs(commands.Cog):
             #grab time for error message
             now = datetime.now().time()
 
-            #send error message to server admin
+            #send error message to bot admin
             await admin.create_dm()
-            await admin.dm_channel.send(f'Command error occured at {now}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {error.__traceback__}\nError: ' + '{}: {}'.format(type(error).__name__, error))
+            await admin.dm_channel.send(f'Command error occured at {now}\nServer: {ctx.guild.name}\nChannel: {ctx.message.channel.name}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {error.__traceback__}\nError: ' + '{}: {}'.format(type(error).__name__, error))
 
             # delete command message to keep channels clean if not a dm and bot has permissions
             if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
