@@ -1326,15 +1326,18 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             for name in combo_df.iloc[i]['names']:
                 names_message += f'{name}\n'
 
+            # create message showing base stat values
             base_stats_message = ""
             base_stats_message += f'{trait_names[traits[0]-1]}: ' + str(combo_df.iloc[i]['stat1']) + '\n'
             base_stats_message += f'{trait_names[traits[1]-1]}: ' + str(combo_df.iloc[i]['stat2']) + '\n' 
             base_stats_message += f'{trait_names[traits[2]-1]}: ' + str(combo_df.iloc[i]['stat3']) + '\n'  
 
+            # calculate stat values after masterworking
             stat1_final = combo_df.iloc[i]['stat1'] + 10
             stat2_final = combo_df.iloc[i]['stat2'] + 10
             stat3_final = combo_df.iloc[i]['stat3'] + 10
 
+            # if we are assuming certain mods are applied we need to add those to the total
             mobility_boost = 0
             if traction:
                 mobility_boost += 5
@@ -1348,13 +1351,19 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 elif traits[2] == 1:
                     stat3_final += mobility_boost
 
+            # create message for final stats
             final_stats_message = ""
             final_stats_message += f'{trait_names[traits[0]-1]}: {stat1_final}\n'
             final_stats_message += f'{trait_names[traits[1]-1]}: {stat2_final}\n'
             final_stats_message += f'{trait_names[traits[2]-1]}: {stat3_final}\n'
 
-            final_stat_tiers = (stat1_final%10) + (stat2_final%10) + (stat3_final%10)
+            # caclulate additional values
+            extra_points = (stat1_final%10) + (stat2_final%10) + (stat3_final%10)
+            final_stat_tiers = (int(stat1_final/10)) + (int(stat2_final/10)) + (int(stat3_final/10))
 
+            base_stats_message += f'Extra Points: {extra_points}'
+
+            # add to embed
             embed.add_field(name=f'Armor Set {i+1}:', value=f'Total Tiers: {final_stat_tiers}', inline = False)
             embed.add_field(name=f'Armor Pieces:', value = names_message, inline = True)
             embed.add_field(name=f'Base Stats:', value = base_stats_message, inline = True)
