@@ -1260,7 +1260,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             items_df = items_df[items_df.power_cap >= power_cap]
             items_df = items_df.reset_index(drop=True)
 
-        return items_df.values.tolist()
+        items = items_df.values.tolist()
+        for i, items in enumerate(items):
+            items[i][5] = items[i][5].tolist()
+
+        return items
 
 
 def setup(bot):
