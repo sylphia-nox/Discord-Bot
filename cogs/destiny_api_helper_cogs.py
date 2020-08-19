@@ -816,11 +816,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # run api call to get power cap
                 try:
                     power_cap_hash = manifest[itemHash]['quality']['versions'][0]['powerCapHash']
-                    power_cap = int(power_caps[power_cap_hash]['powerCap'])
+                    power_cap = power_caps[power_cap_hash]['powerCap']
                     exotic = int(manifest[itemHash]['inventory']['tierType']) == 6
                 except:
                     power_cap = 0
                     exotic = False
+                    raise
 
                 item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
 
@@ -912,7 +913,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def optimize_armor(self, items, trait1, trait2, trait3, traction: bool = False, friends: bool = False):
         high_items, items, high_values = await self.get_max_stat_items(items, trait1, trait2)
         print(len(items))
-        print(items[0])
+    
         #setup variables to work with, setting to 90 due to masterworking
         stat1_goal = 90
         stat2_goal = 90
@@ -1138,8 +1139,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     cost = temp_stats[0][3] + temp_stats[1][3] + temp_stats[2][3] + temp_stats[3][3]
                                     if(cost <= surplus):
                                         # get raw scores
-                                        print("printing temp stats")
-                                        print(temp_stats)
                                         primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
 
                                         # calculate scores
@@ -1154,7 +1153,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                         
                                         # store scores
                                         temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score])
-                                        #print('added item')
+                                        
                                         # loop succes, iterate
                                         boots_i += 1
                                     # exiting boots loop
@@ -1203,7 +1202,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         stat3 = 0
 
         # get stat values for best armor
-        print(items[0])
         for item in items:
             stat1 += item[0]
             stat2 += item[1] 
