@@ -1094,7 +1094,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
             temp_stats = [[],[],[],[]]
             temp_costs = [0,0,0,0]
-            temp_id = []
+            temp_id = [0,0,0,0]
             
             # assign stat values
             temp_stats[0] = [helmets.iloc[helmet_i]['trait1'], helmets.iloc[helmet_i]['trait2'], helmets.iloc[helmet_i]['trait3']] 
