@@ -981,7 +981,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         ###
 
         # removing uneeded columns
-        item_df = item_df.drop(['itemType','power_cap','exotic'], axis=1)
+        item_df = item_df.drop(['itemType','power_cap'], axis=1)
 
         # adding column containing total value of primary stats and remove any columns with value of 0
         item_df['desired_total'] = item_df.item_stats.str[trait1-1] + item_df.item_stats.str[trait2-1]
@@ -1096,16 +1096,19 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             temp_costs = [0,0,0,0]
             temp_id = [0,0,0,0]
             temp_hashes = [0,0,0,0]
+            is_exotic = [0,0,0,0]
             
             # assign stat values
             temp_stats[0] = [helmets.iloc[helmet_i]['trait1'], helmets.iloc[helmet_i]['trait2'], helmets.iloc[helmet_i]['trait3']] 
             temp_costs[0] = helmets.iloc[helmet_i]['cost']
             temp_hashes[0] = helmets.iloc[helmet_i]['itemHash']
+            is_exotic[0] = 1 if helmets.iloc[helmet_i]['exotic'].astype(bool) else 0
             # store id
             temp_id[0] = helmets.iloc[helmet_i]['id']
 
             # calculate cost
             cost = sum(temp_costs)
+            
             
             # if cost is less than surplus continue, otherwise, we will exit current loop level.
             if(cost <= surplus):
@@ -1118,8 +1121,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     temp_costs[1] = arms.iloc[arms_i]['cost']
                     temp_hashes[1] = arms.iloc[arms_i]['itemHash']
                     temp_id[1] = arms.iloc[arms_i]['id']
+                    is_exotic[1] = 1 if arms.iloc[arms_i]['exotic'].astype(bool) else 0
 
                     cost = sum(temp_costs)
+                    
                     if(cost <= surplus):
                         chest_active = True
                         chest_i = 0
@@ -1129,6 +1134,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                             temp_costs[2] = chests.iloc[chest_i]['cost']
                             temp_hashes[2] = chests.iloc[chest_i]['itemHash']
                             temp_id[2] = chests.iloc[chest_i]['id']
+                            is_exotic[2] = 1 if chests.iloc[chest_i]['exotic'].astype(bool) else 0
 
                             cost = sum(temp_costs)
                             if(cost <= surplus):
@@ -1140,27 +1146,31 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     temp_costs[2] =  boots.iloc[boots_i]['cost']
                                     temp_hashes[3] = boots.iloc[boots_i]['itemHash']
                                     temp_id[3] = boots.iloc[boots_i]['id']
+                                    is_exotic[3] = 1 if boots.iloc[boots_i]['exotic'].astype(bool) else 0
 
                                     cost = sum(temp_costs)
                                     if(cost <= surplus):
-                                        # get raw scores
-                                        primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
+                                        # check the loadout is valid
+                                        if(sum(is_exotic) <= 1):
+                                            # get raw scores
+                                            primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
 
-                                        # calculate scores
-                                        primary_score = neg_primary_tiers - primary_deficiency
-                                        trait3_score = neg_trait3_tiers - tier3_deficiency
+                                            # calculate scores
+                                            primary_score = neg_primary_tiers - primary_deficiency
+                                            trait3_score = neg_trait3_tiers - tier3_deficiency
 
-                                        # check if armor is just a direct decrease in stat values
-                                        if temp_stat1 < stat1 and temp_stat2 < stat2:
-                                            primary_score -= 1
-                                        if temp_stat3 < stat3:
-                                            trait3_score -= 1
-                                        
-                                        # store scores
-                                        temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
-                                        
-                                        # loop succes, iterate
-                                        boots_i += 1
+                                            # check if armor is just a direct decrease in stat values
+                                            if temp_stat1 < stat1 and temp_stat2 < stat2:
+                                                primary_score -= 1
+                                            if temp_stat3 < stat3:
+                                                trait3_score -= 1
+                                            
+                                            
+                                            # store scores
+                                            temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
+                                            
+                                            # loop succes, iterate
+                                            boots_i += 1
                                     # exiting boots loop
                                     else:
                                         boots_active = False
