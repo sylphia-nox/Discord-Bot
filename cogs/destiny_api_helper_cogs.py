@@ -786,7 +786,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 items = await self.parse_json_for_armor_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type, armor_sockets)
                 items = await self.parse_json_for_armor_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type, armor_sockets)
         except KeyError:
-            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
+            raise errors.PrivacyOnException("There was an error accessing your items, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
         
 
         # deleting variable to save memory usage.
@@ -833,7 +833,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         intrinsic_sockets = []
         stats = [0,0,0,0,0,0]
         for socket in sockets:
-            if "plugHash" in socket and (socket["isEnabled"] and not socket["isVisible"]):
+            if "plugHash" in socket and (socket.get('isEnabled', False) and not socket.get('isVisible', True)):
                 intrinsic_sockets.append(socket["plugHash"])
         # confirm we have 4 intrinsic plugs, helps avoid outliers like class items.
         if len(intrinsic_sockets) == 4:
