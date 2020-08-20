@@ -1323,8 +1323,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # create message table of armor sets. 
         for i in range(combos):
             names_message = ""
-            for name in combo_df.iloc[i]['names']:
-                names_message += f'{name}\n'
+            for ii in range(4):
+                name = combo_df.iloc[i]['names'][ii]:
+                Id = combo_df.iloc[i]['ids'][ii]:
+                names_message += f'{name} ({Id})\n'
 
             # create message showing base stat values
             base_stats_message = ""
