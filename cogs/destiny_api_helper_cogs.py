@@ -1327,8 +1327,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 names_message += f'{name}\n'
 
             DIM_search = "`"
-            for i, Id in enumerate(combo_df.iloc[i]['ids']):
-                if i != 3:
+            for index, Id in enumerate(combo_df.iloc[i]['ids']):
+                if index != 3:
                     DIM_search += f'id:{Id} or '
                 else:
                     DIM_search += f'id:{Id}`'
