@@ -1399,12 +1399,14 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # add name and hash
                 exotics.append([name, item[6]])
 
-        exotics_df = pd.DataFrame(exotics, columns = ['name', 'hash'])
+        exotics.append(["Any", 0])
+        exotics_df = pd.DataFrame(exotics, columns = ['name', 'itemHash'])
         # sorting by name 
         exotics_df.sort_values('name', inplace = True) 
   
         # dropping ALL duplicte values 
         exotics_df.drop_duplicates(subset ='name', keep = False, inplace = True) 
+        exotics_df = exotics_df.reset_index(drop=True)
 
         names = exotics_df.name
 
@@ -1417,9 +1419,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
             # checking to confirm the response is valid
             if int(msg.content) <= len(names):
-                exotic_hash = exotics_df.iloc[int(msg.content)-1][hash]
-            elif (int(msg.content) == len(names)+1):
-                exotic_hash = 0
+                exotic_hash = exotics_df.iloc[int(msg.content)-1]['itemHash']
             else:
                 await ctx.message.channel.send(f'Please choose from the list.')
 
