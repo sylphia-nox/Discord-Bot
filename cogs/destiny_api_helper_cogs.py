@@ -1323,10 +1323,15 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # create message table of armor sets. 
         for i in range(combos):
             names_message = ""
-            for ii in range(4):
-                name = combo_df.iloc[i]['names'][ii]:
-                Id = combo_df.iloc[i]['ids'][ii]:
-                names_message += f'{name} ({Id})\n'
+            for name in combo_df.iloc[i]['names']:
+                names_message += f'{name}\n'
+
+            DIM_search = ""
+            for i, Id in enumerate(combo_df.iloc[i]['ids']):
+                if i != 3:
+                    DIM_search += f'id={Id} or'
+                else:
+                    DIM_search += f'id={Id}'
 
             # create message showing base stat values
             base_stats_message = ""
@@ -1366,7 +1371,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             base_stats_message += f'Extra Points: {extra_points}'
 
             # add to embed
-            embed.add_field(name=f'Armor Set {i+1}:', value=f'Total Tiers: {final_stat_tiers}', inline = False)
+            embed.add_field(name=f'Armor Set {i+1}:', value=f'Total Tiers: {final_stat_tiers}\nDIM Search String: {DIM_search}', inline = False)
             embed.add_field(name=f'Armor Pieces:', value = names_message, inline = True)
             embed.add_field(name=f'Base Stats:', value = base_stats_message, inline = True)
             embed.add_field(name=f'Final Stats:', value = final_stats_message, inline = True)
