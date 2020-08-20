@@ -808,7 +808,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 itemSubType = manifest[itemHash]['itemSubType']
 
                 # now that we know this is an instanced item, get its ID to get the items power level
-                itemInstanceID = str(item.get('itemInstanceId'), 0)
+                itemInstanceID = str(item.get('itemInstanceId', 0))
                 # run api call to get power cap
                 try:
                     power_cap_hash = str(manifest[itemHash]['quality']['versions'][0]['powerCapHash'])
