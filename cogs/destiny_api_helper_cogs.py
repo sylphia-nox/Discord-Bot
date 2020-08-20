@@ -1067,12 +1067,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 calc_item_df = calc_item_df[calc_item_df.primary_score >= 0]
                 calc_item_df = calc_item_df.reset_index(drop=True)
             # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
-            #if(len(temp_item_df.index) > 75):
-            #    temp_item_df = temp_item_df[temp_item_df.cost <= (surplus)]
-            #    temp_item_df = temp_item_df.reset_index(drop=True)
-            if(len(calc_item_df.index) > 60):
-                calc_item_df = calc_item_df.sort_values(by=['primary_score','trait3_score','cost'], ascending=[False, False, True])
-                calc_item_df = calc_item_df.head(60)
+            if(len(temp_item_df.index) > 50):
+                temp_item_df = temp_item_df[temp_item_df.cost <= (surplus)]
+                temp_item_df = temp_item_df.reset_index(drop=True)
+            if(len(calc_item_df.index) > 50):
+                calc_item_df = calc_item_df.sort_values(by=['primary_score','trait3_score','desired_total'], ascending=[False, False, False])
+                calc_item_df = calc_item_df.head(50)
 
         # create list of high_item ids
         high_item_ids = []
@@ -1080,7 +1080,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             high_item_ids.append(item[0])
 
         # declare variables for the most unpythonic looping ever.
-        helmets = calc_item_df[calc_item_df.itemSubType.astype(int) == 0].sort_values(by='cost', ascending=True)
+        helmets = calc_item_df[calc_item_df.itemSubType.astype(int) == 0].sort_values(by='cost', ascending=True) # desired_total
         arms = calc_item_df[calc_item_df.itemSubType.astype(int) == 1].sort_values(by='cost', ascending=True)
         chests = calc_item_df[calc_item_df.itemSubType.astype(int) == 2].sort_values(by='cost', ascending=True)
         boots = calc_item_df[calc_item_df.itemSubType.astype(int) == 3].sort_values(by='cost', ascending=True)
