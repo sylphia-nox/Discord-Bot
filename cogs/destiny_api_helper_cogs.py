@@ -999,7 +999,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         temp_item_df['cost'] = costs
 
         # remove all items that result in a reduction in potential tiers if we have too many items.
-        if(len(temp_item_df.index) > 40):
+        if(len(temp_item_df.index) > 100):
             temp_item_df = temp_item_df[temp_item_df.cost <= (true_surplus)]
             temp_item_df = temp_item_df.reset_index(drop=True)
 
@@ -1063,16 +1063,16 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             calc_item_df['trait3_score'] = trait3_scores
 
             # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
-            if(len(temp_item_df.index) > 50):
+            if(len(temp_item_df.index) > 100):
                 temp_item_df = temp_item_df[temp_item_df.cost <= (surplus)]
                 temp_item_df = temp_item_df.reset_index(drop=True)
             # remove all items that will decrease score/cannot results in score increase
-            if(len(calc_item_df.index) > 40):
+            if(len(calc_item_df.index) > 100):
                 calc_item_df = calc_item_df[calc_item_df.primary_score >= 0]
                 calc_item_df = calc_item_df.reset_index(drop=True)
-            if(len(calc_item_df.index) > 20):
+            if(len(calc_item_df.index) > 100):
                 calc_item_df = calc_item_df.sort_values(by=['primary_score','trait3_score','desired_total'], ascending=[False, False, False])
-                calc_item_df = calc_item_df.head(20)
+                calc_item_df = calc_item_df.head(100)
 
         # create list of high_item ids
         high_item_ids = []
@@ -1168,8 +1168,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                             # store scores
                                             temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
                                             
-                                            # loop succes, iterate
-                                            boots_i += 1
+                                        # loop succes, iterate
+                                        boots_i += 1
                                     # exiting boots loop
                                     else:
                                         boots_active = False
