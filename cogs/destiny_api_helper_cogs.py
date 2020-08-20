@@ -1023,7 +1023,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         highest_primary_score = 0
 
         # next we need to reduce the calculations to a manageable amount, but if we are already in range we can avoid that
-        if(len(calc_item_df.index) > 40):
+        if(len(calc_item_df.index) > 20):
             # calculate scores
             primary_scores = []
             trait3_scores = []
@@ -1070,9 +1070,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             if(len(calc_item_df.index) > 40):
                 calc_item_df = calc_item_df[calc_item_df.primary_score >= 0]
                 calc_item_df = calc_item_df.reset_index(drop=True)
-            if(len(calc_item_df.index) > 40):
+            if(len(calc_item_df.index) > 20):
                 calc_item_df = calc_item_df.sort_values(by=['primary_score','trait3_score','desired_total'], ascending=[False, False, False])
-                calc_item_df = calc_item_df.head(40)
+                calc_item_df = calc_item_df.head(20)
 
         # create list of high_item ids
         high_item_ids = []
