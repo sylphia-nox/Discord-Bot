@@ -999,7 +999,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         temp_item_df['cost'] = costs
 
         # remove all items that result in a reduction in potential tiers if we have too many items.
-        if(len(temp_item_df.index) > 60):
+        if(len(temp_item_df.index) > 50):
             temp_item_df = temp_item_df[temp_item_df.cost <= (true_surplus)]
             temp_item_df = temp_item_df.reset_index(drop=True)
 
@@ -1057,6 +1057,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 if(primary_score < highest_primary_score):
                     highest_primary_score == primary_score
 
+                surplus = surplus - (highest_primary_score *10)
             
             calc_item_df['primary_score'] = primary_scores
             calc_item_df['trait3_score'] = trait3_scores
@@ -1065,12 +1066,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             if(len(calc_item_df.index) > 60):
                 calc_item_df = calc_item_df[calc_item_df.primary_score >= 0]
                 calc_item_df = calc_item_df.reset_index(drop=True)
-            # if still not under 100 remove items that will not results in increase and will leave no surplus for other armor pieces
-            if(len(calc_item_df.index) > 60):
-                calc_item_df = calc_item_df[~((calc_item_df.primary_score == 0) & (calc_item_df.cost >= (true_surplus-10)))]
-                calc_item_df = calc_item_df.reset_index(drop=True)
-            if(len(calc_item_df.index) > 60):
-                calc_item_df = calc_item_df.sort_values(by=['primary_score','cost','trait3_score'], ascending=[False, True, False])
+            # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
+            if(len(temp_item_df.index) > 75):
+                temp_item_df = temp_item_df[temp_item_df.cost <= (surplus)]
+                temp_item_df = temp_item_df.reset_index(drop=True)
+            if(len(calc_item_df.index) > 75):
+                calc_item_df = calc_item_df.sort_values(by=['primary_score','trait3_score','cost'], ascending=[False, False, True])
                 calc_item_df = calc_item_df.head(80)
 
         # create list of high_item ids
@@ -1084,8 +1085,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         chests = calc_item_df[calc_item_df.itemSubType.astype(int) == 2].sort_values(by='cost', ascending=True)
         boots = calc_item_df[calc_item_df.itemSubType.astype(int) == 3].sort_values(by='cost', ascending=True)
     
-        # adjust surplus based on known potential tier gains
-        surplus = surplus - (highest_primary_score *10)
 
         temp_combo_list = []
         helmet_active = True
