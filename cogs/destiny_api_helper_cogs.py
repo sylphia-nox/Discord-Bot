@@ -652,8 +652,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         return message
 
-        
-
     # helper function to calculater probabilities
     async def calculate_probabilities(self, power_difference, milestone):
         # define list of possible drops
@@ -810,16 +808,15 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 itemSubType = manifest[itemHash]['itemSubType']
 
                 # now that we know this is an instanced item, get its ID to get the items power level
-                itemInstanceID = str(item['itemInstanceId'])
+                itemInstanceID = str(item.get('itemInstanceId'), "")
                 # run api call to get power cap
                 try:
                     power_cap_hash = str(manifest[itemHash]['quality']['versions'][0]['powerCapHash'])
                     power_cap = power_caps[power_cap_hash]['powerCap']
                     exotic = int(manifest[itemHash]['inventory']['tierType']) == 6
                 except:
-                    power_cap = 0
-                    exotic = False
-                    print('error getting items')
+                    # if we get an error here we have a messed up item and need to skip to the next one.
+                    continue
 
                 item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
 
