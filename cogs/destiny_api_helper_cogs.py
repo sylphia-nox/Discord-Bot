@@ -1410,7 +1410,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         names = exotics_df.name
 
-        await ctx.message.channel.send(f'Which Exotic?\n{names.to_string(index=False)}\nNone')
+        exotic_list_message = await ctx.message.channel.send(f'Which Exotic?\n{names.to_string()}')
 
         exotic_hash = -1
         while exotic_hash == -1:
@@ -1420,6 +1420,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # checking to confirm the response is valid
             if int(msg.content) in range(len(names)):
                 exotic_hash = exotics_df.iloc[int(msg.content)]['itemHash']
+                await exotic_list_message.delete()
             else:
                 await ctx.message.channel.send(f'Please choose from the list.')
 
