@@ -1062,14 +1062,14 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             calc_item_df['primary_score'] = primary_scores
             calc_item_df['trait3_score'] = trait3_scores
 
-            # remove all items that will decrease score/cannot results in score increase
-            if(len(calc_item_df.index) > 50):
-                calc_item_df = calc_item_df[calc_item_df.primary_score >= 0]
-                calc_item_df = calc_item_df.reset_index(drop=True)
             # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
             if(len(temp_item_df.index) > 50):
                 temp_item_df = temp_item_df[temp_item_df.cost <= (surplus)]
                 temp_item_df = temp_item_df.reset_index(drop=True)
+            # remove all items that will decrease score/cannot results in score increase
+            if(len(calc_item_df.index) > 50):
+                calc_item_df = calc_item_df[calc_item_df.primary_score >= 0]
+                calc_item_df = calc_item_df.reset_index(drop=True)
             if(len(calc_item_df.index) > 50):
                 calc_item_df = calc_item_df.sort_values(by=['primary_score','trait3_score','desired_total'], ascending=[False, False, False])
                 calc_item_df = calc_item_df.head(50)
