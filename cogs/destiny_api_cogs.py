@@ -121,7 +121,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
     
     # this command provides users with optimized gear to maximize stats.
     @commands.command(name = 'optimize', hidden = True)
-    async def optimize(self, ctx, character, trait1 = 1, trait2 = 3, trait3 = 5, traction: bool = False, friends: bool = False, exotic_hash: int = 0, power_cap: int = 0):
+    async def optimize(self, ctx, character, trait1 = 1, trait2 = 3, trait3 = 5, power_cap: int = 0, traction: bool = False, friends: bool = False):
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
         
@@ -131,6 +131,8 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
         armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token)
         
+        exotic_hash = await destiny_helpers.pick_exotic(ctx, armor)
+
         # filter list to use specific exotic and for sunsetting.
         armor = await destiny_helpers.filter_armor(armor, exotic_hash, power_cap)
 

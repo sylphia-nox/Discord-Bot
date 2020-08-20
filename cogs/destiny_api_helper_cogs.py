@@ -1387,6 +1387,44 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         return embed
 
+    async def pick_exotic(self, ctx, items):
+        global manifest
+        
+        exotics = []
+        # item format: [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
+        for item in items:
+            # if item is an exotic, add it to the list.
+            if item[4]:
+                name = manifest[str(item[6])]['displayProperties']['name']
+                # add name and hash
+                exotics.append([name, item[6]])
+
+        exotics_df = pd.DataFrame(items, columns = ['name', 'hash'])
+        # sorting by name 
+        exotics_df.sort_values('name', inplace = True) 
+  
+        # dropping ALL duplicte values 
+        exotics_df.drop_duplicates(subset ='name', keep = False, inplace = True) 
+
+        names = exotics_df.name
+
+        await ctx.message.channel.send(f'Which Exotic?\n{names}\nNone')
+
+        exotic_hash = -1
+        while exotic_hash == -1:
+
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+
+            # checking to confirm the response is valid
+            if int(msg.content) <= len(names):
+                exotic_hash = exotics_df.iloc[int(msg.content)-1][hash]
+            elif (int(msg.content) == len(names)+1):
+                exotic_hash = 0
+            else:
+                await ctx.message.channel.send(f'Please choose from the list.')
+
+        return exotic_hash
+
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))
 
