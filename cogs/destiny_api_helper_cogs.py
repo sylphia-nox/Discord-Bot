@@ -999,7 +999,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         temp_item_df['cost'] = costs
 
         # remove all items that result in a reduction in potential tiers if we have too many items.
-        if(len(temp_item_df.index) > 100):
+        if(len(temp_item_df.index) > 60):
             temp_item_df = temp_item_df[temp_item_df.cost <= (true_surplus)]
             temp_item_df = temp_item_df.reset_index(drop=True)
 
@@ -1023,7 +1023,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         highest_primary_score = 0
 
         # next we need to reduce the calculations to a manageable amount, but if we are already in range we can avoid that
-        if(len(calc_item_df.index) > 100):
+        if(len(calc_item_df.index) > 60):
             # calculate scores
             primary_scores = []
             trait3_scores = []
@@ -1062,16 +1062,16 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             calc_item_df['trait3_score'] = trait3_scores
 
             # remove all items that will decrease score/cannot results in score increase
-            if(len(calc_item_df.index) > 100):
+            if(len(calc_item_df.index) > 60):
                 calc_item_df = calc_item_df[calc_item_df.primary_score >= 0]
                 calc_item_df = calc_item_df.reset_index(drop=True)
             # if still not under 100 remove items that will not results in increase and will leave no surplus for other armor pieces
-            if(len(calc_item_df.index) > 100):
+            if(len(calc_item_df.index) > 60):
                 calc_item_df = calc_item_df[~((calc_item_df.primary_score == 0) & (calc_item_df.cost >= (true_surplus-10)))]
                 calc_item_df = calc_item_df.reset_index(drop=True)
-            if(len(calc_item_df.index) > 100):
+            if(len(calc_item_df.index) > 60):
                 calc_item_df = calc_item_df.sort_values(by=['primary_score','cost','trait3_score'], ascending=[False, True, False])
-                calc_item_df = calc_item_df.head(100)
+                calc_item_df = calc_item_df.head(80)
 
         # create list of high_item ids
         high_item_ids = []
