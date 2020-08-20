@@ -1399,7 +1399,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # add name and hash
                 exotics.append([name, item[6]])
 
-        exotics_df = pd.DataFrame(items, columns = ['name', 'hash'])
+        exotics_df = pd.DataFrame(exotics, columns = ['name', 'hash'])
         # sorting by name 
         exotics_df.sort_values('name', inplace = True) 
   
