@@ -1196,10 +1196,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         # we now have a list of every item combination with stat values.           
         results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score', 'hashes']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head(20)
-        pd.set_option('display.max_columns', 500)
-        pd.set_option('display.width', 1000)
-        pd.set_option('display.max_colwidth', 150) 
-        print(results_df.head(20))
+        # pd.set_option('display.max_columns', 500)
+        # pd.set_option('display.width', 1000)
+        # pd.set_option('display.max_colwidth', 150) 
+        # print(results_df.head(20))
         return results_df.head()
 
     # helper function to calculate scores input [trait1, trait2, trait3]
@@ -1261,13 +1261,16 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def filter_armor(self, items, exotic_hash: int = 0, power_cap: int = 0):
         items_df = pd.DataFrame(items, columns = ['id', 'itemType', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
 
-        if exotic_hash != 0:
+        if exotic_hash > 0:
             #  [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
             exotic_slot = items_df[items_df.itemHash.astype(int) == exotic_hash].iloc[0]['itemSubType']
             items_df = items_df[~((items_df.exotic.astype(bool)) & (items_df.itemHash.astype(int) != exotic_hash))]
             items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash.astype(int) != exotic_hash))]
             items_df = items_df.reset_index(drop=True)
-            
+        elif exotic_hash == -1:
+            items_df = items_df[~(items_df.exotic.astype(bool))]
+            items_df = items_df.reset_index(drop=True)
+
         if power_cap != 0:
             items_df = items_df[items_df.power_cap >= power_cap]
             items_df = items_df.reset_index(drop=True)
@@ -1403,6 +1406,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 exotics.append([name, item[6]])
 
         exotics.append([" Any", 0])
+        exotics.append(["| None |", -1])
         exotics_df = pd.DataFrame(exotics, columns = ['name', 'itemHash'])
         # sorting by name 
         exotics_df.sort_values('name', inplace = True) 
@@ -1415,8 +1419,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         exotic_list_message = await ctx.message.channel.send(f'Which Exotic?\n{names.to_string()}')
 
-        exotic_hash = -1
-        while exotic_hash == -1:
+        exotic_hash = -2
+        while exotic_hash == -2:
 
             msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
 
