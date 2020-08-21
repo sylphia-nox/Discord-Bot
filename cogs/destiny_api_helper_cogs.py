@@ -713,7 +713,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             return "token not found"
 
     # helper function to update the plug DB info.
-    def update_plugs(self):
+    def update_db_tables(self):
         full_manifest = api.get_sync("/Destiny2/Manifest/")
         manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition']
         del full_manifest
@@ -722,6 +722,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
 
         for key, item in item_manifest.items():
+
+            #populate variables for checking armor
+            itemType = item['itemType']
+            twoDotOh = True
+
             if "plug" in item:
                 if item["plug"]["plugCategoryIdentifier"] == "intrinsics":
                     stats = item["investmentStats"]
@@ -734,9 +739,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                             if category == 2996146975:
                                 category = "mobility"
                             elif category == 392767087:
-                                category = "recovery"
-                            elif category == 1943323491:
                                 category = "resilience"
+                            elif category == 1943323491:
+                                category = "recovery"
                             elif category == 1735777505:
                                 category = "discipline"
                             elif category == 144602215:
@@ -754,6 +759,58 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                             vals = [int(key), values[0][1], values[1][1], values[2][1]]
 
                             helpers.write_db_sync(sql, vals)
+
+            elif itemType == 2 and item['inventory']['tierType'] == 6:
+                # print("found exotic:" + f'{item["hash"]}')
+
+                # check if exotic has sockets
+                if "investmentStats" in item:
+                    intrinsic_stats = item['investmentStats']
+                    name = item['displayProperties']['name']
+
+                    values = []
+                    total = 0
+
+                    for stat in intrinsic_stats:
+                        category = int(stat["statTypeHash"])
+                        category_name = ""
+                        if category == 2996146975:
+                            category_name = "mobility"
+                        elif category == 392767087:
+                            category_name = "resilience"
+                        elif category == 1943323491:
+                            category_name = "recovery"
+                        elif category == 1735777505:
+                            category_name = "discipline"
+                        elif category == 144602215:
+                            category_name = "intellect"
+                        elif category == 4244567218:
+                            category_name = "strength"
+                        
+                        if category_name != "":
+                            value = int(stat["value"])
+                            total += value
+                            if value > 2:
+                                twoDotOh = False
+                            values.append([category_name, value])
+
+                    if twoDotOh:
+                        sql1 = 'REPLACE INTO `exotics` (`hash`, `name`'
+                        sql2 = ', `total`) VALUES (%s, %s'
+                        sql3 = ', %s);'
+
+                        vals = [int(key), name]
+
+                        for value in values:
+                            sql1 += f', `{value[0]}`'
+                            sql2 += ', %s'
+                            vals.append(value[1])
+
+                        vals.append(total)
+                        
+                        sql = sql1 + sql2 + sql3
+           
+                        helpers.write_db_sync(sql, vals)
 
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
     async def get_player_armor(self, player_char_info, OAuth = False, access_token = ""):
@@ -837,7 +894,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # confirm we have 4 intrinsic plugs, helps avoid outliers like class items.
         if len(intrinsic_sockets) == 4:
             # query DB to get plug info
-            select = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(recovery,0) as `recovery`, IFNULL(resilience,0) as `resilience`, IFNULL(discipline,0) as `discipline`, IFNULL(intellect,0) as `intellect`, IFNULL(strength,0) as `strength` FROM plugs '
+            select = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(resilience,0) as `resilience`, IFNULL(recovery,0) as `recovery`, IFNULL(discipline,0) as `discipline`, IFNULL(intellect,0) as `intellect`, IFNULL(strength,0) as `strength` FROM plugs '
             where = f'WHERE hash = {intrinsic_sockets[0]} OR hash = {intrinsic_sockets[1]} OR hash = {intrinsic_sockets[2]} OR hash = {intrinsic_sockets[3]};'
             sql = select + where
             plugs = await helpers.query_db(sql)
