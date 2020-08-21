@@ -1335,7 +1335,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         
         items = items_df.values.tolist()
         
-        
+        # add in intrinsic bonus stats to any remaning exotics.
+        items = await self.add_exotic_bonus_stats(items)
 
         return items
 
@@ -1490,6 +1491,28 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         return int(exotic_hash)
 
+    async def add_exotic_bonus_stats(self, items):
+        # [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
+        for i, item in enumerate(items):
+            # check if item is exotic
+            if bool(item[4]):
+                itemHash = item[6]
+                # query DB for instrinsic stats, using DB tables instead of manifest file to improve performance
+                sql = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(resilience,0) as `resilience`, IFNULL(recovery,0) as `recovery` from `exotics` WHERE `hash` = {itemHash}'
+                sqlreturn = await helpers.query_db(sql)
+
+                # confirm we get results, armor 1.0 is not in the table so it will not return anything
+                if sqlreturn != [] and sqlreturn[0] != []:
+                    itemStats = item[5]
+                    # iterate through first values
+                    for index in range(3):
+                        itemStats[index] += sqlreturn[0][index]
+                    items[i][5] = itemStats
+
+        return items
+                    
+                    
+                
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))
 
