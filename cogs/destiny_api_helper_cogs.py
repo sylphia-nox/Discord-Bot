@@ -962,33 +962,23 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return high_items, reduced_item_list, high_values
 
     # this function returns a list of optimized gear
-    async def optimize_armor(self, items, trait1, trait2, trait3, traction: bool = False, friends: bool = False):
+    async def optimize_armor(self, items, traits: list, stat_goal_reductions: list):
+        
+        # assign variables: list would be better but existing code relies on variable names.
+        trait1 = traits[0]
+        trait2 = traits[1]
+        trait3 = traits[2]
+        
+        # get list of items with highest combined stat1 and stat2 values
         high_items, items, high_values = await self.get_max_stat_items(items, trait1, trait2)
     
         #setup variables to work with, setting to 90 due to masterworking
-        stat1_goal = 90
-        stat2_goal = 90
-        stat3_goal = 90
+        stat1_goal = 100 - stat_goal_reductions[0]
+        stat2_goal = 100 - stat_goal_reductions[1]
+        stat3_goal = 100 - stat_goal_reductions[2]
         stat1 = 0
         stat2 = 0
         stat3 = 0
-
-        # if optimizing mobility and traction or friends, adjust goal
-        if trait1 == 1:
-            if traction:
-                stat1_goal -= 15
-            if friends:
-                stat1_goal -= 20
-        elif trait2 == 1:
-            if traction:
-                stat2_goal -= 15
-            if friends:
-                stat2_goal -= 20
-        elif trait3 == 1:
-            if traction:
-                stat3_goal -= 15
-            if friends:
-                stat3_goal -= 20
 
         # get stat values for best armor
         for item in high_items:
@@ -1341,7 +1331,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return items
 
     # this helper function generates the formatted message for the ~power command
-    async def format_armor_message(self, combo_df, player_char_info, steam_name, traits, traction, friends):
+    async def format_armor_message(self, combo_df, player_char_info, steam_name, traits, stat_bonuses):
         global manifest
 
         class_type = player_char_info[2]
@@ -1410,33 +1400,26 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             base_stats_message += f'{trait_names[traits[2]-1]}: ' + str(combo_df.iloc[i]['stat3']) + '\n'  
 
             # calculate stat values after masterworking
-            stat1_final = combo_df.iloc[i]['stat1'] + 10
-            stat2_final = combo_df.iloc[i]['stat2'] + 10
-            stat3_final = combo_df.iloc[i]['stat3'] + 10
+            stats_final = [combo_df.iloc[i]['stat1'], combo_df.iloc[i]['stat2'], combo_df.iloc[i]['stat1'] + 10]
 
-            # if we are assuming certain mods are applied we need to add those to the total
-            mobility_boost = 0
-            if traction:
-                mobility_boost += 5
-            if friends:
-                mobility_boost += 20
-            if mobility_boost > 0:
-                if traits[0] == 1:
-                    stat1_final += mobility_boost
-                elif traits[1] == 1:
-                    stat2_final += mobility_boost
-                elif traits[2] == 1:
-                    stat3_final += mobility_boost
+            # if traction is in the mods_bonus, we need to remove its hidden +10, 
+            for i, bonus in enumerate(stat_bonuses):
+                if bonus%10 == 5:
+                    stat_bonuses -= 10
 
             # create message for final stats
             final_stats_message = ""
-            final_stats_message += f'{trait_names[traits[0]-1]}: {stat1_final}\n'
-            final_stats_message += f'{trait_names[traits[1]-1]}: {stat2_final}\n'
-            final_stats_message += f'{trait_names[traits[2]-1]}: {stat3_final}\n'
+            extra_points = 0
+            final_stat_tiers = 0
+            
+            # iterate through to create message and caculate values
+            for i, trait in enumerate(traits):
+                # if we are assuming certain mods/masterwork are applied we need to add those to the total
+                stats_final[i] += stat_bonuses[i]
+                extra_points += stats_final[i]
+                final_stat_tiers += (int(stats_final[i]/10))
+                final_stats_message += f'{trait_names[traits[i]-1]}: {stats_final[i]}\n'
 
-            # caclulate additional values
-            extra_points = (stat1_final%10) + (stat2_final%10) + (stat3_final%10)
-            final_stat_tiers = (int(stat1_final/10)) + (int(stat2_final/10)) + (int(stat3_final/10))
 
             base_stats_message += f'Extra Points: {extra_points}'
 
@@ -1510,9 +1493,138 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     items[i][5] = itemStats
 
         return items
+
+    # helper funciton for users to select light level for filtering out amor that will be sunset         
+    async def pick_light_level(self, ctx):
+        # ask for light level
+        light_level_message = await ctx.message.channel.send(f'What is the minimum Light Level you want your amor to be able to achieve? This filters armor that cannot achieve above your provided power level.')
+
+        light_level = -1
+
+        # loop to handle bad inputs
+        while light_level == -1:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+
+            # checking to confirm the response is valid
+            if msg.content.isnumeric() and  0 <= int(msg.content) <= 9999:
+                light_level = int(msg.content)
+                await light_level_message.delete()
+            else:
+                await ctx.message.channel.send(f'Please provide a valid light level.')
+
+        # return light_level
+        return light_level     
+
+    # helper function for users to select desired stats and select if they are using mods like traction, powerful friends, etc.
+    async def pick_stats(self, ctx):   
+        # define array of stat names
+        stat_names = ['Mobility', 'Resilience','Recovery','Discipline','Intellect','Strength'] 
+        stat_string = '1 Mobility\n2 Resilience\n3 Recovery\n4 Discipline\n5 Intellect\n6 Strength\n'
+        message = 'Choose 3 Stat categories.  The algorith will prioritize the combined tiers of stat 1 and 2 and then will provide the best stats for the 3rd without reducing the total tiers between the first and second.\n'
+
+
+        # ask for stats
+        stats_message = await ctx.message.channel.send(message + stat_string + 'Example: `1 3 5` for Mob/Rec/Int')
+
+        stats = [0,0,0]
+
+        # loop to handle bad inputs
+        while stats == [0,0,0]:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+
+            try:
+                # split response into list    
+                response_list = msg.content.split()
+
+                # checking to confirm the response is valid
+                if len(response_list) == 3 and max(response_list) <= 6 and min(response_list) >= 1:
+                    stats = [int(response_list[0]), int(response_list[1]), int(response_list[2])]
+                    await stats_message.delete()
+                else:
+                    await ctx.message.channel.send(f'Please provide valid stats.  Examples: `1 3 5` or `3 5 2`')
+            except:
+                await ctx.message.channel.send(f'Error: Please provide valid stats.  Examples: `1 3 5` or `3 5 2`')
+
+        # if I ask about masterworking it will go here
+        stat_goal_reductions = [10,10,10,10,10,10]
+
+        # next, we need to get the mod selection
+        sql_select = f'SELECT IFNULL(field_one,"") as `mobility`, IFNULL(field_two,"") as `resilience`, IFNULL(field_three,"") as `recovery`, IFNULL(field_four,"") as `discipline`, IFNULL(field_five,"") as `intellect`, IFNULL(field_six,"") as `strength` '
+        sql_from = f'from `current_info` WHERE `name` = 20_mods'
+        sql_return = await helpers.query_db(sql_select + sql_from)
+
+        # loop through stats and check on mods
+        for i, stat in enumerate(stats):
+            # check if we need to ask about traction
+            if stat == 1:
+                # ask for stats
+                traction_message = await ctx.message.channel.send('Will you be using traction in your build? (+15 mobility | 5 visible, 10 hidden)')
+
+                need_answer = True
+
+                # loop to handle bad inputs
+                while need_answer:
+
+                    # get response message
+                    msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+                    response = msg.content
                     
+                    # checking to confirm the response is valid
+                    if response.lower() == 'y' or response.lower() == 'yes':
+                        stat_goal_reductions[i] += 15
+                        need_answer = False
+                        await traction_message.delete()
+                    elif response.lower() == 'n' or response.lower() == 'no':
+                        need_answer = False
+                        await traction_message.delete()
+                    else:
+                        await ctx.message.channel.send(f'Please provide a valid answer (y or n)')
+
+            # Check for +20 mods
+            if sql_return[0][stat-1] != "":
+                mod_name = sql_return[0][stat-1]
+                stat_name = stat_names[stat-1]
+                # ask about mod
+                mod_message = await ctx.message.channel.send(f'Will you be using {mod_name} in your build? (+20 {stat_name})')
+
+                need_answer = True
+
+                # loop to handle bad inputs
+                while need_answer:
+
+                    # get response message
+                    msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+                    response = msg.content
                     
-                
+                    # checking to confirm the response is valid
+                    if response.lower() == 'y' or response.lower() == 'yes':
+                        stat_goal_reductions[i] += 20
+                        need_answer = False
+                        await mod_message.delete()
+                    elif response.lower() == 'n' or response.lower() == 'no':
+                        need_answer = False
+                        await mod_message.delete()
+                    else:
+                        await ctx.message.channel.send(f'Please provide a valid answer (y or n)')
+
+        # return light_level
+        return stats, stat_goal_reductions   
+
+    # helper function to ask user for input
+    async def ask_user_input_for_optimize(self, ctx, items):
+        exotic_hash = await self.pick_exotic(ctx, items)
+        light_level = await self.pick_light_level(ctx)
+        stats, stat_goal_reductions = await self.pick_stats(ctx)
+
+        return exotic_hash, light_level, stats, stat_goal_reductions 
+
+
+
+
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))
 

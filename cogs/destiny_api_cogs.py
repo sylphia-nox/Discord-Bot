@@ -120,8 +120,8 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
             await ctx.message.delete()
     
     # this command provides users with optimized gear to maximize stats.
-    @commands.command(name = 'optimize', hidden = True)
-    async def optimize(self, ctx, character, trait1 = 1, trait2 = 3, trait3 = 5, power_cap: int = 0, traction: bool = False, friends: bool = False):
+    @commands.command(name = 'optimize', brief = "~optimize <class_name>",  help = "~optimize <class_name:(hunter/warlock/titan)>, Command to create optimized loadouts based on 3 stats.  Bot will respond with additional questions, use y or n to respond to yes/no questions.")
+    async def optimize(self, ctx, character):
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
         
@@ -131,15 +131,17 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
         armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token)
         
-        exotic_hash = await destiny_helpers.pick_exotic(ctx, armor)
+        # get user input for variables
+        exotic_hash, power_cap, traits, stat_goal_reductions = await destiny_helpers.ask_user_input_for_optimize(ctx, armor)
 
         # filter list to use specific exotic and for sunsetting.
         armor = await destiny_helpers.filter_armor(armor, exotic_hash, power_cap)
 
         # get dataframe of optimized items
-        results_df = await destiny_helpers.optimize_armor(armor, trait1, trait2, trait3, traction, friends)
+        results_df = await destiny_helpers.optimize_armor(armor, traits, stat_goal_reductions)
 
-        embed = await destiny_helpers.format_armor_message(results_df, player_char_info, player_info[2], [trait1, trait2, trait3], traction, friends)
+        # create embed to send to user
+        embed = await destiny_helpers.format_armor_message(results_df, player_char_info, player_info[2], traits, stat_goal_reductions)
 
         await ctx.send(embed = embed)
 
