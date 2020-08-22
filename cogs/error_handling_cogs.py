@@ -8,6 +8,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 from json import JSONDecodeError
 from discord import ChannelType
+from google.cloud import error_reporting
+
 
 class error_handling_cogs(commands.Cog):
 
@@ -63,6 +65,7 @@ class error_handling_cogs(commands.Cog):
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.message.author.create_dm()
             await ctx.message.author.dm_channel.send(f'Missing arguments for command: {command_name}, type `~help {command_name}` for more information.')
+            
 
         #check if user was trying to cross-out text and so triggered the bot.  If so, this is not an error.
         elif (ctx.message.content.split()[0][1] == "~"):
@@ -96,8 +99,10 @@ class error_handling_cogs(commands.Cog):
             raise error
 
 
-        #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
+        #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, send report to Google cloud platform and delete their message
         if(ctx.message.content.split()[0][1] != "~"):
+            client = error_reporting.Client()
+            client.report_exception()
             # delete command message to keep channels clean if not a dm and bot has permissions
             if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
                 await ctx.message.delete()
