@@ -1405,7 +1405,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # if traction is in the mods_bonus, we need to remove its hidden +10, 
             for i, bonus in enumerate(stat_bonuses):
                 if bonus%10 == 5:
-                    stat_bonuses -= 10
+                    stat_bonuses[i] -= 10
 
             # create message for final stats
             final_stats_message = ""
@@ -1418,7 +1418,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 stats_final[i] += stat_bonuses[i]
                 extra_points += stats_final[i]
                 final_stat_tiers += (int(stats_final[i]/10))
-                final_stats_message += f'{trait_names[traits[i]-1]}: {stats_final[i]}\n'
+                final_stats_message += f'{trait_names[trait-1]}: {stats_final[i]}\n'
 
 
             base_stats_message += f'Extra Points: {extra_points}'
