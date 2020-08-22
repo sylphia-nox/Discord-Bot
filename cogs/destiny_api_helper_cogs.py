@@ -1540,10 +1540,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # split response into list 
                 response = str(msg.content)  
                 response_list = response.split()
+                #convert values to integers
+                response_list = [int(i) for i in response_list]
 
                 # checking to confirm the response is valid
                 if len(response_list) == 3 and max(response_list) <= 6 and min(response_list) >= 1:
-                    stats = [int(response_list[0]), int(response_list[1]), int(response_list[2])]
+                    stats = [response_list[0], response_list[1], response_list[2]]
                     await stats_message.delete()
                 else:
                     await ctx.message.channel.send(f'Please provide valid stats.  Examples: `1 3 5` or `3 5 2`')
