@@ -1557,7 +1557,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         # next, we need to get the mod selection
         sql_select = f'SELECT IFNULL(field_one,"") as `mobility`, IFNULL(field_two,"") as `resilience`, IFNULL(field_three,"") as `recovery`, IFNULL(field_four,"") as `discipline`, IFNULL(field_five,"") as `intellect`, IFNULL(field_six,"") as `strength` '
-        sql_from = f'from `current_info` WHERE `name` = 20_mods'
+        sql_from = f'from `current_info` WHERE `name` = \'20_mods\''
         sql_return = await helpers.query_db(sql_select + sql_from)
 
         # loop through stats and check on mods
