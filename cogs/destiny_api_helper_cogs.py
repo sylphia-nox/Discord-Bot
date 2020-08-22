@@ -1537,8 +1537,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
 
             try:
-                # split response into list    
-                response_list = msg.content.split()
+                # split response into list 
+                response = str(msg.content)  
+                response_list = response.split()
 
                 # checking to confirm the response is valid
                 if len(response_list) == 3 and max(response_list) <= 6 and min(response_list) >= 1:
