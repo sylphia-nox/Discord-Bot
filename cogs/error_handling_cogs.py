@@ -78,7 +78,6 @@ class error_handling_cogs(commands.Cog):
 
             await admin.create_dm()
             await admin.dm_channel.send(f'JSON decode error occured at {now}')
-            raise error
 
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, delete their message
         else:
@@ -102,7 +101,10 @@ class error_handling_cogs(commands.Cog):
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, send report to Google cloud platform and delete their message
         if(ctx.message.content.split()[0][1] != "~"):
             client = error_reporting.Client()
-            client.report_exception()
+            try:
+                raise error
+            except Exception:
+                client.report_exception()
             # delete command message to keep channels clean if not a dm and bot has permissions
             if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
                 await ctx.message.delete()
