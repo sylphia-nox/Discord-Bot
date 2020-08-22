@@ -92,10 +92,6 @@ class error_handling_cogs(commands.Cog):
             await admin.create_dm()
             await admin.dm_channel.send(f'Command error occured at {now}\nServer: {ctx.guild.name}\nChannel: {ctx.message.channel.name}\nUser: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {error.__traceback__}\nError: ' + '{}: {}'.format(type(error).__name__, error))
 
-            # delete command message to keep channels clean if not a dm and bot has permissions
-            if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
-                await ctx.message.delete()
-            raise error
 
 
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, send report to Google cloud platform and delete their message
