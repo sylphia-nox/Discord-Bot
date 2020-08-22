@@ -1416,7 +1416,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             for i, trait in enumerate(traits):
                 # if we are assuming certain mods/masterwork are applied we need to add those to the total
                 stats_final[i] += stat_bonuses[i]
-                extra_points += stats_final[i]
+                extra_points += stats_final[i]%10
                 final_stat_tiers += (int(stats_final[i]/10))
                 final_stats_message += f'{trait_names[trait-1]}: {stats_final[i]}\n'
 
