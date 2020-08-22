@@ -957,6 +957,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     high_values[3] = value
                     high_items[3] = item
 
+        
+        # confirm list is properly populated.  If not raise an error.
+        for i, item in enumerate(high_items):
+            slots = ["Helmet","Arm","Chest","Leg"]
+            if item == []:
+                raise errors.NoValidItem(f'You currently do not have a valid {slots[i]} armor piece based on your items and filters.')
+
         # return list of best items
         return high_items, reduced_item_list, high_values
 
