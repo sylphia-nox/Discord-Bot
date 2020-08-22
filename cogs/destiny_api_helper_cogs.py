@@ -1565,7 +1565,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # check if we need to ask about traction
             if stat == 1:
                 # ask for stats
-                traction_message = await ctx.message.channel.send('Will you be using traction in your build? (+15 mobility | 5 visible, 10 hidden)')
+                traction_message = await ctx.message.channel.send('Will you be using traction in your build? (+15 mobility | 5 visible, 10 hidden) The hidden +10 will not be shown in Final stats.')
 
                 need_answer = True
 
