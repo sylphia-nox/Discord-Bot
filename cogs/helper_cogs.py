@@ -423,7 +423,44 @@ class helper_cogs(commands.Cog, name='Utilities'):
         )
         await self.write_db(sql, val)
 
-        
+    # helper function to select values to setup a new Discord server for sundance
+    async def ask_for_server_options(self, ctx):
+        # need admin_role, destiny_folk,  channel
+        # ask for light level
+        await ctx.message.channel.send(f'What role should have admin control over raid posts?  Can be set to @everyone.')
+
+        admin_role = None
+        destiny_folk = None
+        channel = None
+
+        # loop to handle bad inputs
+        while admin_role is None:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+            mentions = msg.role_mentions
+            # checking to confirm the response is valid
+            if len(mentions) >= 1:
+                admin_role = mentions[0]
+            else:
+                await ctx.message.channel.send(f'Please provide a valid role.')
+
+        await ctx.message.channel.send(f'What role should be tagged in raid posts?  Can be set to @everyone.')
+
+        # loop to handle bad inputs
+        while destiny_folk is None:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+            mentions = msg.role_mentions
+            # checking to confirm the response is valid
+            if len(mentions) >= 1:
+                destiny_folk = mentions[0]
+            else:
+                await ctx.message.channel.send(f'Please provide a valid role.')
+
+        # return light_level
+        return admin_role, destiny_folk, channel 
 
 
 def setup(bot):

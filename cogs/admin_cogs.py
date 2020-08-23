@@ -85,18 +85,18 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await ctx.message.delete()
 
     # this command allows a server admin to configure the raid_channel
-    @commands.command(name='setup', brief = "`~setup @admin_role @destiny_folk #raid_chan`",help ='`~setup @admin_role @destiny_folk #raid_chan` all arguments are optional but roles will default to the guild default role.  If any roles are mentioned, they will be set sequentially.  Admin_role controls who has power to change raid posts, destiny_folk is the group that is tagged in raid posts.  Raid_chan is where raid posts will be posted (if none is set it will post in the channel where the ~raid command is used.) ')
+    @commands.command(name='setup', brief = "~setup",help ='~setup` The bot will request the needed information.')
     @commands.has_permissions(administrator = True)
     @commands.guild_only()
     async def setup_raid_posts(self, ctx, admin_role: discord.Role = None, destiny_folk: discord.Role = None,  channel: discord.TextChannel = None):
+        admin_role, destiny_folk, channel = await helpers.ask_for_server_options(ctx)
+        
         if channel is None:
             channel_id = "null"
         else:
             channel_id = channel.id
         if admin_role is None: admin_role = ctx.guild.default_role
         if destiny_folk is None: destiny_folk = ctx.guild.default_role
-
-        
 
         # call utility to setup channel
         await helpers.setup_server(channel_id, admin_role.id, destiny_folk.id, ctx.guild.id)
