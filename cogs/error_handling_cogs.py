@@ -106,7 +106,10 @@ class error_handling_cogs(commands.Cog):
             except Exception as err:
                 message = "".join(traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True))
 
+                print(f' ')
                 print(f'Printing traceback as seen inside except block\n\n{message}\n\n')
+                print(f' ')
+                print(f' ')
                 client.report(message, user = str(ctx.message.author.id))
                 #client.report_exception(user = str(ctx.message.author.id))
             # delete command message to keep channels clean if not a dm and bot has permissions
