@@ -427,7 +427,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
     async def ask_for_server_options(self, ctx):
         # need admin_role, destiny_folk,  channel
         # ask for light level
-        await ctx.message.channel.send(f'What role should have admin control over raid posts?  Can be set to @everyone.')
+        await ctx.message.channel.send(f'What role should have admin control over raid posts?  Can be set to `@everyone`.')
 
         admin_role = None
         destiny_folk = None
@@ -445,7 +445,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
             else:
                 await ctx.message.channel.send(f'Please provide a valid role.')
 
-        await ctx.message.channel.send(f'What role should be tagged in raid posts?  Can be set to @everyone.')
+        await ctx.message.channel.send(f'What role should be tagged in raid posts?  Can be set to `@everyone`.')
 
         # loop to handle bad inputs
         while destiny_folk is None:
@@ -458,6 +458,14 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 destiny_folk = mentions[0]
             else:
                 await ctx.message.channel.send(f'Please provide a valid role.')
+
+        await ctx.message.channel.send(f'What channel should raids be posted in?  You can respond without a channel name to have raids be posted in the same channel that the ~raid command is run in.')
+        # get response message
+        msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+        mentions = msg.channel_mentions
+        # checking to confirm the response is valid
+        if len(mentions) >= 1:
+            channel = mentions[0]
 
         # return light_level
         return admin_role, destiny_folk, channel 
