@@ -105,7 +105,7 @@ class error_handling_cogs(commands.Cog):
                 raise error
             except Exception as err:
                 message = traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True)
-                client.report(message, user = ctx.message.author.id)
+                client.report(message, user = str(ctx.message.author.id))
             # delete command message to keep channels clean if not a dm and bot has permissions
             if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
                 await ctx.message.delete()
