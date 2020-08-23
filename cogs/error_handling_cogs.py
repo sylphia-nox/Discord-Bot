@@ -100,16 +100,11 @@ class error_handling_cogs(commands.Cog):
 
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, send report to Google cloud platform and delete their message
         if(ctx.message.content.split()[0][1] != "~"):
-            client = error_reporting.Client()
+            client = error_reporting.Client(service="Sundance.py")
             try:
                 raise error
             except Exception as err:
                 message = "".join(traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True))
-
-                print(f' ')
-                print(f'Printing traceback as seen inside except block\n\n{message}\n\n')
-                print(f' ')
-                print(f' ')
                 client.report(message, user = str(ctx.message.author.id))
                 #client.report_exception(user = str(ctx.message.author.id))
             # delete command message to keep channels clean if not a dm and bot has permissions
