@@ -104,11 +104,11 @@ class error_handling_cogs(commands.Cog):
             try:
                 raise error
             except Exception as err:
-                message = "".join(traceback.format_exception(None, err, err.__traceback__, limit=None, chain=False))
-                while err.__cause__ is not None:
-                    err = Exception(err.__cause__)
-                    message = "".join(traceback.format_exception(None, err, err.__traceback__, limit=None, chain=False)) + "\n" +  message
+                message = "".join(traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True))
+
+                print(f'Printing traceback as seen inside except block\n\n{message}\n\n')
                 client.report(message, user = str(ctx.message.author.id))
+                #client.report_exception(user = str(ctx.message.author.id))
             # delete command message to keep channels clean if not a dm and bot has permissions
             if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
                 await ctx.message.delete()
