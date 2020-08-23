@@ -104,6 +104,9 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         # delete command message to keep channels clean
         await ctx.message.delete()
 
+        # inform admin setup is complete
+        await ctx.message.channel.send("Setup complete")
+
         # reload the cog to reset decorator values
         self.bot.reload_extension("cogs.admin_cogs")
 
