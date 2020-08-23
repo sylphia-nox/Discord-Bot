@@ -91,7 +91,7 @@ class error_handling_cogs(commands.Cog):
             #send error message to bot admin
             await admin.create_dm()
             guild = ctx.guild
-            Error_Message = 'Command error occured at {now}\n'
+            Error_Message = f'Command error occured at {now}\n'
             if guild is discord.Guild:
                 Error_Message += 'Server: {ctx.guild.name}\nChannel: {ctx.message.channel.name}\n'
             await admin.dm_channel.send(Error_Message + f'User: {ctx.message.author.name}\nMessage: {ctx.message.content}\nTraceback: {error.__traceback__}\nError: ' + '{}: {}'.format(type(error).__name__, error))
@@ -103,8 +103,9 @@ class error_handling_cogs(commands.Cog):
             client = error_reporting.Client()
             try:
                 raise error
-            except Exception:
-                client.report_exception()
+            except Exception as err:
+                message = traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True)
+                client.report(message, user = ctx.message.author.id)
             # delete command message to keep channels clean if not a dm and bot has permissions
             if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
                 await ctx.message.delete()

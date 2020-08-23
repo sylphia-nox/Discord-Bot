@@ -206,8 +206,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                     # get membershipType
                     membershipType = user['membershipType']
-            except IndexError:
-                raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
+            except IndexError as e:
+                raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes") from e
 
         # could not get exact match, return first results
         if(memberID == ""):
@@ -218,8 +218,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                 # get membershipType
                 membershipType = get_user_return['Response'][0]['membershipType']
-            except IndexError:
-                raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes")
+            except IndexError as e:
+                raise errors.PlayerNotFound("Bungie account could not be found, if there is any whitespace in your name make sure you surround it with quotes") from e
 
 
         # deleting json to save resources
@@ -324,8 +324,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             for id in char_ids:
                 items = await self.parse_json_for_item_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type)
                 items = await self.parse_json_for_item_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type)
-        except KeyError:
-            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
+        except KeyError as e:
+            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.") from e
         
 
         # deleting variable to save memory usage.
@@ -382,8 +382,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # pull out item_info
             milestones = json_return['Response']['progressions']['data']['milestones']
             del json_return
-        except KeyError:
-            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
+        except KeyError as e:
+            raise errors.PrivacyOnException("Items could not be loaded, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.") from e
         
         # get list of pinnacle activities from DB
         pinnacle_activity_info = await helpers.query_db('SELECT * FROM `pinnacle_milestone_info`')
