@@ -1471,12 +1471,15 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
             msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
 
-            # checking to confirm the response is valid
-            if int(msg.content) in range(len(names)):
-                exotic_hash = exotics_df.iloc[int(msg.content)]['itemHash']
-                await exotic_list_message.delete()
-            else:
-                await ctx.message.channel.send(f'Please choose from the list.')
+            try:
+                # checking to confirm the response is valid
+                if int(msg.content) in range(len(names)):
+                    exotic_hash = exotics_df.iloc[int(msg.content)]['itemHash']
+                    await exotic_list_message.delete()
+                else:
+                    await ctx.message.channel.send(f'Please choose from the list.')
+            except:
+                await ctx.message.channel.send(f'Please respond with a valid number.')
 
         return int(exotic_hash)
 
