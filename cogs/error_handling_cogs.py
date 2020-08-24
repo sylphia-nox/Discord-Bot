@@ -8,10 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from json import JSONDecodeError
 from discord import ChannelType
-try:
-    from google.cloud import error_reporting   
-except ImportError:
-    pass
+
 
 
 
@@ -123,7 +120,11 @@ class error_handling_cogs(commands.Cog):
 
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, send report to Google cloud platform and delete their message
         if(ctx.message.content.split()[0][1] != "~"):
-            client = error_reporting.Client(service="Sundance.py")
+            try:
+                from google.cloud import error_reporting  
+                client = error_reporting.Client(service="Sundance.py") 
+            except ImportError:
+                pass
             try:
                 raise error
             except Exception as err:
