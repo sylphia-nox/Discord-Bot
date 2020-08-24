@@ -129,7 +129,7 @@ class error_handling_cogs(commands.Cog):
                     # check for chained exception
                     if "The above exception was the direct cause of the following exception:" in line:
                         error_message = traceback_lines[i-1]                                                    # get string for line containing raised error
-                        traceback_lines[i-2] = traceback_lines[i-2].[:-2] + f' | {error_message}'   # append error to previous line with "|" seperator
+                        traceback_lines[i-2] = traceback_lines[i-2].rstrip() + f' | {error_message}'   # append error to previous line with "|" seperator
                         traceback_lines[i-1] = ''                                                               # change error line to blank
                         traceback_lines[i] = ''                                                                 # change line to blank
                         traceback_lines[i+1] = ''                                                               # remove line containing "Traceback (most recent call last)"
