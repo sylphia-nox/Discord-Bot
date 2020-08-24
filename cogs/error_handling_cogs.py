@@ -27,6 +27,8 @@ class error_handling_cogs(commands.Cog):
         #import global variables
         global bot_admin_code
 
+        delete = True
+
         # This prevents any cogs with an overwritten cog_command_error being handled here.
         cog = ctx.cog
         if cog:
@@ -49,6 +51,7 @@ class error_handling_cogs(commands.Cog):
         elif error.__cause__ and isinstance(error.__cause__, discord.errors.Forbidden):
             await ctx.message.author.create_dm()
             await ctx.message.author.dm_channel.send(f'There was a permissions error and the bot could not fully execute the command.')
+            delete = False
 
         #checking if user tried to run server commands through DMs
         elif isinstance(error, commands.NoPrivateMessage):
@@ -64,11 +67,23 @@ class error_handling_cogs(commands.Cog):
         elif isinstance(error, commands.BadArgument):
             await ctx.message.author.create_dm()
             await ctx.message.author.dm_channel.send(f'Incorrect arguments for command: {command_name}, type `~help {command_name}` for more information.')
+            delete = False
 
         #checking if the command is missing arguments
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.message.author.create_dm()
             await ctx.message.author.dm_channel.send(f'Missing arguments for command: {command_name}, type `~help {command_name}` for more information.')
+            delete = False
+
+        #checking if the command is missing arguments
+        elif isinstance(error, commands.CommandNotFound):
+            if(ctx.message.content.split()[0][1] != "~"):
+                await ctx.message.author.create_dm()
+                await ctx.message.author.dm_channel.send(f'That command does not exist.  Use ~help for possible commands.')
+                delete = False
+            elif (ctx.message.content.split()[0][1] == "~"):
+                #not an error do nothing 
+                print(f'not an error.  Someone was using cross-out notation.')
             
 
         #check if user was trying to cross-out text and so triggered the bot.  If so, this is not an error.
@@ -108,12 +123,26 @@ class error_handling_cogs(commands.Cog):
             try:
                 raise error
             except Exception as err:
-                message = "".join(traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True))
+                # getting traceback and reformatting to work better with GCP
+                traceback_lines = traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True)
+                for i, line in enumerate(traceback_lines):
+                    # check for chained exception
+                    if "The above exception was the direct cause of the following exception:" in line:
+                        error_message = traceback_lines[i-2]                                                    # get string for line containing raised error
+                        traceback_lines[i-3] = traceback_lines[i-3].replace('\n', '') + f' | {error_message}'   # append error to previous line with "|" seperator
+                        traceback_lines[i-2] = ''                                                               # change error line to blank
+                        traceback_lines[i-1] = ''                                                               # change blank new line row to blank
+                        traceback_lines[i] = ''                                                                 # change line to blank
+                        traceback_lines[i+1] = ''                                                               # remove newline below message
+                        traceback_lines[i+2] = ''                                                               # remove line containing "Traceback (most recent call last)"
+
+
+                message = "".join(traceback_lines)
                 message = message.replace('\n\n', '\n')
                 client.report(message, user = str(ctx.message.author.id))
                 #client.report_exception(user = str(ctx.message.author.id))
             # delete command message to keep channels clean if not a dm and bot has permissions
-            if ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
+            if delete and ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
                 await ctx.message.delete()
 
             raise error
