@@ -1,0 +1,23 @@
+###### Requirements with Version Specifiers ######
+
+aiohttp
+appdirs
+asn1crypto
+async-timeout
+discord.py
+google-api-core
+google-api-python-client
+google-auth
+google-auth-httplib2
+google-cloud-core
+google-cloud-error-reporting
+google-cloud-logging
+google-python-cloud-debugger
+googleapis-common-protos
+mysql-connector-python==8.0.12
+numpy
+pandas
+python-dateutil
+python-dotenv
+requests
+requests-toolbelt
