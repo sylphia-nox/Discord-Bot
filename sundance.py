@@ -76,7 +76,11 @@ async def on_ready():
     
     try:
         import googleclouddebugger
-        googleclouddebugger.enable(breakpoint_enable_canary=False)
+        googleclouddebugger.enable(
+            module='Sundance.py',
+            version='1.01',
+            breakpoint_enable_canary=False
+        )
     except ImportError:
         pass
     
