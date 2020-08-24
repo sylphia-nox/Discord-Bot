@@ -8,7 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from json import JSONDecodeError
 from discord import ChannelType
-from google.cloud import error_reporting
+
 
 
 class error_handling_cogs(commands.Cog):
@@ -119,6 +119,31 @@ class error_handling_cogs(commands.Cog):
 
         #check to see if they user was trying to cross out a message and accidentally triggered the bot, if not, send report to Google cloud platform and delete their message
         if(ctx.message.content.split()[0][1] != "~"):
+            try:
+                from google.cloud import error_reporting
+                client = error_reporting.Client(service="Sundance.py")
+                try:
+                    raise error
+                except Exception as err:
+                    # getting traceback and reformatting to work better with GCP
+                    traceback_lines = traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True)
+                    for i, line in enumerate(traceback_lines):
+                        # check for chained exception
+                        if "The above exception was the direct cause of the following exception:" in line:
+                            error_message = traceback_lines[i-1]                                                    # get string for line containing raised error
+                            traceback_lines[i-2] = traceback_lines[i-2].rstrip() + f' | {error_message}'   # append error to previous line with "|" seperator
+                            traceback_lines[i-1] = ''                                                               # change error line to blank
+                            traceback_lines[i] = ''                                                                 # change line to blank
+                            traceback_lines[i+1] = ''                                                               # remove line containing "Traceback (most recent call last)"
+
+
+                    message = "".join(traceback_lines)
+                    message = message.replace('\n\n', '\n')
+                    client.report(message, user = str(ctx.message.author.id))
+                    #client.report_exception(user = str(ctx.message.author.id))
+            except ImportError:
+                print(f'Could not log error to GCP')
+                pass
             client = error_reporting.Client(service="Sundance.py")
             try:
                 raise error
