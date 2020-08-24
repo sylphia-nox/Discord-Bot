@@ -8,7 +8,11 @@ from datetime import datetime
 from dotenv import load_dotenv
 from json import JSONDecodeError
 from discord import ChannelType
-from google.cloud import error_reporting
+try:
+    from google.cloud import error_reporting   
+except ImportError:
+    pass
+
 
 
 class error_handling_cogs(commands.Cog):
@@ -123,22 +127,25 @@ class error_handling_cogs(commands.Cog):
             try:
                 raise error
             except Exception as err:
-                # getting traceback and reformatting to work better with GCP
-                traceback_lines = traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True)
-                for i, line in enumerate(traceback_lines):
-                    # check for chained exception
-                    if "The above exception was the direct cause of the following exception:" in line:
-                        error_message = traceback_lines[i-1]                                                    # get string for line containing raised error
-                        traceback_lines[i-2] = traceback_lines[i-2].rstrip() + f' | {error_message}'   # append error to previous line with "|" seperator
-                        traceback_lines[i-1] = ''                                                               # change error line to blank
-                        traceback_lines[i] = ''                                                                 # change line to blank
-                        traceback_lines[i+1] = ''                                                               # remove line containing "Traceback (most recent call last)"
+                try:
+                    # getting traceback and reformatting to work better with GCP
+                    traceback_lines = traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True)
+                    for i, line in enumerate(traceback_lines):
+                        # check for chained exception
+                        if "The above exception was the direct cause of the following exception:" in line:
+                            error_message = traceback_lines[i-1]                                           # get string for line containing raised error
+                            traceback_lines[i-2] = traceback_lines[i-2].rstrip() + f' | {error_message}'   # append error to previous line with "|" seperator
+                            traceback_lines[i-1] = ''                                                      # change error line to blank
+                            traceback_lines[i] = ''                                                        # change line to blank
+                            traceback_lines[i+1] = ''                                                      # remove line containing "Traceback (most recent call last)"
 
 
-                message = "".join(traceback_lines)
-                message = message.replace('\n\n', '\n')
-                client.report(message, user = str(ctx.message.author.id))
-                #client.report_exception(user = str(ctx.message.author.id))
+                    message = "".join(traceback_lines)
+                    message = message.replace('\n\n', '\n')
+                    client.report(message, user = str(ctx.message.author.id))
+                    #client.report_exception(user = str(ctx.message.author.id))
+                except:
+                    pass
             # delete command message to keep channels clean if not a dm and bot has permissions
             if delete and ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
                 await ctx.message.delete()
