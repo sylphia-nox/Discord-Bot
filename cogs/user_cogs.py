@@ -103,8 +103,9 @@ class user_cogs(commands.Cog, name='User Commands'):
         # Reset boss display status
         await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="commands | ~help"))
 
-        # delete command message to keep channels clean
-        await ctx.message.delete()
+        # delete command message to keep channels clean if not a dm and bot has permissions
+        if ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
  
 
     # this command allows a user to join a raid.
@@ -114,8 +115,9 @@ class user_cogs(commands.Cog, name='User Commands'):
         # call utility
         await helpers.add_user_to_raid(ctx.message.author, raid_id, ctx.guild.id, ctx.message.author, spot)
 
-        #delete command message to keep channels clean
-        await ctx.message.delete()
+        # delete command message to keep channels clean if not a dm and bot has permissions
+        if ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
 
     # command to allow a user to leave the raid, it will remove the user from the first spot it finds them in.
     @commands.command(name='leave', help='type ~leave # and you will be removed from that raid')
@@ -125,8 +127,9 @@ class user_cogs(commands.Cog, name='User Commands'):
         # call utility
         await helpers.remove_user(ctx.message.author, raid_id, ctx.guild.id, ctx.message.author)
 
-        #delete command message to keep channels clean
-        await ctx.message.delete()
+        # delete command message to keep channels clean if not a dm and bot has permissions
+        if ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
 
 def setup(bot):
     bot.add_cog(user_cogs(bot))

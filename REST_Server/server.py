@@ -142,7 +142,7 @@ def api_auth():
     # If no ID is provided, display an error in the browser.
     try:
         if 'id' in request.args:
-            discordID = long (request.args['id'])
+            discordID = request.args['id']
         else:
             return "Error: There was a problem with the generated link.  Please try again."
     except:

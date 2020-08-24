@@ -74,7 +74,15 @@ async def on_ready():
     for guild in bot.guilds:
         print (f'{guild.name}(id: {guild.id})\n')
     
-
+    try:
+        import googleclouddebugger
+        googleclouddebugger.enable(
+            module='Sundance.py',
+            version='1.01',
+            breakpoint_enable_canary=False
+        )
+    except ImportError:
+        pass
     
 
     # Setting `Listening` status

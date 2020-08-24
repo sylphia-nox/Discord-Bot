@@ -3,6 +3,7 @@
 from discord import ChannelType
 from discord.ext import commands
 from datetime import datetime
+import pandas as pd
 
 class destiny_api_cogs(commands.Cog, name='Destiny Commands'): 
     
@@ -51,7 +52,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.send(embed = embed)
 
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
             await ctx.message.delete()
 
     @commands.command(name = 'level', brief = "`~level <class> <steam_name:optional>`", help = "`~level <class> optional:<steam_name>` Steam_name is needed if you have not authenticated. Class should be warlock/hunter/titan (not case sensitive).  Advanced ~level <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
@@ -90,7 +91,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.send(embed = embed)
         
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
             await ctx.message.delete()
 
 
@@ -101,7 +102,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await destiny_helpers.get_manifest()
 
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
             await ctx.message.delete()
 
     # this command sends users a url to authenticate with Bungie.net.
@@ -115,9 +116,34 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.message.author.dm_channel.send(f'Please use the below link to authenticate with Bungie.net.  It may freeze on the final page, please give it time to finish.\n{url}')
 
         # delete command message to keep channels clean if not a dm and bot has permissions
-        if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
+        if ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
             await ctx.message.delete()
     
+    # this command provides users with optimized gear to maximize stats.
+    @commands.command(name = 'optimize', brief = "~optimize <class_name>",  help = "~optimize <class_name:(hunter/warlock/titan)>, Command to create optimized loadouts based on 3 stats.  Bot will respond with additional questions, use y or n to respond to yes/no questions.")
+    async def optimize(self, ctx, character):
+        player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
+        access_token = player_info[3]
+        
+        # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
+        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
+
+        # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
+        armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token)
+        
+        # get user input for variables
+        exotic_hash, power_cap, traits, stat_goal_reductions = await destiny_helpers.ask_user_input_for_optimize(ctx, armor)
+
+        # filter list to use specific exotic and for sunsetting.
+        armor = await destiny_helpers.filter_armor(armor, exotic_hash, power_cap)
+
+        # get dataframe of optimized items
+        results_df = await destiny_helpers.optimize_armor(armor, traits, stat_goal_reductions)
+
+        # create embed to send to user
+        embed = await destiny_helpers.format_armor_message(results_df, player_char_info, player_info[2], traits, stat_goal_reductions)
+
+        await ctx.send(embed = embed)
 
 def setup(bot):
     bot.add_cog(destiny_api_cogs(bot))

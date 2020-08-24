@@ -1,0 +1,13 @@
+###### Requirements with Version Specifiers ######
+
+aiohttp
+appdirs
+asn1crypto
+async-timeout
+discord.py
+mysql-connector-python==8.0.12
+numpy
+pandas
+python-dateutil
+python-dotenv
+requests
