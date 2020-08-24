@@ -128,13 +128,11 @@ class error_handling_cogs(commands.Cog):
                 for i, line in enumerate(traceback_lines):
                     # check for chained exception
                     if "The above exception was the direct cause of the following exception:" in line:
-                        error_message = traceback_lines[i-2]                                                    # get string for line containing raised error
-                        traceback_lines[i-3] = traceback_lines[i-3].replace('\n', '') + f' | {error_message}'   # append error to previous line with "|" seperator
-                        traceback_lines[i-2] = ''                                                               # change error line to blank
-                        traceback_lines[i-1] = ''                                                               # change blank new line row to blank
+                        error_message = traceback_lines[i-1]                                                    # get string for line containing raised error
+                        traceback_lines[i-2] = traceback_lines[i-3].replace('\n', '') + f' | {error_message}'   # append error to previous line with "|" seperator
+                        traceback_lines[i-1] = ''                                                               # change error line to blank
                         traceback_lines[i] = ''                                                                 # change line to blank
-                        traceback_lines[i+1] = ''                                                               # remove newline below message
-                        traceback_lines[i+2] = ''                                                               # remove line containing "Traceback (most recent call last)"
+                        traceback_lines[i+1] = ''                                                               # remove line containing "Traceback (most recent call last)"
 
 
                 message = "".join(traceback_lines)
