@@ -46,6 +46,10 @@ class error_handling_cogs(commands.Cog):
             await ctx.message.author.dm_channel.send(f'{str(error)}')
             print(f'Error: {str(error)}')
 
+        elif error.__cause__ and isinstance(error.__cause__, discord.errors.Forbidden):
+            await ctx.message.author.create_dm()
+            await ctx.message.author.dm_channel.send(f'There was a permissions error and the bot could not fully execute the command.')
+
         #checking if user tried to run server commands through DMs
         elif isinstance(error, commands.NoPrivateMessage):
             await ctx.message.author.create_dm()
@@ -109,7 +113,7 @@ class error_handling_cogs(commands.Cog):
                 client.report(message, user = str(ctx.message.author.id))
                 #client.report_exception(user = str(ctx.message.author.id))
             # delete command message to keep channels clean if not a dm and bot has permissions
-            if ctx.channel.type is ChannelType.text and ctx.guild.me.guild_permissions.manage_messages:
+            if ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
                 await ctx.message.delete()
 
             raise error

@@ -74,7 +74,11 @@ async def on_ready():
     for guild in bot.guilds:
         print (f'{guild.name}(id: {guild.id})\n')
     
-
+    try:
+        import googleclouddebugger
+        googleclouddebugger.enable(breakpoint_enable_canary=False)
+    except ImportError:
+        pass
     
 
     # Setting `Listening` status

@@ -38,7 +38,8 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await helpers.print_raid(raid_id, ctx.guild.id)
 
         # delete command message to keep channels clean
-        await ctx.message.delete()
+        if ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
 
     # this command allows a user with certain privileges to delete Raids
     @commands.command(name='delete', brief = "`~delete <raid #>`", help='type ~delete #, this command is only available to admin users.')
@@ -49,7 +50,8 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await helpers.delete_raid(raid_id, ctx.guild.id)
 
         # delete command message to keep channels clean
-        await ctx.message.delete()
+        if ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
 
     # this command allows an admin user to add someone to a raid post
     @commands.command(name='add', brief = "`~add @usertag <raid #> <spot #>`", help='type add @usertag # #, where # # is the raid ID followed by the spot to add them to that raid.')
@@ -60,7 +62,8 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await helpers.add_user_to_raid(user, raid_id, ctx.guild.id, ctx.message.author, spot_id)
 
         # delete command message to keep channels clean
-        await ctx.message.delete()
+        if ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
 
     # this command allows an admin user to remove someone from a raid post
     @commands.command(name='remove', brief = "`~remove @usertag <spot number>`", help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
@@ -71,7 +74,8 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await helpers.remove_user(user, raid_id, ctx.guild.id, ctx.message.author)
 
         # delete command message to keep channels clean
-        await ctx.message.delete()
+        if ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
 
     # this command allows an admin user to reschedule a raid
     @commands.command(name='reschedule', brief = "`~reschedule <new time>`", help = 'type `~reschedule <new time>`, new time must be a parsable time or date/time.')
@@ -82,7 +86,8 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await helpers.change_raid_time(ctx.message.author, raid_id, ctx.guild.id, new_time)
         
         # delete command message to keep channels clean
-        await ctx.message.delete()
+        if ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
 
     # this command allows a server admin to configure the raid_channel
     @commands.command(name='setup', brief = "~setup",help ='~setup` The bot will request the needed information.')
@@ -102,7 +107,8 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
         await helpers.setup_server(channel_id, admin_role.id, destiny_folk.id, ctx.guild.id)
 
         # delete command message to keep channels clean
-        await ctx.message.delete()
+        if ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
 
         # inform admin setup is complete
         await ctx.message.channel.send("Setup complete")
