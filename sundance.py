@@ -19,6 +19,7 @@ load_dotenv()
 
 #set Bot Token variables
 BotToken = os.getenv('BOT_TOKEN')
+version = os.getenv('BOT_VERSION')
 
 #create bot object
 bot = commands.Bot(command_prefix='~')
@@ -78,7 +79,7 @@ async def on_ready():
         import googleclouddebugger
         googleclouddebugger.enable(
             module='Sundance.py',
-            version='1.01',
+            version=  version,
             breakpoint_enable_canary=False
         )
     except ImportError:
