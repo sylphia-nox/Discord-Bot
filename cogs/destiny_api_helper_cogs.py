@@ -1674,9 +1674,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             try:
                 power_index = power_levels.index(int(item[3]))
             except ValueError:
-                if int(item[4]) < power_levels[0]:
+                if int(item[3]) < power_levels[0] or int(item[3]) == 999950:
                     power_index = -1
-                elif int(item[4]) > power_levels[3]:
+                elif int(item[3]) > power_levels[3]:
                     power_index = 4
                 else:
                     power_index = 0
