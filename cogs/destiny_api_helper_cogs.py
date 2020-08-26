@@ -115,6 +115,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # check if plugs and intrinsic stats need to be updated
             if new_itemUrl != ItemUrl:
                 ItemUrl = new_itemUrl
+                print("updated db info")
                 await self.update_db_tables(new_itemUrl)
                 print("Plugs and intrinsic armor updated.")
         except Exception as e:
