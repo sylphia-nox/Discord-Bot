@@ -1661,6 +1661,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             items[index][1] = sum(temp_stats)
 
         items_df =  pd.DataFrame(items, columns = ['id', 'score', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
+        items_df = items_df[items_df.itemSubType.astype(int) != 30]
         items_df.sort_values(by=['score'], ascending=True, inplace=True)
 
         print(items_df.head(30))
