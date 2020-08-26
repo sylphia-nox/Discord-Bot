@@ -438,7 +438,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         for guild in guilds:
             members += guild.members
         print(f'Querying DB')
-        sqlreturn = await self.query_db('SELECT `discordID` FROM `oauth_tokens` where `access_token` is null;')
+        sqlreturn = await self.query_db('SELECT `discordID` FROM `oauth_tokens`;')
         oauth_owners = (np.transpose(sqlreturn))
         print(f'comparing list of members')
         print(f'{oauth_owners}')
