@@ -446,8 +446,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
             for owner in oauth_owners:
                 if not int(owner) in member_ids:
                     bad_items += 1
-                    print(f'Need to delete {owner} from DB.')
-                    # await self.write_db("DELETE FROM `oauth_tokens` WHERE `discordID` = '%s'", [member,])
+                    await self.write_db("DELETE FROM `oauth_tokens` WHERE `discordID` = '%s'", [member,])
 
         if (bad_items > 0):
             print(f'Removed {bad_items} bad entries from db')

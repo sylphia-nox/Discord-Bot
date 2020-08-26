@@ -1650,7 +1650,23 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         return exotic_hash, light_level, stats, stat_goal_reductions 
 
+    # helper function to get items that can be cleansed from vault
+    async def get_cleanse(self, items, stat_modifiers):
+        # item format [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
+        for index, item in enumerate(items):
+            temp_stats = item[5]
+            score = 0
+            for i, stat in enumerate(temp_stats):
+                temp_stats[i] = stat * stat_modifiers[i]
+                score += sum(temp_stats[i])
+            items[index][5] = temp_stats
+            items[index][1] = score
 
+        items_df =  pd.DataFrame(items, columns = ['id', 'score', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
+        items_df.sort_values(by=['score'], ascending=True, inplace=True)
+
+        return items_df.head(5)
+            
 
 
 def setup(bot):
