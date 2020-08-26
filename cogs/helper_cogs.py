@@ -400,6 +400,32 @@ class helper_cogs(commands.Cog, name='Utilities'):
                     val = (notify_message.id,  raid_id, raid[12])
                     await self.write_db(sql, val)
 
+    async def log_error(self, error):
+        try:
+            from google.cloud import error_reporting
+            client = error_reporting.Client(service="Sundance.py")
+            try:
+                raise error
+            except Exception as err:
+                # getting traceback and reformatting to work better with GCP
+                traceback_lines = traceback.format_exception(None, err, err.__traceback__, limit=None, chain=True)
+                for i, line in enumerate(traceback_lines):
+                    # check for chained exception
+                    if "The above exception was the direct cause of the following exception:" in line:
+                        error_message = traceback_lines[i-1]                                           # get string for line containing raised error
+                        traceback_lines[i-2] = traceback_lines[i-2].rstrip() + f' | {error_message}'   # append error to previous line with "|" seperator
+                        traceback_lines[i-1] = ''                                                      # change error line to blank
+                        traceback_lines[i] = ''                                                        # change line to blank
+                        traceback_lines[i+1] = ''                                                      # remove line containing "Traceback (most recent call last)"
+
+
+                message = "".join(traceback_lines)
+                message = message.replace('\n\n', '\n')
+                client.report(message, user = str(ctx.message.author.id))
+                #client.report_exception(user = str(ctx.message.author.id))
+        except ImportError:
+            print(f'Could not log error to GCP')
+            pass
 
     async def purge_oauth_DB(self):
         
@@ -413,7 +439,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
             members += guild.members
         print(f'Querying DB')
         sqlreturn = await self.query_db('SELECT `discordID` FROM `oauth_tokens` where `access_token` is null;')
-        oauth_owners = (np.transpose(sqlreturn))[0]
+        oauth_owners = (np.transpose(sqlreturn))
         print(f'comparing list of ')
         for owner in oauth_owners:
             if not int(owner) in members:

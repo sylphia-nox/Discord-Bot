@@ -210,6 +210,8 @@ class error_handling_cogs(commands.Cog):
         await admin.create_dm()
         await admin.dm_channel.send(f'On_message error occured at {now}\nError: {traceback.format_exc()}')
 
+        raise error
+
 
 
 def setup(bot):

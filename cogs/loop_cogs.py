@@ -44,27 +44,27 @@ class loop_cogs(commands.Cog):
         
         # print to console for monitoring
         print(f'loop check {now}')
-
-        # run utility
-        print(f'Checking for raid notification')
-        await helpers.raid_notification_check()
+        try:
+            # run utility
+            print(f'Checking for raid notification')
+            await helpers.raid_notification_check()
+        except Exception as e:
+            await helpers.log_error(e)
 
         # run purge OAuth
         print(f'Purging Oauth')
-        await helpers.purge_oauth_DB()
+        try:
+            await helpers.purge_oauth_DB()
+        except Exception as e:
+            await helpers.log_error(e)
 
         # load/update manifests
         print(f'Loading/updating manifests')
-        await destiny_helpers.check_for_updated_manifests()
+        try:
+            await destiny_helpers.check_for_updated_manifests()
+        except Exception as e:
+            await helpers.log_error(e)
 
-    @notify.after_loop
-    async def after_notify(self):
-        if self.notify.failed():                                # pylint: disable=no-member
-            print('notify failed')
-
-    @notify.error
-    async def notify_error(self):
-        print('error happened in loop')
 
     #function ensure bot is started and ready before running loop
     @notify.before_loop
