@@ -79,6 +79,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
     # helper function to check if items need to be updated
     async def check_for_updated_manifests(self):
+        print('Checking for updates')
         # get globals
         global ItemLiteUrl
         global ItemUrl
