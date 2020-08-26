@@ -57,6 +57,15 @@ class loop_cogs(commands.Cog):
         print(f'Loading/updating manifests')
         await destiny_helpers.check_for_updated_manifests()
 
+    @notify.after_loop()
+    async def after_notify(self):
+        if self.notify.failed(): # pylint: disable=no-member
+            print('notify failed')
+
+    @notify.error()
+    async def notify_error(self):
+        print('error happened in loop')
+
     #function ensure bot is started and ready before running loop
     @notify.before_loop
     async def notify_before(self):
