@@ -158,7 +158,8 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token, all_items = False)
 
         # add bonus stats to exotic armor
-        armor = await destiny_helpers.add_exotic_bonus_stats(armor)
+        # commenting out to improve performance while testing.
+        # armor = await destiny_helpers.add_exotic_bonus_stats(armor)
 
         # need to add function to get modifier numbers
 
