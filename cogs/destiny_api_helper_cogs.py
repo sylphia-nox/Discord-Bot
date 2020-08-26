@@ -74,12 +74,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
 
         ItemLiteUrl = ""
-        ItemUrl = ""
-        PowerCapUrl = "/common/destiny2_content/json/en/DestinyPowerCapDefinition-900dbb84-139b-43a4-a41e-9dbe81a031de.json"
+        ItemUrl = "/common/destiny2_content/json/en/DestinyInventoryItemDefinition-900dbb84-139b-43a4-a41e-9dbe81a031de.json"
+        PowerCapUrl = ""
 
     # helper function to check if items need to be updated
     async def check_for_updated_manifests(self):
-        print('Checking for updates')
         # get globals
         global ItemLiteUrl
         global ItemUrl
@@ -90,10 +89,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         try:
             # get global manifest
             full_manifest = await api.get("/Destiny2/Manifest/")
-            new_itemLiteUrl = str(full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition'])
-            new_itemUrl = str(full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition'])
-            new_powerCapUrl = str(full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyPowerCapDefinition'])
-            print(f'{ItemLiteUrl}')
+            new_itemLiteUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
+            new_itemUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition']
+            new_powerCapUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyPowerCapDefinition']
             print(f'{ItemUrl}')
             print(f'{PowerCapUrl}')
             print(f'{new_itemLiteUrl}')
@@ -115,7 +113,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # check if plugs and intrinsic stats need to be updated
             if new_itemUrl != ItemUrl:
                 ItemUrl = new_itemUrl
-                print("updated db info")
                 await self.update_db_tables(new_itemUrl)
                 print("Plugs and intrinsic armor updated.")
         except Exception as e:
