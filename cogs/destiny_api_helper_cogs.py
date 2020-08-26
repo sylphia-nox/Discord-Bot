@@ -75,7 +75,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         ItemLiteUrl = ""
         ItemUrl = ""
-        PowerCapUrl = ""
+        PowerCapUrl = "/common/destiny2_content/json/en/DestinyPowerCapDefinition-900dbb84-139b-43a4-a41e-9dbe81a031de.json"
 
     # helper function to check if items need to be updated
     async def check_for_updated_manifests(self):
