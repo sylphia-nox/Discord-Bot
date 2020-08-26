@@ -46,20 +46,17 @@ class loop_cogs(commands.Cog):
         print(f'loop check {now}')
         try:
             # run utility
-            print(f'Checking for raid notification')
             await helpers.raid_notification_check()
         except Exception as e:
             await helpers.log_error(e)
 
         # run purge OAuth
-        print(f'Purging Oauth')
         try:
             await helpers.purge_oauth_DB()
         except Exception as e:
             await helpers.log_error(e)
 
         # load/update manifests
-        print(f'Loading/updating manifests')
         try:
             await destiny_helpers.check_for_updated_manifests()
         except Exception as e:
