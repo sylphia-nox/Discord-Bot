@@ -443,7 +443,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         print(f'comparing list of members')
         print(f'{oauth_owners}')
         for owner in oauth_owners:
-            if not int(owner) in members:
+            if not str(owner) in members:
                 print(f'Need to delete {owner} from DB.')
                 # await self.write_db("DELETE FROM `oauth_tokens` WHERE `discordID` = '%s'", [member,])
         print(f'found no members to delete.')
