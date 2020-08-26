@@ -1684,22 +1684,22 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             items[index][1] = sum(temp_stats) * float(power_modifiers[power_index])
 
             # reformat itemSubType
-            if item[2] == 26:
-                # update item slot for easier use down the road and append to reduced list
-                slot_name = "Helmet"
-            # if gauntlets
-            elif item[2] == 27:
-                slot_name = "Gauntlets"
-            # if chest
-            elif item[2] == 28:
-                slot_name = "Chest"
-            # if legs
-            elif item[2] == 29:
-                slot_name = "Legs"
-            items[index][2] = slot_name
+            # if item[2] == 26:
+            #     # update item slot for easier use down the road and append to reduced list
+            #     slot_name = "Helmet"
+            # # if gauntlets
+            # elif item[2] == 27:
+            #     slot_name = "Gauntlets"
+            # # if chest
+            # elif item[2] == 28:
+            #     slot_name = "Chest"
+            # # if legs
+            # elif item[2] == 29:
+            #     slot_name = "Legs"
+            # items[index][2] = slot_name
 
         items_df =  pd.DataFrame(items, columns = ['id', 'score', 'slot', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
-        items_df = items_df[items_df.itemSubType.astype(int) != 30]
+        items_df = items_df[items_df.slot.astype(int) != 30]
         items_df.sort_values(by=['score'], ascending=True, inplace=True)
 
         pd.set_option('display.max_columns', 500)
