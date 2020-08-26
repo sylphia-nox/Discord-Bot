@@ -47,7 +47,7 @@ class loop_cogs(commands.Cog):
 
         # run purge OAuth
         print(f'Purging Oauth')
-        await helpers.purge_oauth_DB()
+        # await helpers.purge_oauth_DB()
 
         # load/update manifests
         print(f'Loading/updating manifests')

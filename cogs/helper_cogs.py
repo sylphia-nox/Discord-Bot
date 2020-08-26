@@ -416,7 +416,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
         print(f'comparing list of ')
         for owner in oauth_owners:
             if not int(owner) in members:
-                print(f'Need to delete {member} from DB.')
+                print(f'Need to delete {owner} from DB.')
                 # await self.write_db("DELETE FROM `oauth_tokens` WHERE `discordID` = '%s'", [member,])
 
     # helper function to write info into DB for guilds
