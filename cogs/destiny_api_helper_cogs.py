@@ -1653,21 +1653,45 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     # helper function to get items that can be cleansed from vault
     async def get_cleanse(self, items, stat_modifiers):
         # item format [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
+
+        # get current season power cap
+        power_levels = []
+        sqlreturn = await helpers.query_db('SELECT `field_three`, `field_four`, `field_five`, `field_six` FROM `current_info` WHERE id = 1')
+        for entry in sqlreturn[0]:
+            power_levels.append(int(entry))
+        power_modifiers = [.9,1,1.05,1.1,1.15,1.2]
+
         for index, item in enumerate(items):
+            # adjust for stat modifiers
             temp_stats = item[5]
             for i, stat in enumerate(temp_stats):
                 temp_stats[i] = stat * stat_modifiers[i]
             items[index][5] = temp_stats
-            items[index][1] = sum(temp_stats)
+            
+            #adjust for power level
+            try:
+                power_index = power_levels.index(int(item[4]))
+            except ValueError:
+                if int(item[4]) < power_levels[0]:
+                    power_index = -1
+                elif int(item[4]) > power_levels[3]:
+                    power_index = 4
+                else:
+                    power_index = 0
+            power_index += 1
+            items[index][1] = sum(temp_stats) * power_modifiers[power_index]
 
         items_df =  pd.DataFrame(items, columns = ['id', 'score', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
         items_df = items_df[items_df.itemSubType.astype(int) != 30]
         items_df.sort_values(by=['score'], ascending=True, inplace=True)
 
+        pd.set_option('display.max_columns', 500)
+        pd.set_option('display.width', 1000)
+        pd.set_option('display.max_colwidth', 150) 
         print(items_df.head(30))
         return items_df.head(5)
-            
 
+        
 
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))
