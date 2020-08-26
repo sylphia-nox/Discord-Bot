@@ -90,9 +90,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         try:
             # get global manifest
             full_manifest = await api.get("/Destiny2/Manifest/")
-            new_itemLiteUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
-            new_itemUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition']
-            new_powerCapUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyPowerCapDefinition']
+            new_itemLiteUrl = str(full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition'])
+            new_itemUrl = str(full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition'])
+            new_powerCapUrl = str(full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyPowerCapDefinition'])
             print(f'{ItemLiteUrl}')
             print(f'{ItemUrl}')
             print(f'{PowerCapUrl}')
