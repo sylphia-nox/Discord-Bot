@@ -1655,16 +1655,15 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # item format [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
         for index, item in enumerate(items):
             temp_stats = item[5]
-            score = 0
             for i, stat in enumerate(temp_stats):
                 temp_stats[i] = stat * stat_modifiers[i]
-                score += sum(temp_stats[i])
             items[index][5] = temp_stats
-            items[index][1] = score
+            items[index][1] = sum(temp_stats)
 
         items_df =  pd.DataFrame(items, columns = ['id', 'score', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
         items_df.sort_values(by=['score'], ascending=True, inplace=True)
 
+        print(items_df.head(30))
         return items_df.head(5)
             
 
