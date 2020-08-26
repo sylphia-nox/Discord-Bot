@@ -437,14 +437,17 @@ class helper_cogs(commands.Cog, name='Utilities'):
         members = []
         for guild in guilds:
             members += guild.members
+        member_ids = []
+        for member in members:
+            member_ids.append(member.id)
         print(f'Querying DB')
         sqlreturn = await self.query_db('SELECT `discordID` FROM `oauth_tokens`;')
         oauth_owners = (np.transpose(sqlreturn))[0]
         print(f'comparing list of members')
         print(f'{oauth_owners}')
-        print(f'{members}')
+        print(f'{member_ids}')
         for owner in oauth_owners:
-            if not owner in members:
+            if not int(owner) in member_ids:
                 print(f'Need to delete {owner} from DB.')
                 # await self.write_db("DELETE FROM `oauth_tokens` WHERE `discordID` = '%s'", [member,])
         print(f'found no members to delete.')
