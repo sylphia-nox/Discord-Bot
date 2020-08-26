@@ -20,6 +20,12 @@ class loop_cogs(commands.Cog):
         if(helpers is None):
             print(f'Fatal error, loop_cogs failed to load helper_cogs.py')
 
+        # load Destiny helper cogs
+        global destiny_helpers
+        destiny_helpers = self.bot.get_cog('Destiny Utilities')
+        if(destiny_helpers is None):
+            print(f'Fatal error, Destiny_api_cogs failed to load destiny_api_helper_cogs')
+
         # pyline ignore command as it does not properly recognize that this method does exist
         self.notify.start() # pylint: disable=no-member
 
@@ -40,6 +46,9 @@ class loop_cogs(commands.Cog):
 
         # run purge OAuth
         await helpers.purge_oauth_DB()
+
+        # load/update manifests
+        await destiny_helpers.check_for_updated_manifests()
 
     #function ensure bot is started and ready before running loop
     @notify.before_loop

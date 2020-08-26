@@ -67,33 +67,147 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         if(api is None):
             print(f'Fatal error, Destiny_api_helper_cogs failed to load destiny_api_caller_cogs')
 
-        # load manifests
-        self.initialize_manifest()
+        # set starting manifest links
+        global ItemLiteUrl
+        global ItemUrl
+        global PowerCapUrl 
 
-    # helper function to get Manifest file and save it to global variable
-    async def get_manifest(self):
-        # grab manifest file for items
-        global manifest
-        full_manifest = await api.get("/Destiny2/Manifest/")
-        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
-        del full_manifest
 
-        manifest = await api.get_simple_async("https://www.bungie.net/" + manifest_url)
+        ItemLiteUrl = ""
+        ItemUrl = ""
+        PowerCapUrl = ""
 
-    # helper function to initialize manifest file when cog is loaded, non async version of get_manifest
-    def initialize_manifest(self):
+    # helper function to check if items need to be updated
+    async def check_for_updated_manifests(self):
+        # get globals
+        global ItemLiteUrl
+        global ItemUrl
+        global PowerCapUrl
         global manifest
         global power_caps
 
-        full_manifest = api.get_sync("/Destiny2/Manifest/")
-        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
-        power_cap_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyPowerCapDefinition']
-        del full_manifest
+        try:
+            # get global manifest
+            full_manifest = await api.get("/Destiny2/Manifest/")
+            new_itemLiteUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
+            new_itemUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition']
+            new_powerCapUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyPowerCapDefinition']
 
-        manifest = api.get_simple("https://www.bungie.net/" + manifest_url)
-        power_caps = api.get_simple("https://www.bungie.net/" + power_cap_url)
-        print('Manifests Initialized')
+            # check if itemLiteDefinition (manifest) needs to be updated and if so, update
+            if (new_itemLiteUrl != ItemLiteUrl):
+                ItemLiteUrl = new_itemLiteUrl
+                manifest = await api.get_simple_async("https://www.bungie.net/" + new_itemLiteUrl)
+                print("New ItemLiteDefinition manifest loaded")
 
+            # check if power cap definitions need to be updated
+            if new_powerCapUrl != PowerCapUrl:
+                PowerCapUrl = new_powerCapUrl
+                power_caps = api.get_simple("https://www.bungie.net/" + new_powerCapUrl)
+                print("New PowerCapDefinition manifest loaded")
+
+            # check if plugs and intrinsic stats need to be updated
+            if new_itemUrl != ItemUrl:
+                ItemUrl = new_itemUrl
+                await self.update_db_tables(new_itemUrl)
+                print("Plugs and intrinsic armor updated.")
+        except Exception as e:
+            raise errors.ManifestLoadError("Critical Error: manifest not loaded") from e
+
+    # helper function to update the plug DB info.
+    async def update_db_tables(self, url: str):
+        item_manifest = api.get_simple("https://www.bungie.net/" + url)
+
+
+        for key, item in item_manifest.items():
+
+            #populate variables for checking armor
+            itemType = item['itemType']
+            twoDotOh = True
+
+            if "plug" in item:
+                if item["plug"]["plugCategoryIdentifier"] == "intrinsics":
+                    stats = item["investmentStats"]
+                    values = []
+                    if stats:
+                        isPlug = True
+                    
+                        for stat in stats:
+                            category = int(stat["statTypeHash"])
+                            if category == 2996146975:
+                                category = "mobility"
+                            elif category == 392767087:
+                                category = "resilience"
+                            elif category == 1943323491:
+                                category = "recovery"
+                            elif category == 1735777505:
+                                category = "discipline"
+                            elif category == 144602215:
+                                category = "intellect"
+                            elif category == 4244567218:
+                                category = "strength"
+                            else:
+                                isPlug = False
+                            
+                            value = int(stat["value"])
+                            values.append([category, value])
+
+                        if isPlug:
+                            sql = f'REPLACE INTO `plugs` (`hash`, `{values[0][0]}`, `{values[1][0]}`, `{values[2][0]}`) ' + 'VALUES (%s, %s, %s, %s)'
+                            vals = [int(key), values[0][1], values[1][1], values[2][1]]
+
+                            await helpers.write_db(sql, vals)
+
+            elif itemType == 2 and item['inventory']['tierType'] == 6:
+                # print("found exotic:" + f'{item["hash"]}')
+
+                # check if exotic has sockets
+                if "investmentStats" in item:
+                    intrinsic_stats = item['investmentStats']
+                    name = item['displayProperties']['name']
+
+                    values = []
+                    total = 0
+
+                    for stat in intrinsic_stats:
+                        category = int(stat["statTypeHash"])
+                        category_name = ""
+                        if category == 2996146975:
+                            category_name = "mobility"
+                        elif category == 392767087:
+                            category_name = "resilience"
+                        elif category == 1943323491:
+                            category_name = "recovery"
+                        elif category == 1735777505:
+                            category_name = "discipline"
+                        elif category == 144602215:
+                            category_name = "intellect"
+                        elif category == 4244567218:
+                            category_name = "strength"
+                        
+                        if category_name != "":
+                            value = int(stat["value"])
+                            total += value
+                            if value > 2:
+                                twoDotOh = False
+                            values.append([category_name, value])
+
+                    if twoDotOh:
+                        sql1 = 'REPLACE INTO `exotics` (`hash`, `name`'
+                        sql2 = ', `total`) VALUES (%s, %s'
+                        sql3 = ', %s);'
+
+                        vals = [int(key), name]
+
+                        for value in values:
+                            sql1 += f', `{value[0]}`'
+                            sql2 += ', %s'
+                            vals.append(value[1])
+
+                        vals.append(total)
+                        
+                        sql = sql1 + sql2 + sql3
+           
+                        await helpers.write_db(sql, vals)
 
     # this helper function generates the formatted message for the ~power command
     async def format_power_message(self, high_items, player_char_info, steam_name):
@@ -712,105 +826,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             print (sql_return)
             return "token not found"
 
-    # helper function to update the plug DB info.
-    def update_db_tables(self):
-        full_manifest = api.get_sync("/Destiny2/Manifest/")
-        manifest_url = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition']
-        del full_manifest
-
-        item_manifest = api.get_simple("https://www.bungie.net/" + manifest_url)
-
-
-        for key, item in item_manifest.items():
-
-            #populate variables for checking armor
-            itemType = item['itemType']
-            twoDotOh = True
-
-            if "plug" in item:
-                if item["plug"]["plugCategoryIdentifier"] == "intrinsics":
-                    stats = item["investmentStats"]
-                    values = []
-                    if stats:
-                        isPlug = True
-                    
-                        for stat in stats:
-                            category = int(stat["statTypeHash"])
-                            if category == 2996146975:
-                                category = "mobility"
-                            elif category == 392767087:
-                                category = "resilience"
-                            elif category == 1943323491:
-                                category = "recovery"
-                            elif category == 1735777505:
-                                category = "discipline"
-                            elif category == 144602215:
-                                category = "intellect"
-                            elif category == 4244567218:
-                                category = "strength"
-                            else:
-                                isPlug = False
-                            
-                            value = int(stat["value"])
-                            values.append([category, value])
-
-                        if isPlug:
-                            sql = f'REPLACE INTO `plugs` (`hash`, `{values[0][0]}`, `{values[1][0]}`, `{values[2][0]}`) ' + 'VALUES (%s, %s, %s, %s)'
-                            vals = [int(key), values[0][1], values[1][1], values[2][1]]
-
-                            helpers.write_db_sync(sql, vals)
-
-            elif itemType == 2 and item['inventory']['tierType'] == 6:
-                # print("found exotic:" + f'{item["hash"]}')
-
-                # check if exotic has sockets
-                if "investmentStats" in item:
-                    intrinsic_stats = item['investmentStats']
-                    name = item['displayProperties']['name']
-
-                    values = []
-                    total = 0
-
-                    for stat in intrinsic_stats:
-                        category = int(stat["statTypeHash"])
-                        category_name = ""
-                        if category == 2996146975:
-                            category_name = "mobility"
-                        elif category == 392767087:
-                            category_name = "resilience"
-                        elif category == 1943323491:
-                            category_name = "recovery"
-                        elif category == 1735777505:
-                            category_name = "discipline"
-                        elif category == 144602215:
-                            category_name = "intellect"
-                        elif category == 4244567218:
-                            category_name = "strength"
-                        
-                        if category_name != "":
-                            value = int(stat["value"])
-                            total += value
-                            if value > 2:
-                                twoDotOh = False
-                            values.append([category_name, value])
-
-                    if twoDotOh:
-                        sql1 = 'REPLACE INTO `exotics` (`hash`, `name`'
-                        sql2 = ', `total`) VALUES (%s, %s'
-                        sql3 = ', %s);'
-
-                        vals = [int(key), name]
-
-                        for value in values:
-                            sql1 += f', `{value[0]}`'
-                            sql2 += ', %s'
-                            vals.append(value[1])
-
-                        vals.append(total)
-                        
-                        sql = sql1 + sql2 + sql3
-           
-                        helpers.write_db_sync(sql, vals)
+    
 
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
     async def get_player_armor(self, player_char_info, OAuth = False, access_token = ""):

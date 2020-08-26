@@ -1,0 +1,11 @@
+###### Requirements with Version Specifiers ######
+
+google-api-core
+google-api-python-client
+google-auth
+google-auth-httplib2
+google-cloud-core
+google-cloud-error-reporting
+google-cloud-logging
+google-python-cloud-debugger
+googleapis-common-protos
