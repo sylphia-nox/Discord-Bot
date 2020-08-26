@@ -421,7 +421,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
                 message = "".join(traceback_lines)
                 message = message.replace('\n\n', '\n')
-                client.report(message, user = str(ctx.message.author.id))
+                client.report(message)
                 #client.report_exception(user = str(ctx.message.author.id))
         except ImportError:
             print(f'Could not log error to GCP')
@@ -440,11 +440,13 @@ class helper_cogs(commands.Cog, name='Utilities'):
         print(f'Querying DB')
         sqlreturn = await self.query_db('SELECT `discordID` FROM `oauth_tokens` where `access_token` is null;')
         oauth_owners = (np.transpose(sqlreturn))
-        print(f'comparing list of ')
+        print(f'comparing list of members')
+        print(f'{oauth_owners}')
         for owner in oauth_owners:
             if not int(owner) in members:
                 print(f'Need to delete {owner} from DB.')
                 # await self.write_db("DELETE FROM `oauth_tokens` WHERE `discordID` = '%s'", [member,])
+        print(f'found no members to delete.')
         
 
     # helper function to write info into DB for guilds

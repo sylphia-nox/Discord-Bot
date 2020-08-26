@@ -92,11 +92,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             new_itemLiteUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
             new_itemUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition']
             new_powerCapUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyPowerCapDefinition']
-            print(f'{ItemUrl}')
-            print(f'{PowerCapUrl}')
-            print(f'{new_itemLiteUrl}')
-            print(f'{new_itemUrl}')
-            print(f'{new_powerCapUrl}')
 
             # check if itemLiteDefinition (manifest) needs to be updated and if so, update
             if (new_itemLiteUrl != ItemLiteUrl):
