@@ -829,7 +829,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     
 
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
-    async def get_player_armor(self, player_char_info, OAuth = False, access_token = ""):
+    async def get_player_armor(self, player_char_info, OAuth = False, access_token = "", all_items: bool = True):
         global manifest
 
         # declare list to hold items
@@ -852,12 +852,14 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # parse vault items
             items = await self.parse_json_for_armor_info(json_return['Response']['profileInventory']['data']['items'], items, class_type, armor_sockets)
 
-            # parse equiped and unequiped items
-            for id in char_ids:
-                items = await self.parse_json_for_armor_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type, armor_sockets)
-                items = await self.parse_json_for_armor_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type, armor_sockets)
-        except KeyError:
-            raise errors.PrivacyOnException("There was an error accessing your items, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
+            # check if we want items on characters and not just the vault
+            if all_items:
+                # parse equiped and unequiped items
+                for id in char_ids:
+                    items = await self.parse_json_for_armor_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type, armor_sockets)
+                    items = await self.parse_json_for_armor_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type, armor_sockets)
+        except KeyError as err:
+            raise errors.PrivacyOnException("There was an error accessing your items, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.") from err
         
 
         # deleting variable to save memory usage.
@@ -1691,7 +1693,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         print(items_df.head(30))
         return items_df.head(5)
 
-        
+
 
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))

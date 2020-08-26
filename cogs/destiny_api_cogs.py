@@ -155,7 +155,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
 
         # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
-        armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token)
+        armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token, all_items = False)
 
         # add bonus stats to exotic armor
         armor = await destiny_helpers.add_exotic_bonus_stats(armor)
