@@ -404,16 +404,18 @@ class helper_cogs(commands.Cog, name='Utilities'):
     async def purge_oauth_DB(self):
         # make sure this is the production bot and not dev bot
         #if str(os.getenv('BOT_NAME')) == 'Sundance_Discord_Bot':
+        print(f'Getting guilds')
         guilds = self.bot.guilds
+        print(f'Getting members')
         members = []
         for guild in guilds:
             members += guild.members
-
+        print(f'Querying DB')
         sqlreturn = await self.query_db('SELECT `discordID` FROM `oauth_tokens` where `access_token` is null;')
-        members_actual = (np.transpose(sqlreturn))[0]
-
-        for member in members:
-            if not member in members_actual:
+        oauth_owners = (np.transpose(sqlreturn))[0]
+        print(f'comparing list of ')
+        for owner in oauth_owners:
+            if not int(owner) in members:
                 print(f'Need to delete {member} from DB.')
                 # await self.write_db("DELETE FROM `oauth_tokens` WHERE `discordID` = '%s'", [member,])
 
