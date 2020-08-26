@@ -1672,7 +1672,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             
             #adjust for power level
             try:
-                power_index = power_levels.index(int(item[4]))
+                power_index = power_levels.index(int(item[3]))
             except ValueError:
                 if int(item[4]) < power_levels[0]:
                     power_index = -1
