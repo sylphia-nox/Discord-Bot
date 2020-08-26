@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 from dateutil.parser import parse
 from dateutil.parser import ParserError
+import errors
 
 class loop_cogs(commands.Cog):
 
@@ -27,7 +28,10 @@ class loop_cogs(commands.Cog):
             print(f'Fatal error, Destiny_api_cogs failed to load destiny_api_helper_cogs')
 
         # pylint ignore command as it does not properly recognize that this method does exist
-        self.notify.start() # pylint: disable=no-member
+        self.notify.add_exception_type(errors.ApiError)             # pylint: disable=no-member
+        self.notify.add_exception_type(errors.ManifestLoadError)    # pylint: disable=no-member
+        self.notify.add_exception_type(IndexError)                  # pylint: disable=no-member
+        self.notify.start()                                         # pylint: disable=no-member
 
 
 
