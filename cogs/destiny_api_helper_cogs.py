@@ -92,6 +92,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             new_itemLiteUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemLiteDefinition']
             new_itemUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyInventoryItemDefinition']
             new_powerCapUrl = full_manifest['Response']['jsonWorldComponentContentPaths']['en']['DestinyPowerCapDefinition']
+            print(f'{ItemLiteUrl}')
+            print(f'{ItemUrl}')
+            print(f'{PowerCapUrl}')
+            print(f'{new_itemLiteUrl}')
+            print(f'{new_itemUrl}')
+            print(f'{new_powerCapUrl}')
 
             # check if itemLiteDefinition (manifest) needs to be updated and if so, update
             if (new_itemLiteUrl != ItemLiteUrl):
@@ -102,7 +108,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # check if power cap definitions need to be updated
             if new_powerCapUrl != PowerCapUrl:
                 PowerCapUrl = new_powerCapUrl
-                power_caps = api.get_simple("https://www.bungie.net/" + new_powerCapUrl)
+                power_caps = await api.get_simple_async("https://www.bungie.net/" + new_powerCapUrl)
                 print("New PowerCapDefinition manifest loaded")
 
             # check if plugs and intrinsic stats need to be updated
@@ -115,7 +121,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
     # helper function to update the plug DB info.
     async def update_db_tables(self, url: str):
-        item_manifest = api.get_simple("https://www.bungie.net/" + url)
+        item_manifest = await api.get_simple_async("https://www.bungie.net/" + url)
 
 
         for key, item in item_manifest.items():
