@@ -71,6 +71,9 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         #make request for membership ID
         url = base_url + api_url
         r = requests.get(url, headers = headers)
+        status = r.status_code
+        if status != 200:
+            raise errors.ApiError(f'Status code {status} received from API')
 
         #convert the json object we received into a Python dictionary object and return that object
         return r.json()
@@ -86,6 +89,9 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         #make request for membership ID
         url = base_url + api_url
         r = requests.get(url, headers = headers)
+        status = r.status_code
+        if status != 200:
+            raise errors.ApiError(f'Status code {status} received from API')
 
         #convert the json object we received into a Python dictionary object and return that object
         return r.json()
@@ -93,11 +99,17 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
     # helper function to call get without header or base url
     async def get_simple_async(self, url):
         r = requests.get(url)
+        status = r.status_code
+        if status != 200:
+            raise errors.ApiError(f'Status code {status} received from API')
         return r.json()
 
     # helper function to call get without header or base url
     def get_simple(self, url):
         r = requests.get(url)
+        status = r.status_code
+        if status != 200:
+            raise errors.ApiError(f'Status code {status} received from API')
         return r.json()
 
 

@@ -42,8 +42,21 @@ class error_handling_cogs(commands.Cog):
         #this is grabbing what the user typed, taking the first word, and then removing the "~"
         command_name = ctx.message.content.split()[0].strip("~")
 
-        # check if error is from errors.py
-        if isinstance(error, errors.Error):
+        # check if error is a manifest load error
+        if isinstance(error, errors.ManifestLoadError):
+            await admin.create_dm()
+            await admin.dm_channel.send(f'Critical Error: manifest not loaded')
+
+        # check if error is a manifest load error
+        elif isinstance(error, errors.ManifestLoadError):
+            await ctx.message.author.create_dm()
+            await ctx.message.author.dm_channel.send(f'An error occured getting a response from the Bungie.net API.  The API may be down or you may need to authenticate with the bot.')
+
+            await admin.create_dm()
+            await admin.dm_channel.send(f'Error {str(error)}')
+
+        # check if error is from any other error from errors.py
+        elif isinstance(error, errors.Error):
             await ctx.message.author.create_dm()
             await ctx.message.author.dm_channel.send(f'{str(error)}')
             print(f'Error: {str(error)}')
@@ -130,11 +143,11 @@ class error_handling_cogs(commands.Cog):
                     for i, line in enumerate(traceback_lines):
                         # check for chained exception
                         if "The above exception was the direct cause of the following exception:" in line:
-                            error_message = traceback_lines[i-1]                                                    # get string for line containing raised error
+                            error_message = traceback_lines[i-1]                                           # get string for line containing raised error
                             traceback_lines[i-2] = traceback_lines[i-2].rstrip() + f' | {error_message}'   # append error to previous line with "|" seperator
-                            traceback_lines[i-1] = ''                                                               # change error line to blank
-                            traceback_lines[i] = ''                                                                 # change line to blank
-                            traceback_lines[i+1] = ''                                                               # remove line containing "Traceback (most recent call last)"
+                            traceback_lines[i-1] = ''                                                      # change error line to blank
+                            traceback_lines[i] = ''                                                        # change line to blank
+                            traceback_lines[i+1] = ''                                                      # remove line containing "Traceback (most recent call last)"
 
 
                     message = "".join(traceback_lines)
@@ -144,6 +157,31 @@ class error_handling_cogs(commands.Cog):
             except ImportError:
                 print(f'Could not log error to GCP')
                 pass
+            if delete and ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
+                await ctx.message.delete()
+
+            raise error
+            
+
+    #this event catches errors from event coroutines 
+    @commands.Cog.listener()
+    async def on_error(self, error, *args, **kwargs):
+        #import global variables
+        global bot_admin_code
+
+        #grab admin user object
+        admin = self.bot.get_user(bot_admin_code)
+        
+        #grab time for error message
+        now = datetime.now().time()
+
+        # check if error is a manifest load error
+        if isinstance(error, errors.ManifestLoadError):
+            await admin.create_dm()
+            await admin.dm_channel.send(f'Critical Error: manifest not loaded')
+
+        try:
+            from google.cloud import error_reporting
             client = error_reporting.Client(service="Sundance.py")
             try:
                 raise error
@@ -153,46 +191,26 @@ class error_handling_cogs(commands.Cog):
                 for i, line in enumerate(traceback_lines):
                     # check for chained exception
                     if "The above exception was the direct cause of the following exception:" in line:
-                        error_message = traceback_lines[i-1]                                                    # get string for line containing raised error
+                        error_message = traceback_lines[i-1]                                           # get string for line containing raised error
                         traceback_lines[i-2] = traceback_lines[i-2].rstrip() + f' | {error_message}'   # append error to previous line with "|" seperator
-                        traceback_lines[i-1] = ''                                                               # change error line to blank
-                        traceback_lines[i] = ''                                                                 # change line to blank
-                        traceback_lines[i+1] = ''                                                               # remove line containing "Traceback (most recent call last)"
+                        traceback_lines[i-1] = ''                                                      # change error line to blank
+                        traceback_lines[i] = ''                                                        # change line to blank
+                        traceback_lines[i+1] = ''                                                      # remove line containing "Traceback (most recent call last)"
 
 
                 message = "".join(traceback_lines)
                 message = message.replace('\n\n', '\n')
-                client.report(message, user = str(ctx.message.author.id))
+                client.report(message)
                 #client.report_exception(user = str(ctx.message.author.id))
-            # delete command message to keep channels clean if not a dm and bot has permissions
-            if delete and ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
-                await ctx.message.delete()
-
-            raise error
-            
-
-    #this event catches errors from event coroutines 
-    @commands.Cog.listener()
-    async def on_error(self, event, *args, **kwargs):
-        #import global variables
-        global bot_admin_code
-
-        #grab admin user object
-        admin = self.bot.get_user(bot_admin_code)
-        
-        #Gets the message object
-        message = args[0] 
-        
-        #grab time for error message
-        now = datetime.now().time()
-
-        #inform user an error occured
-        await message.author.create_dm()
-        await message.author.dm_channel.send(f'An error occured, please correct your input and try again.  If the issue continues to occur please contact <@{bot_admin_code}>.')
+        except ImportError:
+            print(f'Could not log error to GCP')
+            pass
 
         #send error message to server admin
         await admin.create_dm()
-        await admin.dm_channel.send(f'On_message error occured at {now}\nUser: {message.author.name}\nMessage: {message.content}\nError: {traceback.format_exc()}')
+        await admin.dm_channel.send(f'On_message error occured at {now}\nError: {traceback.format_exc()}')
+
+        raise error
 
 
 

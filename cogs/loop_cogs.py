@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 from dateutil.parser import parse
 from dateutil.parser import ParserError
+import errors
 
 class loop_cogs(commands.Cog):
 
@@ -20,8 +21,17 @@ class loop_cogs(commands.Cog):
         if(helpers is None):
             print(f'Fatal error, loop_cogs failed to load helper_cogs.py')
 
-        # pyline ignore command as it does not properly recognize that this method does exist
-        self.notify.start() # pylint: disable=no-member
+        # load Destiny helper cogs
+        global destiny_helpers
+        destiny_helpers = self.bot.get_cog('Destiny Utilities')
+        if(destiny_helpers is None):
+            print(f'Fatal error, Destiny_api_cogs failed to load destiny_api_helper_cogs')
+
+        # pylint ignore command as it does not properly recognize that this method does exist
+        self.notify.add_exception_type(errors.ApiError)             # pylint: disable=no-member
+        self.notify.add_exception_type(errors.ManifestLoadError)    # pylint: disable=no-member
+        self.notify.add_exception_type(IndexError)                  # pylint: disable=no-member
+        self.notify.start()                                         # pylint: disable=no-member
 
 
 
@@ -34,12 +44,24 @@ class loop_cogs(commands.Cog):
         
         # print to console for monitoring
         print(f'loop check {now}')
-
-        # run utility
-        await helpers.raid_notification_check()
+        try:
+            # run utility
+            await helpers.raid_notification_check()
+        except Exception as e:
+            await helpers.log_error(e)
 
         # run purge OAuth
-        await helpers.purge_oauth_DB()
+        try:
+            await helpers.purge_oauth_DB()
+        except Exception as e:
+            await helpers.log_error(e)
+
+        # load/update manifests
+        try:
+            await destiny_helpers.check_for_updated_manifests()
+        except Exception as e:
+            await helpers.log_error(e)
+
 
     #function ensure bot is started and ready before running loop
     @notify.before_loop
