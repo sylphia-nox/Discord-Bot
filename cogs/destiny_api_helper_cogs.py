@@ -1661,7 +1661,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         sqlreturn = await helpers.query_db('SELECT `field_three`, `field_four`, `field_five`, `field_six` FROM `current_info` WHERE id = 1')
         for entry in sqlreturn[0]:
             power_levels.append(int(entry))
-        power_modifiers = [.9,1,1.05,1.1,1.15,1.2]
+        power_modifiers = [.9,1,1.33,1.67,1.10,1.2]
 
         for index, item in enumerate(items):
             # adjust for stat modifiers
@@ -1681,9 +1681,24 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 else:
                     power_index = 0
             power_index += 1
-            items[index][1] = sum(temp_stats) * power_modifiers[power_index]
+            items[index][1] = sum(temp_stats) * float(power_modifiers[power_index])
 
-        items_df =  pd.DataFrame(items, columns = ['id', 'score', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
+            # reformat itemSubType
+            if item[2] == 26:
+                # update item slot for easier use down the road and append to reduced list
+                slot_name = "Helmet"
+            # if gauntlets
+            elif item[2] == 27:
+                slot_name = "Gauntlets"
+            # if chest
+            elif item[2] == 28:
+                slot_name = "Chest"
+            # if legs
+            elif item[2] == 29:
+                slot_name = "Legs"
+            items[index][2] = slot_name
+
+        items_df =  pd.DataFrame(items, columns = ['id', 'score', 'slot', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
         items_df = items_df[items_df.itemSubType.astype(int) != 30]
         items_df.sort_values(by=['score'], ascending=True, inplace=True)
 
