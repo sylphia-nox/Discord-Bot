@@ -57,12 +57,12 @@ class loop_cogs(commands.Cog):
         print(f'Loading/updating manifests')
         await destiny_helpers.check_for_updated_manifests()
 
-    @notify.after_loop()
+    @notify.after_loop
     async def after_notify(self):
-        if self.notify.failed(): # pylint: disable=no-member
+        if self.notify.failed():                                # pylint: disable=no-member
             print('notify failed')
 
-    @notify.error()
+    @notify.error
     async def notify_error(self):
         print('error happened in loop')
 
