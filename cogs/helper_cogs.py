@@ -402,15 +402,19 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
 
     async def purge_oauth_DB(self):
-        guild = self.bot.guilds[0]
-        members = guild.members
+        # make sure this is the production bot and not dev bot
+        if str(os.getenv('BOT_NAME')) == 'Sundance_Discord_Bot':
+            guilds = self.bot.guilds
+            members = []
+            for guild in guilds:
+                members += guild.members
 
-        sqlreturn = await self.query_db('SELECT `discordID` FROM `oauth_tokens` where `access_token` is null;')
-        members_actual = (np.transpose(sqlreturn))[0]
+            sqlreturn = await self.query_db('SELECT `discordID` FROM `oauth_tokens` where `access_token` is null;')
+            members_actual = (np.transpose(sqlreturn))[0]
 
-        for member in members:
-            if not member in members_actual:
-                await self.write_db('DELETE FROM `oauth_tokens` WHERE `discordID` = %s', [member])
+            for member in members:
+                if not member in members_actual:
+                    await self.write_db('DELETE FROM `oauth_tokens` WHERE `discordID` = %s', [member,])
 
     # helper function to write info into DB for guilds
     async def setup_server(self, channel, admin_role, destiny_folk, server_id):
