@@ -15,6 +15,9 @@ class loop_cogs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        global state
+        state = 0
+
         # import utility functions
         global helpers
         helpers = self.bot.get_cog('Utilities')
@@ -36,8 +39,9 @@ class loop_cogs(commands.Cog):
 
 
     # creating this event to notify users approximately 1 hour before a raid
-    @tasks.loop(minutes = 30)
+    @tasks.loop(minutes = 20)
     async def notify(self):
+        global state
 
         # grab current time.
         now = datetime.now()
@@ -61,6 +65,10 @@ class loop_cogs(commands.Cog):
             await destiny_helpers.check_for_updated_manifests()
         except Exception as e:
             await helpers.log_error(e)
+
+        if state == 0:
+            print(f'Bot initialized')
+            state = 1
 
 
     #function ensure bot is started and ready before running loop
