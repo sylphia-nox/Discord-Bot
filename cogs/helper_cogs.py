@@ -284,7 +284,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
     # helper utility to query the DB
     async def query_db(self, query: str):
         loop = asyncio.get_event_loop()
-        sqlreturn = await loop.run_in_executor(ThreadPoolExecutor(), self.query_db_sync(query))
+        sqlreturn = await loop.run_in_executor(ThreadPoolExecutor(), self.query_db_sync, query)
 
         # return results
         return sqlreturn
@@ -307,7 +307,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
     # helper function to write to db
     async def write_db(self, query: str, *args):
         loop = asyncio.get_event_loop()
-        row = await loop.run_in_executor(ThreadPoolExecutor(), self.write_db_sync(query, *args))
+        row = await loop.run_in_executor(ThreadPoolExecutor(), self.write_db_sync, query, *args)
 
         return row
 
@@ -412,6 +412,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 #client.report_exception(user = str(ctx.message.author.id))
         except ImportError:
             print(f'Could not log error to GCP')
+            print(f'{traceback.format_exc()}')
             pass
 
     async def purge_oauth_DB(self):
