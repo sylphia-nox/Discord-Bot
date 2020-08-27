@@ -163,7 +163,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
         # need to add function to get modifier numbers
 
-        results = await destiny_helpers.get_cleanse(armor, [1.375, .75, 1.375, .5, 1, .25])
+        results = await destiny_helpers.get_cleanse(armor, [1.15, .9, 1.15, .8, 1, .7])
 
 def setup(bot):
     bot.add_cog(destiny_api_cogs(bot))
