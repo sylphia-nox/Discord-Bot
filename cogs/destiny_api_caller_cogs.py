@@ -108,10 +108,7 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         header = {'Authorization':f'Basic {id_and_secret}', 'Content-Type':'application/x-www-form-urlencoded'}
         data = {'grant_type':'refresh_token','refresh_token':f'{refresh_token}'}
 
-        loop = asyncio.get_event_loop()
-        r = await loop.run_in_executor(ThreadPoolExecutor(), self.post, 'https://www.bungie.net/platform/app/oauth/token/', header, data)
-
-        user_tokens = r.json()
+        user_tokens = await self.post('https://www.bungie.net/platform/app/oauth/token/', header = header, data = data)
 
         sql = "UPDATE oauth_tokens SET access_token = %s, expires_in = %s, refresh_token = %s, refresh_expires_in = %s WHERE discordID = %s"
         val = (
@@ -127,7 +124,13 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         # return access token to avoid unecessary DB calls
         return user_tokens['access_token']
 
-    def post(self, url, header, data):
+    async def post(self, url, header, data):
+        loop = asyncio.get_event_loop()
+        r_json = await loop.run_in_executor(ThreadPoolExecutor(), self.post_sync, 'https://www.bungie.net/platform/app/oauth/token/', header, data)
+
+        return r_json
+
+    def post_sync(self, url, header, data):
         r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
 
         # confirm 200 Good response
