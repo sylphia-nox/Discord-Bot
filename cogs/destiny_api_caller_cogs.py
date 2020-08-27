@@ -135,7 +135,7 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
 
         # confirm 200 Good response
         status = r.status_code
-        if status != 200 or status != 201:
+        if status != 200 and status != 201:
             raise errors.ApiError(f'Status code {status} received from API')
 
         return r.json()
