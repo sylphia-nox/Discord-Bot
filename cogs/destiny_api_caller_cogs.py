@@ -75,15 +75,10 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
 
         # run requests in seperate thread
         loop = asyncio.get_event_loop()
-        r = await loop.run_in_executor(ThreadPoolExecutor(), self.get_sync, url, headers)
-
-        # confirm 200 Good response
-        status = r.status_code
-        if status != 200:
-            raise errors.ApiError(f'Status code {status} received from API')
+        r_json = await loop.run_in_executor(ThreadPoolExecutor(), self.get_sync, url, headers)
 
         #convert the json object we received into a Python dictionary object and return that object
-        return r.json()
+        return r_json
 
     def get_sync(self, url, headers):
         r = requests.get(url, headers = headers)
