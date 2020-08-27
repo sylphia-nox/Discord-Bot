@@ -109,7 +109,7 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         data = {'grant_type':'refresh_token','refresh_token':f'{refresh_token}'}
 
         loop = asyncio.get_event_loop()
-        r = await loop.run_in_executor(ThreadPoolExecutor(), requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data))
+        r = await loop.run_in_executor(ThreadPoolExecutor(), self.post, 'https://www.bungie.net/platform/app/oauth/token/', header, data)
 
         user_tokens = r.json()
 
@@ -126,6 +126,18 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
 
         # return access token to avoid unecessary DB calls
         return user_tokens['access_token']
+
+    def post(self, url, header, data):
+        r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
+
+        # confirm 200 Good response
+        status = r.status_code
+        if status != 200 or status != 201:
+            raise errors.ApiError(f'Status code {status} received from API')
+
+        return r.json()
+
+
 
 def setup(bot):
     bot.add_cog(destiny_api_caller_cogs(bot))
