@@ -14,6 +14,8 @@ from discord.ext.tasks import loop
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 from dateutil.parser import ParserError
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
 import numpy as np
 
@@ -281,15 +283,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
     # helper utility to query the DB
     async def query_db(self, query: str):
-        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
-        mycursor = mydb.cursor()
-
-        try:
-            # query DB and grab results
-            mycursor.execute(query)
-            sqlreturn = mycursor.fetchall()
-        finally:
-            mydb.close()
+        loop = asyncio.get_event_loop()
+        sqlreturn = await loop.run_in_executor(ThreadPoolExecutor(), self.query_db_sync(query))
 
         # return results
         return sqlreturn
@@ -311,16 +306,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
     # helper function to write to db
     async def write_db(self, query: str, *args):
-        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
-        mycursor = mydb.cursor()
-
-        try:
-            # send sql to db.
-            mycursor.execute(query, *args)
-            mydb.commit()
-            row = mycursor.lastrowid
-        finally:
-            mydb.close()
+        loop = asyncio.get_event_loop()
+        row = await loop.run_in_executor(ThreadPoolExecutor(), self.write_db_sync(query, *args))
 
         return row
 

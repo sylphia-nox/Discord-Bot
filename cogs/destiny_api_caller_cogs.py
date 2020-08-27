@@ -10,6 +10,8 @@ import errors
 import numpy as np
 import base64
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
 class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'): 
     
@@ -70,7 +72,12 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
 
         #make request for membership ID
         url = base_url + api_url
-        r = requests.get(url, headers = headers)
+
+        # run requests in seperate thread
+        loop = asyncio.get_event_loop()
+        r = await loop.run_in_executor(ThreadPoolExecutor(), requests.get(url, headers = headers))
+
+        # confirm 200 Good response
         status = r.status_code
         if status != 200:
             raise errors.ApiError(f'Status code {status} received from API')
@@ -78,35 +85,13 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         #convert the json object we received into a Python dictionary object and return that object
         return r.json()
 
-    def get_sync(self, api_url, OAuth = False, access_token = ""):
-        # create copy of HEADERS to ensure we do not permanently modify HEADERS
-        headers = HEADERS.copy()
-        
-        # if OAuth is set to True, add access token to header
-        if OAuth:
-            headers.update({'Authorization':f'Bearer {access_token}'})
-
-        #make request for membership ID
-        url = base_url + api_url
-        r = requests.get(url, headers = headers)
-        status = r.status_code
-        if status != 200:
-            raise errors.ApiError(f'Status code {status} received from API')
-
-        #convert the json object we received into a Python dictionary object and return that object
-        return r.json()
 
     # helper function to call get without header or base url
     async def get_simple_async(self, url):
-        r = requests.get(url)
-        status = r.status_code
-        if status != 200:
-            raise errors.ApiError(f'Status code {status} received from API')
-        return r.json()
+        loop = asyncio.get_event_loop()
+        r = await loop.run_in_executor(ThreadPoolExecutor(), requests.get(url))
 
-    # helper function to call get without header or base url
-    def get_simple(self, url):
-        r = requests.get(url)
+        # confirm 200 Good response
         status = r.status_code
         if status != 200:
             raise errors.ApiError(f'Status code {status} received from API')
@@ -118,7 +103,8 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         header = {'Authorization':f'Basic {id_and_secret}', 'Content-Type':'application/x-www-form-urlencoded'}
         data = {'grant_type':'refresh_token','refresh_token':f'{refresh_token}'}
 
-        r = requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data)
+        loop = asyncio.get_event_loop()
+        r = await loop.run_in_executor(ThreadPoolExecutor(), requests.post('https://www.bungie.net/platform/app/oauth/token/', headers = header, data = data))
 
         user_tokens = r.json()
 
