@@ -843,6 +843,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         # get all items and info for items
         json_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/?components=102, 201, 205, 305', OAuth, access_token)
+        print(f'Got response from API with info')
        
         # pull out armor item info
         armor_sockets = json_return['Response']['itemComponents']['sockets']['data']
