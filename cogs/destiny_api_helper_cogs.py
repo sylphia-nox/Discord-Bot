@@ -1731,7 +1731,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 stats += f'{i+1}: {stat}\n'
 
         # ask for stats
-        await ctx.message.channel.send("Please respond with the stat numbers in order of imporatance, each stat should be a new message unless you would like 2 or more stats to be equally waited.  Each number should be seperated by a space.\n" + stats)
+        await ctx.message.channel.send("Please respond with the stat numbers in order of importance, each stat should be a new message (line) unless you would like 2 or more stats to be equally waited.  Each number should be seperated by a space.\n" + stats)
 
         # loop to handle bad inputs
         while place < 6:
@@ -1803,13 +1803,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         for row in items_df.itertuples(index=False):
             if count%15 == 0:
-                tables.append(f'{"Name":19} {"Score":5} {"Power Cap":9} {"Dim Search":22}\n')
+                tables.append(f'{"Name":<19} {"Score":<5} {"Power Cap":<9} {"Dim Search":<22}\n')
                 index += 1
             # calculate cost and append to list
             itemHash = str(row.itemHash)
             name = manifest[itemHash]['displayProperties']['name']
                 
-            tables[index] += f'{name:19} {sum(row.item_stats):5} {row.power_cap:9} id:{row.id:19}\n'
+            tables[index] += f'{name:<19} {sum(row.item_stats):>5} {row.power_cap:>9} id:{row.id:<19}\n'
             count += 1
 
 
