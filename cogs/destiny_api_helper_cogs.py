@@ -1809,7 +1809,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             itemHash = str(row.itemHash)
             name = manifest[itemHash]['displayProperties']['name']
                 
-            tables[index] += f'{name:<19} {sum(row.item_stats):>5} {row.power_cap:>9} id:{row.id:<19}\n'
+            tables[index] += f'{str(name):<19} {sum(row.item_stats):5.1} {str(row.power_cap):>9} id:{str(row.id):<19}\n'
+            print(f'{str(name):<19} {sum(row.item_stats):5.1} {str(row.power_cap):>9} id:{str(row.id):<19}\n')
             count += 1
 
 
@@ -1835,6 +1836,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         embed.set_footer(text="Sundance | created by Michael Scarfi", icon_url="https://drive.google.com/uc?export=view&id=1GRYmllW4Ig9LvsNldcOyU3rpbZPb6fD_")
 
         for table in tables:
+            
             # add DIM strings to bottom
             embed.add_field(name=f'Recommended Items to Delete', value = table, inline = False)
 
