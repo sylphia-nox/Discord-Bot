@@ -834,7 +834,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
     async def get_player_armor(self, player_char_info, OAuth = False, access_token = "", all_items: bool = True):
         global manifest
-        print(f'Begining get_player_armor')
+        
         # declare list to hold items
         items = []
 
@@ -846,17 +846,15 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         # get all items and info for items
         json_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/?components=102, 201, 205, 305', OAuth, access_token)
-        print(f'Got response from API with info')
+        
        
         # pull out armor item info
         armor_sockets = json_return['Response']['itemComponents']['sockets']['data']
         
         # if user has privacy on, the json will not have the 'data' tag, so we can use this assignment to raise a PrivacySettings exception
         try:
-            print(f'Begining to parse armor')
             # parse vault items
             items = await self.parse_json_for_armor_info(json_return['Response']['profileInventory']['data']['items'], items, class_type, armor_sockets)
-            print(f'Parsed vault')
 
             # check if we want items on characters and not just the vault
             if all_items:

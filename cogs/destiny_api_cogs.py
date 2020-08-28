@@ -147,12 +147,15 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
     # this command provides users with optimized gear to maximize stats.
     @commands.command(name = 'cleanse', brief = "~cleanse <class_name>",  help = "~cleanse <class_name:(hunter/warlock/titan)>")
-    async def cleanse(self, ctx, character, all_items: bool = False):
+    async def cleanse(self, ctx, character):
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
         
         # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
         player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
+
+        # ask if player want to include all items or only items in vault
+        all_items = await destiny_helpers.include_items_on_character(ctx)
 
         # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
         armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token, all_items = all_items)
@@ -165,6 +168,8 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         modifiers = await destiny_helpers.get_cleanse_modifiers(ctx)
 
         results = await destiny_helpers.get_cleanse(armor, modifiers)
+
+        await ctx.send("Command complete")
 
 def setup(bot):
     bot.add_cog(destiny_api_cogs(bot))
