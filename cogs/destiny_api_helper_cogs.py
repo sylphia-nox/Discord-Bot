@@ -1710,13 +1710,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         items_df =  pd.DataFrame(items, columns = ['id', 'score', 'slot', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
         items_df = items_df[items_df.slot.astype(int) != 30]
         items_df.sort_values(by=['score'], ascending=True, inplace=True)
-        items_df = items_df.head(30)
+        items_df = items_df.head(number)
         items_df = items_df.reset_index(drop=True)
 
-        pd.set_option('display.max_columns', 500)
-        pd.set_option('display.width', 700)
-        pd.set_option('display.max_colwidth', 25) 
-        print(items_df.head(30))
+        #pd.set_option('display.max_columns', 500)
+        #pd.set_option('display.width', 700)
+        #pd.set_option('display.max_colwidth', 25) 
+        #print(items_df.head(30))
         return items_df
 
     async def get_cleanse_modifiers(self, ctx):
@@ -1797,15 +1797,20 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def build_cleanse_embed(self, items_df, player_char_info, steam_name):
         #f'{x:02} {x*x:3} {x*x*x:4}'
         
-
-        table = f'{"Name":19} {"Score":5} {"Power Cap":9} {"Dim Search":22}'
+        tables = []
+        count = 0
+        index = 0
 
         for row in items_df.itertuples(index=False):
+            if count%15 == 0:
+                tables.append(f'{"Name":19} {"Score":5} {"Power Cap":9} {"Dim Search":22}\n')
+                index += 1
             # calculate cost and append to list
             itemHash = str(row.itemHash)
             name = manifest[itemHash]['displayProperties']['name']
                 
-            table += f'{name:19} {sum(row.item_stats):5} {row.power_cap:9} id:{row.id:19}'
+            tables[index] += f'{name:19} {sum(row.item_stats):5} {row.power_cap:9} id:{row.id:19}\n'
+            count += 1
 
 
         class_type = player_char_info[2]
@@ -1819,6 +1824,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         else:
             class_name = "Warlock"
 
+        
         # create embed
         embed = discord.Embed(title=f'***{steam_name}: {class_name}***', colour=discord.Colour(0x0033cc))
 
@@ -1828,11 +1834,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # set embed footer
         embed.set_footer(text="Sundance | created by Michael Scarfi", icon_url="https://drive.google.com/uc?export=view&id=1GRYmllW4Ig9LvsNldcOyU3rpbZPb6fD_")
 
-        # add DIM strings to bottom
-        embed.add_field(name=f'Recommended Items to Delete', value = table, inline = False)
+        for table in tables:
+            # add DIM strings to bottom
+            embed.add_field(name=f'Recommended Items to Delete', value = table, inline = False)
 
         return embed
-        
+
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))
 
