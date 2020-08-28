@@ -1713,7 +1713,54 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         print(items_df.head(30))
         return items_df.head(5)
 
+    async def get_cleanse_modifiers(self, ctx):
+        modifiers = [0,0,0,0,0,0]
+        defaults = [1.2, 1.1, 1, .9, .8, .7]
+        place = 0
+        stat_names = ['Mob', 'Res', 'Rec', 'Dis', 'Int','Str']
 
+        stats = ""
+        for i, stat in enumerate(stat_names):
+            if  modifiers[i] == 0:
+                stats = f'{i+1}: {stat}\n'
+
+        # ask for stats
+        await ctx.message.channel.send("Please respond with the stat numbers in order of imporatance, each stat should be a new message unless you would like 2 or more stats to be equally waited.  Each number should be seperated by a space.\n" + stats)
+
+        # loop to handle bad inputs
+        while place < 6:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+
+            try:
+                # split response into list 
+                response = str(msg.content)  
+                response_list = response.split()
+                #convert values to integers
+                response_list = [int(i) for i in response_list]
+                number_stats = len(response_list)
+
+                # checking to confirm the response is valid
+                if place + len(response_list) < 6 and max(response_list) <= 6 and min(response_list) >= 1:
+                    for stat in response_list:
+                        if(modifiers[stat-1] != 0):
+                            raise Exception
+                    total_weight = sum(defaults[place:place + number_stats])
+                    weight = total_weight/number_stats
+                    for stat in response_list:
+                        modifiers[stat-1] = weight
+                    place += number_stats
+                else:
+                    raise Exception
+            except:
+                stats = ""
+                for i, stat in enumerate(stat_names):
+                    if  modifiers[i] == 0:
+                        stats = f'{i+1}: {stat}\n'
+                await ctx.message.channel.send(f'Error: Please provide valid stat numbers. Remaining stats:\n{stats}')
+
+        return modifiers
 
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))

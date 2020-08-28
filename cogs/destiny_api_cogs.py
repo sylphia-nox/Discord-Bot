@@ -147,28 +147,24 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
     # this command provides users with optimized gear to maximize stats.
     @commands.command(name = 'cleanse', brief = "~cleanse <class_name>",  help = "~cleanse <class_name:(hunter/warlock/titan)>")
-    async def cleanse(self, ctx, character, all_items):
+    async def cleanse(self, ctx, character, all_items: False):
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
-        print(f'Got player info')
         
         # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
         player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
-        print(f'Got charactor info')
 
         # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
         armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token, all_items = all_items)
-        print(f'Got character armor')
 
         # add bonus stats to exotic armor
         # commenting out to improve performance while testing.
         armor = await destiny_helpers.add_exotic_bonus_stats(armor)
-        print(f'Added exotic bonus stats')
 
         # need to add function to get modifier numbers
+        modifiers = await destiny_helpers.get_cleanse_modifiers(ctx)
 
-        results = await destiny_helpers.get_cleanse(armor, [1.15, .9, 1.15, .8, 1, .7])
-        print(f'function complete')
+        results = await destiny_helpers.get_cleanse(armor, modifiers)
 
 def setup(bot):
     bot.add_cog(destiny_api_cogs(bot))
