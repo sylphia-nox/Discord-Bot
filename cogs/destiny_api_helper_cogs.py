@@ -1799,7 +1799,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         
         tables = []
         count = 0
-        index = 0
+        index = -1
 
         for row in items_df.itertuples(index=False):
             if count%15 == 0:
