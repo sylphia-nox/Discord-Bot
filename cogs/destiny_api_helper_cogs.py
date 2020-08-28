@@ -454,15 +454,17 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         for item in json:
             itemHash = str(item['itemHash'])
-            itemType = manifest[itemHash]['itemType']
-            itemClassType = manifest[itemHash]['classType']
+            manifest_entry = manifest[itemHash]
+            itemType = manifest_entry['itemType']
+            itemClassType = manifest_entry['classType']
             #check if the item can be used by the specified character
             if((itemType == 2 and itemClassType == class_type) or itemType == 3):
                 if(itemType == 2):
-                    itemSubType = manifest[itemHash]['itemSubType']
+                    itemSubType = manifest_entry['itemSubType']
                 else:
-                    itemSubType = manifest[itemHash]['inventory']['bucketTypeHash']
+                    itemSubType = manifest_entry['inventory']['bucketTypeHash']
 
+                
                 # now that we know this is an instanced item, get its ID to get the items power level
                 itemInstanceID = str(item['itemInstanceId'])
                 # run api call to get power level
@@ -472,7 +474,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     power_level = 0
 
                 items_list.append([itemInstanceID, itemType, itemSubType, power_level])
-
+        
+        del manifest_entry
         del json
         return items_list
 
@@ -1722,7 +1725,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         stats = ""
         for i, stat in enumerate(stat_names):
             if  modifiers[i] == 0:
-                stats = f'{i+1}: {stat}\n'
+                stats += f'{i+1}: {stat}\n'
 
         # ask for stats
         await ctx.message.channel.send("Please respond with the stat numbers in order of imporatance, each stat should be a new message unless you would like 2 or more stats to be equally waited.  Each number should be seperated by a space.\n" + stats)
@@ -1742,7 +1745,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 number_stats = len(response_list)
 
                 # checking to confirm the response is valid
-                if place + len(response_list) < 6 and max(response_list) <= 6 and min(response_list) >= 1:
+                if place + len(response_list) <= 6 and max(response_list) <= 6 and min(response_list) >= 1:
                     for stat in response_list:
                         if(modifiers[stat-1] != 0):
                             raise Exception
@@ -1760,6 +1763,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         stats = f'{i+1}: {stat}\n'
                 await ctx.message.channel.send(f'Error: Please provide valid stat numbers. Remaining stats:\n{stats}')
 
+        print(modifiers)
         return modifiers
 
 def setup(bot):
