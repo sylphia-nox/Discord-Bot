@@ -1334,9 +1334,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         if exotic_hash > 0:
             #  [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
-            exotic_slot = items_df[items_df.itemHash.astype(int) == exotic_hash].iloc[0]['itemSubType']
-            items_df = items_df[~((items_df.exotic.astype(bool)) & (items_df.itemHash.astype(int) != exotic_hash))]
-            items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash.astype(int) != exotic_hash))]
+            exotic_slot = items_df[items_df.itemHash.astype('int64') == exotic_hash].iloc[0]['itemSubType']
+            items_df = items_df[~((items_df.exotic.astype(bool)) & (items_df.itemHash.astype('int64') != exotic_hash))]
+            items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash.astype('int64') != exotic_hash))]
             items_df = items_df.reset_index(drop=True)
         elif exotic_hash == -1:
             items_df = items_df[~(items_df.exotic.astype(bool))]
