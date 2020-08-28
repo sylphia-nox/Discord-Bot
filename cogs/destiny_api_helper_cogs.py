@@ -1862,10 +1862,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # set embed footer
         embed.set_footer(text="Sundance | created by Michael Scarfi", icon_url="https://drive.google.com/uc?export=view&id=1GRYmllW4Ig9LvsNldcOyU3rpbZPb6fD_")
 
-        for table in tables:
+        for index, table in enumerate(tables):
             
             # add DIM strings to bottom
-            embed.add_field(name=f'Recommended Items to Delete', value = f'```{table}```', inline = False)
+            embed.add_field(name=f'Recommended Items to Delete, Group {index}', value = f'```{table}```', inline = False)
 
         return embed
 
