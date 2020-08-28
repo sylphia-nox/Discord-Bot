@@ -1803,7 +1803,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         for row in items_df.itertuples(index=False):
             if count%15 == 0:
-                tables.append(f'{"Name":<15} {"Scr":<3} {"Cap":<4} {"Dim Search":<22}\n')
+                tables.append(f'{"Name":<15} {"Scr":<4} {"Cap":<4} {"Dim Search":<22}\n')
                 index += 1
             # calculate cost and append to list
             itemHash = str(row.itemHash)
@@ -1811,10 +1811,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 
             tables[index] += f'{str(name)[0:15]:<15} {sum(row.item_stats):3.1f} {str(row.power_cap)[0:4]:>4} id:{str(row.id):<19}\n'
             
-            print(f'{str(name)[0:15]:<15} {sum(row.item_stats):3.1f} {str(row.power_cap)[0:4]:>4} id:{str(row.id):<19}\n')
             count += 1
 
-        print(tables[0])
         class_type = player_char_info[2]
         emblem = player_char_info[5]
 
