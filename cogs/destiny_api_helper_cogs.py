@@ -1810,10 +1810,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             name = manifest[itemHash]['displayProperties']['name']
                 
             tables[index] += f'{str(name):<19} {sum(row.item_stats):5.1} {str(row.power_cap):>9} id:{str(row.id):<19}\n'
-            print(f'{str(name):<19} {sum(row.item_stats):5.1} {str(row.power_cap):>9} id:{str(row.id):<19}\n')
+            
+            print(f'{str(name):<19} {sum(row.item_stats):.1} {str(row.power_cap):>9} id:{str(row.id):<19}\n')
             count += 1
 
-
+        print(table[0])
         class_type = player_char_info[2]
         emblem = player_char_info[5]
 
