@@ -101,7 +101,10 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
         # pull current information on raid.
         sqlreturn = await self.query_db(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE id = {raid_id} AND `server_id` = {server_id}')
-        sqlreturn = sqlreturn[0]
+        try:
+            sqlreturn = sqlreturn[0]
+        except IndexError as err:
+            raise errors.RaidNotFound('That raid does not exist.') from err
 
         # check to confirm user is not already in the raid.
         if str(user.id) in np.array(sqlreturn):
@@ -149,7 +152,10 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
         # pull current raid info
         sqlreturn = await self.query_db(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE id = {raid_id} AND `server_id` = {server_id}')
-        sqlreturn = sqlreturn[0]
+        try:
+            sqlreturn = sqlreturn[0]
+        except IndexError as err:
+            raise errors.RaidNotFound('That raid does not exist.') from err
 
         # iterate through each spot to check if the user is in that spot.
         for i, spot in enumerate(sqlreturn):
@@ -182,7 +188,10 @@ class helper_cogs(commands.Cog, name='Utilities'):
     async def delete_raid(self, raid_id, server_id):
         #grab raid message ID to be deleted
         sqlreturn = await self.query_db(f'SELECT message_id, notify_message_id, channel_id FROM raid_plan WHERE id = {raid_id} AND `server_id` = {server_id}')
-        sqlreturn = sqlreturn[0]
+        try:
+            sqlreturn = sqlreturn[0]
+        except IndexError as err:
+            raise errors.RaidNotFound('That raid does not exist.') from err
         raid_chan_code = int(sqlreturn[2])
 
         #delete raid from DB
