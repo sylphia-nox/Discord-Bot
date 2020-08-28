@@ -35,7 +35,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
             database = os.getenv('DATABASE'),
             auth_plugin='mysql_native_password',
             pool_name='helper_cogs_pool',
-            pool_size=5
+            pool_size=20
         )
         mydb.close()
 

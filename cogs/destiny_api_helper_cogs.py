@@ -12,6 +12,7 @@ import pandas as pd
 import base64
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+import asyncio
 
 class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'): 
     
@@ -1508,24 +1509,36 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return int(exotic_hash)
 
     async def add_exotic_bonus_stats(self, items):
-        # [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
-        for i, item in enumerate(items):
-            # check if item is exotic
-            if bool(item[4]):
-                itemHash = item[6]
-                # query DB for instrinsic stats, using DB tables instead of manifest file to improve performance
-                sql = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(resilience,0) as `resilience`, IFNULL(recovery,0) as `recovery` from `exotics` WHERE `hash` = {itemHash}'
-                sqlreturn = await helpers.query_db(sql)
+        sem = asyncio.Semaphore(5)
 
-                # confirm we get results, armor 1.0 is not in the table so it will not return anything
-                if sqlreturn != [] and sqlreturn[0] != []:
-                    itemStats = item[5]
-                    # iterate through first values
-                    for index in range(3):
-                        itemStats[index] += sqlreturn[0][index]
-                    items[i][5] = itemStats
+        # create task pool
+        tasks = [asyncio.ensure_future(self.safe_add_bonus_stats(item, sem)) for item in items]
+        items = await asyncio.gather(*tasks)
 
-        return items
+        return items 
+
+    async def add_bonus_stats_to_exotic(self, item):
+        if bool(item[4]):
+            itemHash = item[6]
+            # query DB for instrinsic stats, using DB tables instead of manifest file to improve performance
+            sql = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(resilience,0) as `resilience`, IFNULL(recovery,0) as `recovery` from `exotics` WHERE `hash` = {itemHash}'
+            sqlreturn = await helpers.query_db(sql)
+
+            # confirm we get results, armor 1.0 is not in the table so it will not return anything
+            if sqlreturn != [] and sqlreturn[0] != []:
+                # iterate through first values
+                for index in range(3):
+                    item[5][index] += sqlreturn[0][index]
+                
+        return item
+
+    async def safe_add_bonus_stats(self, item, sem: asyncio.Semaphore):
+        async with sem:
+            return await self.add_bonus_stats_to_exotic(item)
+
+            
+
+        
 
     # helper funciton for users to select light level for filtering out amor that will be sunset         
     async def pick_light_level(self, ctx):
