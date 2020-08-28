@@ -1710,7 +1710,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             except ValueError:
                 if int(item[3]) < power_levels[0]:
                     power_index = -1
-                elif int(item[3]) == 999950:
+                elif int(item[3]) == 999950 or int(item[3]) == 999960:
                     items[index][3] = 0
                     power_index = -1
                 elif int(item[3]) > power_levels[3]:
