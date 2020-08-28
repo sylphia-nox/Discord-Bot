@@ -1414,7 +1414,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         for i in range(combos):
             names_message = ""
             for name in combo_df.iloc[i]['names']:
-                names_message += f'{name}\n'
+                names_message += f'{name[0:19]}\n'
 
             DIM_search += f'Set {i+1}: `'
             for index, Id in enumerate(combo_df.iloc[i]['ids']):
@@ -1803,15 +1803,15 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         for row in items_df.itertuples(index=False):
             if count%15 == 0:
-                tables.append(f'{"Name":<19} {"Score":<5} {"Power Cap":<9} {"Dim Search":<22}\n')
+                tables.append(f'{"Name":<15} {"Scr":<3} {"Cap":<4} {"Dim Search":<22}\n')
                 index += 1
             # calculate cost and append to list
             itemHash = str(row.itemHash)
             name = manifest[itemHash]['displayProperties']['name']
                 
-            tables[index] += f'{str(name)[0:19]:<19} {sum(row.item_stats):5.1f} {str(row.power_cap)[0:9]:>9} id:{str(row.id):<19}\n'
+            tables[index] += f'{str(name)[0:15]:<15} {sum(row.item_stats):3.1f} {str(row.power_cap)[0:4]:>4} id:{str(row.id):<19}\n'
             
-            print(f'{str(name)[0:19]:<19} {sum(row.item_stats):5.1f} {str(row.power_cap)[0:9]:>9} id:{str(row.id):<19}\n')
+            print(f'{str(name)[0:15]:<15} {sum(row.item_stats):3.1f} {str(row.power_cap)[0:4]:>4} id:{str(row.id):<19}\n')
             count += 1
 
         print(tables[0])
