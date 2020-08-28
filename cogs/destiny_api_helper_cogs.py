@@ -875,38 +875,33 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def parse_json_for_armor_info(self, json, items_list, class_type, armor_sockets):
         global manifest
         global power_caps
-        count = 0
 
         for item in json:
-            count +=1
-            if count == 1:
-                print(f'Begining item')
             itemHash = str(item['itemHash'])
-            itemType = manifest[itemHash]['itemType']
-            itemClassType = manifest[itemHash]['classType']
+            manifest_entry = manifest[itemHash]
+            itemType = manifest_entry['itemType']
+            itemClassType = manifest_entry['classType']
             # check if the item can be used by the specified character
             if itemType == 2 and itemClassType == class_type:
-                itemSubType = manifest[itemHash]['itemSubType']
+                itemSubType = manifest_entry['itemSubType']
 
                 # now that we know this is an instanced item, get its ID to get the items power level
                 itemInstanceID = str(item.get('itemInstanceId', 0))
                 # run api call to get power cap
                 try:
-                    power_cap_hash = str(manifest[itemHash]['quality']['versions'][0]['powerCapHash'])
+                    power_cap_hash = str(manifest_entry['quality']['versions'][0]['powerCapHash'])
                     power_cap = power_caps[power_cap_hash]['powerCap']
-                    exotic = int(manifest[itemHash]['inventory']['tierType']) == 6
+                    exotic = int(manifest_entry['inventory']['tierType']) == 6
                 except:
                     # if we get an error here we have a messed up item and need to skip to the next one.
                     print(f'Glitched item: {itemHash}')
                     continue
+                finally:
+                    del manifest_entry
 
                 item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
 
                 items_list.append([itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash])
-            if count == 1:
-                print(f'end item')
-            if count%10 == 0:
-                print(f'Parsed {count} items')
 
         del json
         return items_list
