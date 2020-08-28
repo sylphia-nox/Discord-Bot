@@ -652,45 +652,45 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # check if player is 1 away from pinnacle cap, if so, give any activity with highest chance of dropping needed item(s), including all raid encounters
             if (int(sum(high_items)/8) + 1 == int(power_level_brackets[2])):
                 
-                    # create header for message
-                    message += 'You are in the final push\n *Pinnacles you can run and probability of getting a needed item:*\n'
+                # create header for message
+                message += 'You are in the final push\n *Pinnacles you can run and probability of getting a needed item:*\n'
 
-                    # create new array with just activity name and probability of +1/+2 increase (since we are 1 away we want the non +0 probability)
-                    final_push_milestones = []
+                # create new array with just activity name and probability of +1/+2 increase (since we are 1 away we want the non +0 probability)
+                final_push_milestones = []
 
-                    # cycle through and add each active_milestones to final_push_milestones
-                    for i, activity in enumerate(probability_array):
-                        # We need the odds of increasing the power level in that slot, since we can't go up +1 here we need to adjust, at this point, the formula thinks that any +2 drop can give +1 to slots already at max power
-                        # so, we need to remove those from the equation, for +1s, the +1 odd is correct.
-                        if(activity[3] == 2):
-                            probability = activity[0]
-                        else:
-                            probability = activity[1]
-                        
-                        final_push_milestones.append([active_milestones[i][2], probability])
-                        # since we have been dealing with floats, if a probabilty is almost 1.00 change it to be 1
-                        if(final_push_milestones[i][1] >= .99):
-                            final_push_milestones[i][1] = 1
-
-
-                    # create dtype to format structured array
-                    dtype = np.dtype([('name', 'O'), ('probability', '<f8')])
-
-                    # convert array to nparray 
-                    temp = np.array(final_push_milestones)
-
-                    # transform nparray to structured array with column names so it can be sorted
-                    active_milestones = np.rec.fromarrays(temp.T, dtype=dtype)
-                    del temp                                                                # del temp array to save resources
+                # cycle through and add each active_milestones to final_push_milestones
+                for i, activity in enumerate(probability_array):
+                    # We need the odds of increasing the power level in that slot, since we can't go up +1 here we need to adjust, at this point, the formula thinks that any +2 drop can give +1 to slots already at max power
+                    # so, we need to remove those from the equation, for +1s, the +1 odd is correct.
+                    if(activity[3] == 2):
+                        probability = activity[0]
+                    else:
+                        probability = activity[1]
                     
-                    active_milestones = np.sort(active_milestones, order='probability')     # sort the array
-                    active_milestones = np.flip(active_milestones)                          # flip array so it is in descending order.
+                    final_push_milestones.append([active_milestones[i][2], probability])
+                    # since we have been dealing with floats, if a probabilty is almost 1.00 change it to be 1
+                    if(final_push_milestones[i][1] >= .99):
+                        final_push_milestones[i][1] = 1
 
-                    for milestone in active_milestones:
-                        message += f'{milestone[1]*100:.1f}%: {milestone[0]}\n'
+
+                # create dtype to format structured array
+                dtype = np.dtype([('name', 'O'), ('probability', '<f8')])
+
+                # convert array to nparray 
+                temp = np.array(final_push_milestones)
+
+                # transform nparray to structured array with column names so it can be sorted
+                active_milestones = np.rec.fromarrays(temp.T, dtype=dtype)
+                del temp                                                                # del temp array to save resources
                 
-                    # del array to save memory since it contains large strings
-                    del active_milestones
+                active_milestones = np.sort(active_milestones, order='probability')     # sort the array
+                active_milestones = np.flip(active_milestones)                          # flip array so it is in descending order.
+
+                for milestone in active_milestones:
+                    message += f'{milestone[1]*100:.1f}%: {milestone[0]}\n'
+            
+                # del array to save memory since it contains large strings
+                del active_milestones
 
             # everything else needs to make special consideration of raid probabilities
             else:
@@ -875,41 +875,60 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
     # helper function to parse JSON, returns items[] that can be equiped by class_type
     async def parse_json_for_armor_info(self, json, items_list, class_type, armor_sockets):
+        # limit concurrent tasks to 5 to avoid overloading db connection pool
+        sem = asyncio.Semaphore(5)
+        tasks = []
+
+        # loop through items and add valid items to task pool
+        for item in json:
+            # get item info
+            manifest_entry = manifest[str(item['itemHash'])]
+            
+            # if the item is armor and of the correct class, add it to the task list
+            if manifest_entry['itemType'] == 2 and manifest_entry['classType'] == class_type:
+                tasks.append(asyncio.ensure_future(self.safe_parse_item_json_for_info(item, manifest_entry, armor_sockets, sem)))
+
+        # gather results of tasks as a list
+        items = await asyncio.gather(*tasks)
+        del json
+
+        return items
+
+    async def safe_parse_item_json_for_info(self, item, manifest_entry, armor_sockets, sem: asyncio.Semaphore):
+        async with sem:
+            return await self.parse_item_json_for_info(item, manifest_entry, armor_sockets)
+
+    async def parse_item_json_for_info(self, item, manifest_entry, armor_sockets):
         global manifest
         global power_caps
 
-        for item in json:
-            itemHash = str(item['itemHash'])
-            manifest_entry = manifest[itemHash]
-            itemType = manifest_entry['itemType']
-            itemClassType = manifest_entry['classType']
-            # check if the item can be used by the specified character
-            if itemType == 2 and itemClassType == class_type:
-                itemSubType = manifest_entry['itemSubType']
+        itemType = manifest_entry['itemType']
+        itemHash = str(item['itemHash'])
+        itemSubType = manifest_entry['itemSubType']
 
-                # now that we know this is an instanced item, get its ID to get the items power level
-                itemInstanceID = str(item.get('itemInstanceId', 0))
-                # run api call to get power cap
-                try:
-                    power_cap_hash = str(manifest_entry['quality']['versions'][0]['powerCapHash'])
-                    power_cap = power_caps[power_cap_hash]['powerCap']
-                    exotic = int(manifest_entry['inventory']['tierType']) == 6
-                except:
-                    # if we get an error here we have a messed up item and need to skip to the next one.
-                    print(f'Glitched item: {itemHash}')
-                    continue
-                finally:
-                    del manifest_entry
+        # now that we know this is an instanced item, get its ID to get the items power level
+        itemInstanceID = str(item.get('itemInstanceId', 0))
+        sockets = armor_sockets[itemInstanceID]['sockets']
 
-                item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
+        # run api call to get power cap
+        try:
+            power_cap_hash = str(manifest_entry['quality']['versions'][0]['powerCapHash'])
+            power_cap = power_caps[power_cap_hash]['powerCap']
+            exotic = int(manifest_entry['inventory']['tierType']) == 6
+        except:
+            # if we get an error here we have a messed up item and need to skip to the next one.
+            itemHash = item['itemHash']
+            print(f'Glitched item: {itemHash}')
+            return [itemInstanceID, itemType, itemSubType, 0, False, [0,0,0,0,0,0], itemHash]
+        finally:
+            del manifest_entry
 
-                items_list.append([itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash])
+        item_stats = await self.get_armor_stats(itemInstanceID, sockets)
 
-        del json
-        return items_list
+        return [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]   
+        
 
-    async def get_armor_stats(self, itemID, armor_sockets):
-        sockets = armor_sockets[itemID]['sockets']
+    async def get_armor_stats(self, itemID, sockets):
         intrinsic_sockets = []
         stats = [0,0,0,0,0,0]
         for socket in sockets:
@@ -1535,10 +1554,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def safe_add_bonus_stats(self, item, sem: asyncio.Semaphore):
         async with sem:
             return await self.add_bonus_stats_to_exotic(item)
-
-            
-
-        
 
     # helper funciton for users to select light level for filtering out amor that will be sunset         
     async def pick_light_level(self, ctx):
