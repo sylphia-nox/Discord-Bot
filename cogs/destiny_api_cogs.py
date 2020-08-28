@@ -147,7 +147,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
     # this command provides users with optimized gear to maximize stats.
     @commands.command(name = 'cleanse', brief = "~cleanse <class_name>",  help = "~cleanse <class_name:(hunter/warlock/titan)>")
-    async def cleanse(self, ctx, character):
+    async def cleanse(self, ctx, character, number:int = 30):
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
         
@@ -167,7 +167,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # need to add function to get modifier numbers
         modifiers = await destiny_helpers.get_cleanse_modifiers(ctx)
 
-        results = await destiny_helpers.get_cleanse(armor, modifiers)
+        results = await destiny_helpers.get_cleanse(armor, modifiers, number)
 
         await ctx.send("Command complete")
 
