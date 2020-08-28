@@ -12,6 +12,7 @@ import pandas as pd
 import base64
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+import asyncio
 
 class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'): 
     
@@ -454,15 +455,17 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         for item in json:
             itemHash = str(item['itemHash'])
-            itemType = manifest[itemHash]['itemType']
-            itemClassType = manifest[itemHash]['classType']
+            manifest_entry = manifest[itemHash]
+            itemType = manifest_entry['itemType']
+            itemClassType = manifest_entry['classType']
             #check if the item can be used by the specified character
             if((itemType == 2 and itemClassType == class_type) or itemType == 3):
                 if(itemType == 2):
-                    itemSubType = manifest[itemHash]['itemSubType']
+                    itemSubType = manifest_entry['itemSubType']
                 else:
-                    itemSubType = manifest[itemHash]['inventory']['bucketTypeHash']
+                    itemSubType = manifest_entry['inventory']['bucketTypeHash']
 
+                
                 # now that we know this is an instanced item, get its ID to get the items power level
                 itemInstanceID = str(item['itemInstanceId'])
                 # run api call to get power level
@@ -472,7 +475,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     power_level = 0
 
                 items_list.append([itemInstanceID, itemType, itemSubType, power_level])
-
+        
+        del manifest_entry
         del json
         return items_list
 
@@ -648,45 +652,45 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # check if player is 1 away from pinnacle cap, if so, give any activity with highest chance of dropping needed item(s), including all raid encounters
             if (int(sum(high_items)/8) + 1 == int(power_level_brackets[2])):
                 
-                    # create header for message
-                    message += 'You are in the final push\n *Pinnacles you can run and probability of getting a needed item:*\n'
+                # create header for message
+                message += 'You are in the final push\n *Pinnacles you can run and probability of getting a needed item:*\n'
 
-                    # create new array with just activity name and probability of +1/+2 increase (since we are 1 away we want the non +0 probability)
-                    final_push_milestones = []
+                # create new array with just activity name and probability of +1/+2 increase (since we are 1 away we want the non +0 probability)
+                final_push_milestones = []
 
-                    # cycle through and add each active_milestones to final_push_milestones
-                    for i, activity in enumerate(probability_array):
-                        # We need the odds of increasing the power level in that slot, since we can't go up +1 here we need to adjust, at this point, the formula thinks that any +2 drop can give +1 to slots already at max power
-                        # so, we need to remove those from the equation, for +1s, the +1 odd is correct.
-                        if(activity[3] == 2):
-                            probability = activity[0]
-                        else:
-                            probability = activity[1]
-                        
-                        final_push_milestones.append([active_milestones[i][2], probability])
-                        # since we have been dealing with floats, if a probabilty is almost 1.00 change it to be 1
-                        if(final_push_milestones[i][1] >= .99):
-                            final_push_milestones[i][1] = 1
-
-
-                    # create dtype to format structured array
-                    dtype = np.dtype([('name', 'O'), ('probability', '<f8')])
-
-                    # convert array to nparray 
-                    temp = np.array(final_push_milestones)
-
-                    # transform nparray to structured array with column names so it can be sorted
-                    active_milestones = np.rec.fromarrays(temp.T, dtype=dtype)
-                    del temp                                                                # del temp array to save resources
+                # cycle through and add each active_milestones to final_push_milestones
+                for i, activity in enumerate(probability_array):
+                    # We need the odds of increasing the power level in that slot, since we can't go up +1 here we need to adjust, at this point, the formula thinks that any +2 drop can give +1 to slots already at max power
+                    # so, we need to remove those from the equation, for +1s, the +1 odd is correct.
+                    if(activity[3] == 2):
+                        probability = activity[0]
+                    else:
+                        probability = activity[1]
                     
-                    active_milestones = np.sort(active_milestones, order='probability')     # sort the array
-                    active_milestones = np.flip(active_milestones)                          # flip array so it is in descending order.
+                    final_push_milestones.append([active_milestones[i][2], probability])
+                    # since we have been dealing with floats, if a probabilty is almost 1.00 change it to be 1
+                    if(final_push_milestones[i][1] >= .99):
+                        final_push_milestones[i][1] = 1
 
-                    for milestone in active_milestones:
-                        message += f'{milestone[1]*100:.1f}%: {milestone[0]}\n'
+
+                # create dtype to format structured array
+                dtype = np.dtype([('name', 'O'), ('probability', '<f8')])
+
+                # convert array to nparray 
+                temp = np.array(final_push_milestones)
+
+                # transform nparray to structured array with column names so it can be sorted
+                active_milestones = np.rec.fromarrays(temp.T, dtype=dtype)
+                del temp                                                                # del temp array to save resources
                 
-                    # del array to save memory since it contains large strings
-                    del active_milestones
+                active_milestones = np.sort(active_milestones, order='probability')     # sort the array
+                active_milestones = np.flip(active_milestones)                          # flip array so it is in descending order.
+
+                for milestone in active_milestones:
+                    message += f'{milestone[1]*100:.1f}%: {milestone[0]}\n'
+            
+                # del array to save memory since it contains large strings
+                del active_milestones
 
             # everything else needs to make special consideration of raid probabilities
             else:
@@ -829,9 +833,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     
 
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
-    async def get_player_armor(self, player_char_info, OAuth = False, access_token = ""):
+    async def get_player_armor(self, player_char_info, OAuth = False, access_token = "", all_items: bool = True):
         global manifest
-
+        
         # declare list to hold items
         items = []
 
@@ -843,6 +847,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         # get all items and info for items
         json_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/?components=102, 201, 205, 305', OAuth, access_token)
+        
        
         # pull out armor item info
         armor_sockets = json_return['Response']['itemComponents']['sockets']['data']
@@ -852,12 +857,14 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # parse vault items
             items = await self.parse_json_for_armor_info(json_return['Response']['profileInventory']['data']['items'], items, class_type, armor_sockets)
 
-            # parse equiped and unequiped items
-            for id in char_ids:
-                items = await self.parse_json_for_armor_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type, armor_sockets)
-                items = await self.parse_json_for_armor_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type, armor_sockets)
-        except KeyError:
-            raise errors.PrivacyOnException("There was an error accessing your items, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.")
+            # check if we want items on characters and not just the vault
+            if all_items:
+                # parse equiped and unequiped items
+                for id in char_ids:
+                    items = await self.parse_json_for_armor_info(json_return['Response']['characterInventories']['data'][id]['items'], items, class_type, armor_sockets)
+                    items = await self.parse_json_for_armor_info(json_return['Response']['characterEquipment']['data'][id]['items'], items, class_type, armor_sockets)
+        except KeyError as err:
+            raise errors.PrivacyOnException("There was an error accessing your items, ensure your privacy settings allow others to view your inventory or authenticate using `~authenticate`.") from err
         
 
         # deleting variable to save memory usage.
@@ -868,39 +875,60 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
     # helper function to parse JSON, returns items[] that can be equiped by class_type
     async def parse_json_for_armor_info(self, json, items_list, class_type, armor_sockets):
+        # limit concurrent tasks to 5 to avoid overloading db connection pool
+        sem = asyncio.Semaphore(5)
+        tasks = []
+
+        # loop through items and add valid items to task pool
+        for item in json:
+            # get item info
+            manifest_entry = manifest[str(item['itemHash'])]
+            
+            # if the item is armor and of the correct class, add it to the task list
+            if manifest_entry['itemType'] == 2 and manifest_entry['classType'] == class_type:
+                tasks.append(asyncio.ensure_future(self.safe_parse_item_json_for_info(item, manifest_entry, armor_sockets, sem)))
+
+        # gather results of tasks as a list
+        items = await asyncio.gather(*tasks)
+        del json
+
+        return items_list + items
+
+    async def safe_parse_item_json_for_info(self, item, manifest_entry, armor_sockets, sem: asyncio.Semaphore):
+        async with sem:
+            return await self.parse_item_json_for_info(item, manifest_entry, armor_sockets)
+
+    async def parse_item_json_for_info(self, item, manifest_entry, armor_sockets):
         global manifest
         global power_caps
+
+        itemType = manifest_entry['itemType']
+        itemHash = str(item['itemHash'])
+        itemSubType = manifest_entry['itemSubType']
+
+        # now that we know this is an instanced item, get its ID to get the items power level
+        itemInstanceID = str(item.get('itemInstanceId', 0))
+        sockets = armor_sockets[itemInstanceID]['sockets']
+
+        # run api call to get power cap
+        try:
+            power_cap_hash = str(manifest_entry['quality']['versions'][0]['powerCapHash'])
+            power_cap = power_caps[power_cap_hash]['powerCap']
+            exotic = int(manifest_entry['inventory']['tierType']) == 6
+        except:
+            # if we get an error here we have a messed up item and need to skip to the next one.
+            itemHash = item['itemHash']
+            print(f'Glitched item: {itemHash}')
+            return [itemInstanceID, itemType, itemSubType, 0, False, [0,0,0,0,0,0], itemHash]
+        finally:
+            del manifest_entry
+
+        item_stats = await self.get_armor_stats(itemInstanceID, sockets)
+
+        return [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]   
         
 
-        for item in json:
-            itemHash = str(item['itemHash'])
-            itemType = manifest[itemHash]['itemType']
-            itemClassType = manifest[itemHash]['classType']
-            # check if the item can be used by the specified character
-            if itemType == 2 and itemClassType == class_type:
-                itemSubType = manifest[itemHash]['itemSubType']
-
-                # now that we know this is an instanced item, get its ID to get the items power level
-                itemInstanceID = str(item.get('itemInstanceId', 0))
-                # run api call to get power cap
-                try:
-                    power_cap_hash = str(manifest[itemHash]['quality']['versions'][0]['powerCapHash'])
-                    power_cap = power_caps[power_cap_hash]['powerCap']
-                    exotic = int(manifest[itemHash]['inventory']['tierType']) == 6
-                except:
-                    # if we get an error here we have a messed up item and need to skip to the next one.
-                    print(f'Glitched item: {itemHash}')
-                    continue
-
-                item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
-
-                items_list.append([itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash])
-
-        del json
-        return items_list
-
-    async def get_armor_stats(self, itemID, armor_sockets):
-        sockets = armor_sockets[itemID]['sockets']
+    async def get_armor_stats(self, itemID, sockets):
         intrinsic_sockets = []
         stats = [0,0,0,0,0,0]
         for socket in sockets:
@@ -1332,9 +1360,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         if exotic_hash > 0:
             #  [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
-            exotic_slot = items_df[items_df.itemHash.astype(int) == exotic_hash].iloc[0]['itemSubType']
-            items_df = items_df[~((items_df.exotic.astype(bool)) & (items_df.itemHash.astype(int) != exotic_hash))]
-            items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash.astype(int) != exotic_hash))]
+            exotic_slot = items_df[items_df.itemHash.astype('int64') == exotic_hash].iloc[0]['itemSubType']
+            items_df = items_df[~((items_df.exotic.astype(bool)) & (items_df.itemHash.astype('int64') != exotic_hash))]
+            items_df = items_df[~((items_df.itemSubType == exotic_slot) & (items_df.itemHash.astype('int64') != exotic_hash))]
             items_df = items_df.reset_index(drop=True)
         elif exotic_hash == -1:
             items_df = items_df[~(items_df.exotic.astype(bool))]
@@ -1406,7 +1434,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         for i in range(combos):
             names_message = ""
             for name in combo_df.iloc[i]['names']:
-                names_message += f'{name}\n'
+                names_message += f'{name[0:19]}\n'
 
             DIM_search += f'Set {i+1}: `'
             for index, Id in enumerate(combo_df.iloc[i]['ids']):
@@ -1500,24 +1528,32 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return int(exotic_hash)
 
     async def add_exotic_bonus_stats(self, items):
-        # [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
-        for i, item in enumerate(items):
-            # check if item is exotic
-            if bool(item[4]):
-                itemHash = item[6]
-                # query DB for instrinsic stats, using DB tables instead of manifest file to improve performance
-                sql = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(resilience,0) as `resilience`, IFNULL(recovery,0) as `recovery` from `exotics` WHERE `hash` = {itemHash}'
-                sqlreturn = await helpers.query_db(sql)
+        sem = asyncio.Semaphore(5)
 
-                # confirm we get results, armor 1.0 is not in the table so it will not return anything
-                if sqlreturn != [] and sqlreturn[0] != []:
-                    itemStats = item[5]
-                    # iterate through first values
-                    for index in range(3):
-                        itemStats[index] += sqlreturn[0][index]
-                    items[i][5] = itemStats
+        # create task pool
+        tasks = [asyncio.ensure_future(self.safe_add_bonus_stats(item, sem)) for item in items]
+        items = await asyncio.gather(*tasks)
 
-        return items
+        return items 
+
+    async def add_bonus_stats_to_exotic(self, item):
+        if bool(item[4]):
+            itemHash = item[6]
+            # query DB for instrinsic stats, using DB tables instead of manifest file to improve performance
+            sql = f'SELECT IFNULL(mobility,0) as `mobility`, IFNULL(resilience,0) as `resilience`, IFNULL(recovery,0) as `recovery` from `exotics` WHERE `hash` = {itemHash}'
+            sqlreturn = await helpers.query_db(sql)
+
+            # confirm we get results, armor 1.0 is not in the table so it will not return anything
+            if sqlreturn != [] and sqlreturn[0] != []:
+                # iterate through first values
+                for index in range(3):
+                    item[5][index] += sqlreturn[0][index]
+                
+        return item
+
+    async def safe_add_bonus_stats(self, item, sem: asyncio.Semaphore):
+        async with sem:
+            return await self.add_bonus_stats_to_exotic(item)
 
     # helper funciton for users to select light level for filtering out amor that will be sunset         
     async def pick_light_level(self, ctx):
@@ -1650,8 +1686,188 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         return exotic_hash, light_level, stats, stat_goal_reductions 
 
+    # helper function to get items that can be cleansed from vault
+    async def get_cleanse(self, items, stat_modifiers, number:int):
+        # item format [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
 
+        # get current season power cap
+        power_levels = []
+        sqlreturn = await helpers.query_db('SELECT `field_three`, `field_four`, `field_five`, `field_six` FROM `current_info` WHERE id = 1')
+        for entry in sqlreturn[0]:
+            power_levels.append(int(entry))
+        power_modifiers = [.9,1,1.33,1.67,1.10,1.2]
 
+        for index, item in enumerate(items):
+            # adjust for stat modifiers
+            temp_stats = item[5]
+            for i, stat in enumerate(temp_stats):
+                temp_stats[i] = stat * stat_modifiers[i]
+            items[index][5] = temp_stats
+            
+            #adjust for power level
+            try:
+                power_index = power_levels.index(int(item[3]))
+            except ValueError:
+                if int(item[3]) < power_levels[0]:
+                    power_index = -1
+                elif int(item[3]) == 999950 or int(item[3]) == 999960:
+                    items[index][3] = 0
+                    power_index = -1
+                elif int(item[3]) > power_levels[3]:
+                    power_index = 4
+                else:
+                    power_index = 0
+            power_index += 1
+            items[index][1] = sum(temp_stats) * float(power_modifiers[power_index])
+
+            # reformat itemSubType
+            # if item[2] == 26:
+            #     # update item slot for easier use down the road and append to reduced list
+            #     slot_name = "Helmet"
+            # # if gauntlets
+            # elif item[2] == 27:
+            #     slot_name = "Gauntlets"
+            # # if chest
+            # elif item[2] == 28:
+            #     slot_name = "Chest"
+            # # if legs
+            # elif item[2] == 29:
+            #     slot_name = "Legs"
+            # items[index][2] = slot_name
+
+        items_df =  pd.DataFrame(items, columns = ['id', 'score', 'slot', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
+        items_df = items_df[items_df.slot.astype(int) != 30]
+        items_df.sort_values(by=['score'], ascending=True, inplace=True)
+        items_df = items_df.head(number)
+        items_df = items_df.reset_index(drop=True)
+
+        #pd.set_option('display.max_columns', 500)
+        #pd.set_option('display.width', 700)
+        #pd.set_option('display.max_colwidth', 25) 
+        #print(items_df.head(30))
+        return items_df
+
+    async def get_cleanse_modifiers(self, ctx):
+        modifiers = [0,0,0,0,0,0]
+        defaults = [1.25, 1.15, 1.05, .95, .85, .75]
+        place = 0
+        stat_names = ['Mob', 'Res', 'Rec', 'Dis', 'Int','Str']
+
+        stats = ""
+        for i, stat in enumerate(stat_names):
+            if  modifiers[i] == 0:
+                stats += f'{i+1}: {stat}\n'
+
+        # ask for stats
+        await ctx.message.channel.send("Please respond with the stat numbers in order of importance, each stat should be a new message (line) unless you would like 2 or more stats to be equally waited.  Each number should be seperated by a space.\n" + stats)
+
+        # loop to handle bad inputs
+        while place < 6:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+
+            try:
+                # split response into list 
+                response = str(msg.content)  
+                response_list = response.split()
+                #convert values to integers
+                response_list = [int(i) for i in response_list]
+                number_stats = len(response_list)
+
+                # checking to confirm the response is valid
+                if place + len(response_list) <= 6 and max(response_list) <= 6 and min(response_list) >= 1:
+                    for stat in response_list:
+                        if(modifiers[stat-1] != 0):
+                            raise Exception
+                    total_weight = sum(defaults[place:place + number_stats])
+                    weight = total_weight/number_stats
+                    for stat in response_list:
+                        modifiers[stat-1] = weight
+                    place += number_stats
+                else:
+                    raise Exception
+            except:
+                stats = ""
+                for i, stat in enumerate(stat_names):
+                    if  modifiers[i] == 0:
+                        stats = f'{i+1}: {stat}\n'
+                await ctx.message.channel.send(f'Error: Please provide valid stat numbers. Remaining stats:\n{stats}')
+
+        print(modifiers)
+        return modifiers
+
+    async def include_items_on_character(self, ctx):
+        need_answer = True
+        all_items = False
+
+        # ask for input
+        await ctx.message.channel.send("Would you like to include items in your characters inventory? (y/n) No means only include items in your vault.")
+
+        # loop to handle bad inputs
+        while need_answer:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+            response = msg.content
+            
+            # checking to confirm the response is valid
+            if response.lower() == 'y' or response.lower() == 'yes':
+                need_answer = False
+                all_items = True
+            elif response.lower() == 'n' or response.lower() == 'no':
+                need_answer = False
+            else:
+                await ctx.message.channel.send(f'Please provide a valid answer (y or n)')
+
+        return all_items
+
+    async def build_cleanse_embed(self, items_df, player_char_info, steam_name):
+        #f'{x:02} {x*x:3} {x*x*x:4}'
+        
+        tables = []
+        count = 0
+        index = -1
+
+        for row in items_df.itertuples(index=False):
+            if count%15 == 0:
+                tables.append(f'{"Name":<15} {"Scr":<4} {"Cap":<4} {"Dim Search":<22}\n')
+                index += 1
+            # calculate cost and append to list
+            itemHash = str(row.itemHash)
+            name = manifest[itemHash]['displayProperties']['name']
+                
+            tables[index] += f'{str(name)[0:15]:<15} {sum(row.item_stats):3.1f} {str(row.power_cap)[0:4]:>4} id:{str(row.id):<19}\n'
+            
+            count += 1
+
+        class_type = player_char_info[2]
+        emblem = player_char_info[5]
+
+        # get class string
+        if(class_type == 0):
+            class_name = "Titan"
+        elif(class_type == 1):
+            class_name = "Hunter"
+        else:
+            class_name = "Warlock"
+
+        
+        # create embed
+        embed = discord.Embed(title=f'***{steam_name}: {class_name}***', colour=discord.Colour(0x0033cc))
+
+        # set image to player emblem
+        embed.set_thumbnail(url=emblem)
+
+        # set embed footer
+        embed.set_footer(text="Sundance | created by Michael Scarfi", icon_url="https://drive.google.com/uc?export=view&id=1GRYmllW4Ig9LvsNldcOyU3rpbZPb6fD_")
+
+        for index, table in enumerate(tables):
+            
+            # add DIM strings to bottom
+            embed.add_field(name=f'Recommended Items to Delete, Group {index}', value = f'```{table}```', inline = False)
+
+        return embed
 
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))

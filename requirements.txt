@@ -1,6 +1,7 @@
 ###### Requirements with Version Specifiers ######
 
 aiohttp
+aiohttp[speedups]
 appdirs
 asn1crypto
 async-timeout

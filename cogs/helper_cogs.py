@@ -14,6 +14,8 @@ from discord.ext.tasks import loop
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 from dateutil.parser import ParserError
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
 import numpy as np
 
@@ -33,7 +35,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
             database = os.getenv('DATABASE'),
             auth_plugin='mysql_native_password',
             pool_name='helper_cogs_pool',
-            pool_size=5
+            pool_size=20
         )
         mydb.close()
 
@@ -99,7 +101,10 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
         # pull current information on raid.
         sqlreturn = await self.query_db(f'SELECT message_id, prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE id = {raid_id} AND `server_id` = {server_id}')
-        sqlreturn = sqlreturn[0]
+        try:
+            sqlreturn = sqlreturn[0]
+        except IndexError as err:
+            raise errors.RaidNotFound('That raid does not exist.') from err
 
         # check to confirm user is not already in the raid.
         if str(user.id) in np.array(sqlreturn):
@@ -147,7 +152,10 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
         # pull current raid info
         sqlreturn = await self.query_db(f'SELECT prime_one, prime_two, prime_three, prime_four, prime_five, prime_six, back_one, back_two FROM raid_plan WHERE id = {raid_id} AND `server_id` = {server_id}')
-        sqlreturn = sqlreturn[0]
+        try:
+            sqlreturn = sqlreturn[0]
+        except IndexError as err:
+            raise errors.RaidNotFound('That raid does not exist.') from err
 
         # iterate through each spot to check if the user is in that spot.
         for i, spot in enumerate(sqlreturn):
@@ -180,7 +188,10 @@ class helper_cogs(commands.Cog, name='Utilities'):
     async def delete_raid(self, raid_id, server_id):
         #grab raid message ID to be deleted
         sqlreturn = await self.query_db(f'SELECT message_id, notify_message_id, channel_id FROM raid_plan WHERE id = {raid_id} AND `server_id` = {server_id}')
-        sqlreturn = sqlreturn[0]
+        try:
+            sqlreturn = sqlreturn[0]
+        except IndexError as err:
+            raise errors.RaidNotFound('That raid does not exist.') from err
         raid_chan_code = int(sqlreturn[2])
 
         #delete raid from DB
@@ -281,15 +292,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
     # helper utility to query the DB
     async def query_db(self, query: str):
-        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
-        mycursor = mydb.cursor()
-
-        try:
-            # query DB and grab results
-            mycursor.execute(query)
-            sqlreturn = mycursor.fetchall()
-        finally:
-            mydb.close()
+        loop = asyncio.get_event_loop()
+        sqlreturn = await loop.run_in_executor(ThreadPoolExecutor(), self.query_db_sync, query)
 
         # return results
         return sqlreturn
@@ -311,16 +315,8 @@ class helper_cogs(commands.Cog, name='Utilities'):
 
     # helper function to write to db
     async def write_db(self, query: str, *args):
-        mydb = mysql.connector.connect(pool_name='helper_cogs_pool') 
-        mycursor = mydb.cursor()
-
-        try:
-            # send sql to db.
-            mycursor.execute(query, *args)
-            mydb.commit()
-            row = mycursor.lastrowid
-        finally:
-            mydb.close()
+        loop = asyncio.get_event_loop()
+        row = await loop.run_in_executor(ThreadPoolExecutor(), self.write_db_sync, query, *args)
 
         return row
 
@@ -425,6 +421,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
                 #client.report_exception(user = str(ctx.message.author.id))
         except ImportError:
             print(f'Could not log error to GCP')
+            print(f'{traceback.format_exc()}')
             pass
 
     async def purge_oauth_DB(self):
@@ -446,8 +443,7 @@ class helper_cogs(commands.Cog, name='Utilities'):
             for owner in oauth_owners:
                 if not int(owner) in member_ids:
                     bad_items += 1
-                    print(f'Need to delete {owner} from DB.')
-                    # await self.write_db("DELETE FROM `oauth_tokens` WHERE `discordID` = '%s'", [member,])
+                    await self.write_db("DELETE FROM `oauth_tokens` WHERE `discordID` = '%s'", [member,])
 
         if (bad_items > 0):
             print(f'Removed {bad_items} bad entries from db')
