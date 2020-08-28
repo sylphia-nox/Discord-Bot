@@ -167,9 +167,11 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         # need to add function to get modifier numbers
         modifiers = await destiny_helpers.get_cleanse_modifiers(ctx)
 
-        results = await destiny_helpers.get_cleanse(armor, modifiers, number)
+        results_df = await destiny_helpers.get_cleanse(armor, modifiers, number)
 
-        await ctx.send("Command complete")
+        embed = await destiny_helpers.build_cleanse_embed(results_df, player_char_info, player_info[2])
+
+        await ctx.send(embed = embed)
 
 def setup(bot):
     bot.add_cog(destiny_api_cogs(bot))
