@@ -875,9 +875,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     async def parse_json_for_armor_info(self, json, items_list, class_type, armor_sockets):
         global manifest
         global power_caps
-        
+        count = 0
 
         for item in json:
+            count +=1
+            if count == 1:
+                print(f'Begining item')
             itemHash = str(item['itemHash'])
             itemType = manifest[itemHash]['itemType']
             itemClassType = manifest[itemHash]['classType']
@@ -900,6 +903,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 item_stats = await self.get_armor_stats(itemInstanceID, armor_sockets)
 
                 items_list.append([itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash])
+            if count == 1:
+                print(f'end item')
+            if count%10 == 0:
+                print(f'Parsed {count} items')
 
         del json
         return items_list
