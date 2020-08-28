@@ -1659,7 +1659,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return exotic_hash, light_level, stats, stat_goal_reductions 
 
     # helper function to get items that can be cleansed from vault
-    async def get_cleanse(self, items, stat_modifiers):
+    async def get_cleanse(self, items, stat_modifiers, number:int):
         # item format [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
 
         # get current season power cap
@@ -1709,14 +1709,14 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         items_df.sort_values(by=['score'], ascending=True, inplace=True)
 
         pd.set_option('display.max_columns', 500)
-        pd.set_option('display.width', 1000)
-        pd.set_option('display.max_colwidth', 150) 
+        pd.set_option('display.width', 700)
+        pd.set_option('display.max_colwidth', 25) 
         print(items_df.head(30))
-        return items_df.head(5)
+        return items_df.head(number)
 
     async def get_cleanse_modifiers(self, ctx):
         modifiers = [0,0,0,0,0,0]
-        defaults = [1.2, 1.1, 1, .9, .8, .7]
+        defaults = [1.25, 1.15, 1.05, .95, .85, .75]
         place = 0
         stat_names = ['Mob', 'Res', 'Rec', 'Dis', 'Int','Str']
 
@@ -1763,6 +1763,31 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         print(modifiers)
         return modifiers
+
+    async def include_items_on_character(self, ctx):
+        need_answer = True
+        all_items = False
+
+        # ask for input
+        await ctx.message.channel.send("Would you like to include items in your characters inventory? (y/n) No means only include items in your vault.")
+
+        # loop to handle bad inputs
+        while need_answer:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+            response = msg.content
+            
+            # checking to confirm the response is valid
+            if response.lower() == 'y' or response.lower() == 'yes':
+                need_answer = False
+                all_items = True
+            elif response.lower() == 'n' or response.lower() == 'no':
+                need_answer = False
+            else:
+                await ctx.message.channel.send(f'Please provide a valid answer (y or n)')
+
+        return all_items
 
 def setup(bot):
     bot.add_cog(destiny_api_helper_cogs(bot))
