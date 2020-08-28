@@ -1837,7 +1837,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             itemHash = str(row.itemHash)
             name = manifest[itemHash]['displayProperties']['name']
                 
-            tables[index] += f'{str(name)[0:15]:<15} {sum(row.item_stats):3.1f} {str(row.power_cap)[0:4]:>4} id:{str(row.id):<19}\n'
+            tables[index] += f'{str(name)[0:15]:<15} {sum(row.item_stats):4.1f} {str(row.power_cap)[0:4]:>4} id:{str(row.id):<19}\n'
             
             count += 1
 
@@ -1865,7 +1865,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         for index, table in enumerate(tables):
             
             # add DIM strings to bottom
-            embed.add_field(name=f'Recommended Items to Delete, Group {index}', value = f'```{table}```', inline = False)
+            embed.add_field(name=f'Recommended Items to Delete, Group {index + 1}', value = f'```{table}```', inline = False)
 
         return embed
 
