@@ -892,7 +892,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         items = await asyncio.gather(*tasks)
         del json
 
-        return items
+        return items_list + items
 
     async def safe_parse_item_json_for_info(self, item, manifest_entry, armor_sockets, sem: asyncio.Semaphore):
         async with sem:
