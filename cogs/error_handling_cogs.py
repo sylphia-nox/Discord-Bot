@@ -48,9 +48,14 @@ class error_handling_cogs(commands.Cog):
             await admin.dm_channel.send(f'Critical Error: manifest not loaded')
 
         # check if error is a manifest load error
-        elif isinstance(error, errors.ManifestLoadError):
+        elif isinstance(error, errors.ApiError):
             await ctx.message.author.create_dm()
-            await ctx.message.author.dm_channel.send(f'An error occured getting a response from the Bungie.net API.  The API may be down or you may need to authenticate with the bot.')
+
+            if int(error.payload) == 401:
+                await ctx.message.author.dm_channel.send(f'An authentication error was received from Bungie.net.  Please try re-authenticating with the bot.') 
+            else:   
+                await ctx.message.author.create_dm()
+                await ctx.message.author.dm_channel.send(f'An error occured getting a response from the Bungie.net API.  The API may be down or you may need to authenticate/re-authenticate with the bot.')
 
             await admin.create_dm()
             await admin.dm_channel.send(f'Error {str(error)}')
