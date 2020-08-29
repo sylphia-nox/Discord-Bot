@@ -1429,6 +1429,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         combos = len(combo_df.index)%6
 
+        # if traction is in the mods_bonus, we need to remove its hidden +10, 
+        for i, bonus in enumerate(stat_bonuses):
+            if bonus%10 == 5:
+                stat_bonuses[i] -= 10
+
         DIM_search = ""
         # create message table of armor sets. 
         for i in range(combos):
@@ -1450,12 +1455,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             base_stats_message += f'{trait_names[traits[2]-1]}: ' + str(combo_df.iloc[i]['stat3']) + '\n'  
 
             # calculate stat values after masterworking
-            stats_final = [combo_df.iloc[i]['stat1'], combo_df.iloc[i]['stat2'], combo_df.iloc[i]['stat1'] + 10]
+            stats_final = [combo_df.iloc[i]['stat1'], combo_df.iloc[i]['stat2'], combo_df.iloc[i]['stat3']]
 
-            # if traction is in the mods_bonus, we need to remove its hidden +10, 
-            for i, bonus in enumerate(stat_bonuses):
-                if bonus%10 == 5:
-                    stat_bonuses[i] -= 10
+            
 
             # create message for final stats
             final_stats_message = ""
