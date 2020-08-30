@@ -1103,6 +1103,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         item_df['trait3_delta'] = trait3_deltas
         item_df['cost'] = item_df['cost'].astype('int8')
 
+        print(item_df['trait1_delta'].value_counts()) #debug
+        print(item_df['trait2_delta'].value_counts()) #debug
+        print(item_df['trait3_delta'].value_counts()) #debug
+
         # remove all items that result in a reduction in potential tiers if we have too many items.
         if(len(item_df.index) > 100):
             item_df = item_df[item_df.cost <= (true_surplus)]
@@ -1122,72 +1126,72 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         #highest_tertiary_score_sub = 0
 
         print(f'Total Items prior to highest_score_calc: {len(item_df.index)}')
-        # next we need to reduce the calculations to a manageable amount, but if we are already in range we can avoid that
-        if(len(item_df.index) > 20):
-            # calculate scores
-            primary_scores = []
-            trait3_scores = []
+        # next we need to reduce the calculations to a manageable amount
 
-            for row in item_df.itertuples(index=False):
-                # create temp copy of high_items for manipulation
-                test_items = temp_test_items.copy()
-                del test_items[int(row.itemSubType)]
+        # calculate scores
+        primary_scores = []
+        trait3_scores = []
 
-                # add test item to test_items
-                test_items.append([row.trait1, row.trait2, row.trait3])
-                
+        for row in item_df.itertuples(index=False):
+            # create temp copy of high_items for manipulation
+            test_items = temp_test_items.copy()
+            del test_items[int(row.itemSubType)]
 
-                # get deficiency values
-                primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(test_items, stat1_goal, stat2_goal, stat3_goal)
-
-                # calculate scores
-                primary_score = neg_primary_tiers - primary_deficiency
-                trait3_score = neg_trait3_tiers - tier3_deficiency
-
-                # check if armor is just a direct decrease in stat values
-                if temp_stat1 < stat1 and temp_stat2 < stat2 and temp_stat3 <= stat3:
-                    primary_score -= 1
-                if temp_stat3 < stat3:
-                    trait3_score -= 1
-
-                # append score values to lists
-                primary_scores.append(primary_score)
-                trait3_scores.append(neg_trait3_tiers - tier3_deficiency)
-
-                if(primary_score > highest_primary_score):
-                    highest_primary_score = primary_score
-                #     highest_tertiary_score_sub = highest_tertiary_score_prime
-                #     highest_tertiary_score_prime = trait3_score
-                # elif(primary_score ==  highest_primary_score and trait3_score > highest_tertiary_score_prime):
-                #     highest_tertiary_score_prime = trait3_score
-                # elif(primary_score == highest_primary_score-1 and trait3_score > highest_tertiary_score_sub):
-                #     highest_tertiary_score_sub = trait3_score
-
-                # surplus = surplus - (highest_primary_score *10)
-
-            print(f'Highest Primary Score: {highest_primary_score}') #debug
+            # add test item to test_items
+            test_items.append([row.trait1, row.trait2, row.trait3])
             
-            item_df['primary_score'] = primary_scores
-            item_df['trait3_score'] = trait3_scores
- 
 
-            item_df = item_df[(item_df.primary_score >= (highest_primary_score-1))]
+            # get deficiency values
+            primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(test_items, stat1_goal, stat2_goal, stat3_goal)
+
+            # calculate scores
+            primary_score = neg_primary_tiers - primary_deficiency
+            trait3_score = neg_trait3_tiers - tier3_deficiency
+
+            # check if armor is just a direct decrease in stat values
+            if temp_stat1 < stat1 and temp_stat2 < stat2 and temp_stat3 <= stat3:
+                primary_score -= 1
+            if temp_stat3 < stat3:
+                trait3_score -= 1
+
+            # append score values to lists
+            primary_scores.append(primary_score)
+            trait3_scores.append(neg_trait3_tiers - tier3_deficiency)
+
+            if(primary_score > highest_primary_score):
+                highest_primary_score = primary_score
+            #     highest_tertiary_score_sub = highest_tertiary_score_prime
+            #     highest_tertiary_score_prime = trait3_score
+            # elif(primary_score ==  highest_primary_score and trait3_score > highest_tertiary_score_prime):
+            #     highest_tertiary_score_prime = trait3_score
+            # elif(primary_score == highest_primary_score-1 and trait3_score > highest_tertiary_score_sub):
+            #     highest_tertiary_score_sub = trait3_score
+
+            # surplus = surplus - (highest_primary_score *10)
+
+        print(f'Highest Primary Score: {highest_primary_score}') #debug
+        
+        item_df['primary_score'] = primary_scores
+        item_df['trait3_score'] = trait3_scores
+
+
+        item_df = item_df[(item_df.primary_score >= (highest_primary_score-1))]
+        item_df = item_df.reset_index(drop=True)
+        print(f'Total Items after highest_score_calc: {len(item_df.index)}') #debug
+        # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
+        if(len(item_df.index) > 100):
+            item_df = item_df[item_df.cost <= (surplus)]
             item_df = item_df.reset_index(drop=True)
-            print(f'Total Items after highest_score_calc: {len(item_df.index)}') #debug
-            # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
-            if(len(item_df.index) > 100):
-                item_df = item_df[item_df.cost <= (surplus)]
-                item_df = item_df.reset_index(drop=True)
-            # remove all items that will decrease score/cannot results in score increase
-            if(len(item_df.index) > 100):
-                item_df = item_df[item_df.primary_score >= 0]
-                item_df = item_df.reset_index(drop=True)
-            if(len(item_df.index) > 100):
-                item_df = item_df.sort_values(by=['primary_score','trait3_score','desired_total'], ascending=[False, False, False])
-                item_df = item_df.head(100)
+        # remove all items that will decrease score/cannot results in score increase
+        if(len(item_df.index) > 100):
+            item_df = item_df[item_df.primary_score >= 0]
+            item_df = item_df.reset_index(drop=True)
+        if(len(item_df.index) > 100):
+            item_df = item_df.sort_values(by=['primary_score','trait3_score','desired_total'], ascending=[False, False, False])
+            item_df = item_df.head(100)
 
-            # clear uneeded columns
-            item_df.drop(['primary_score','trait3_score'], axis = 1)
+        # clear uneeded columns
+        item_df.drop(['primary_score','trait3_score'], axis = 1)
 
         # create list of high_item ids
         high_item_ids = []
@@ -1218,6 +1222,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # 
         #
         #
+        
 
         while helmet_active and helmet_i < len(helmets.index):
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
@@ -1257,12 +1262,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     trait1_deltas[1] = arms.iloc[arms_i]['trait1_delta']
                     trait2_deltas[1] = arms.iloc[arms_i]['trait2_delta']
                     trait3_deltas[1] = arms.iloc[arms_i]['trait3_delta']
-                    best_delta = max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)])
 
                     is_exotic[1] = 1 if arms.iloc[arms_i]['exotic'].astype(bool) else 0
                     count += 1 #debug
                     # check if too many exotics (helmet and arms)
-                    if(sum(is_exotic) <= 1 and best_delta >= 0):
+                    if(sum(is_exotic) <= 1 and max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)]) >= 0):
 
                         temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3']]
                         temp_costs[1] = arms.iloc[arms_i]['cost']
@@ -1278,11 +1282,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                 trait1_deltas[2] = chests.iloc[chest_i]['trait1_delta']
                                 trait2_deltas[2] = chests.iloc[chest_i]['trait2_delta']
                                 trait3_deltas[2] = chests.iloc[chest_i]['trait3_delta']
-                                best_delta = max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)])
 
                                 is_exotic[2] = 1 if chests.iloc[chest_i]['exotic'].astype(bool) else 0
                                 count += 1 #debug
-                                if(sum(is_exotic) <= 1 and best_delta >= 0):
+                                if(sum(is_exotic) <= 1 and max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)]) >= 0):
 
                                     temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
                                     temp_costs[2] = chests.iloc[chest_i]['cost']
@@ -1300,12 +1303,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                             trait1_deltas[3] = boots.iloc[boots_i]['trait1_delta']
                                             trait2_deltas[3] = boots.iloc[boots_i]['trait2_delta']
                                             trait3_deltas[3] = boots.iloc[boots_i]['trait3_delta']
-                                            best_delta = max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)])
 
                                             is_exotic[3] = 1 if boots.iloc[boots_i]['exotic'].astype(bool) else 0
 
                                             count += 1 #debug
-                                            if(sum(is_exotic) <= 1):
+                                            if(sum(is_exotic) <= 1 and max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)]) >= 0):
 
                                                 temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3']]
                                                 temp_costs[2] =  boots.iloc[boots_i]['cost']
@@ -1332,6 +1334,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                                     if (primary_score + 1) >= best_score:
                                                         if primary_score > best_score:
                                                             best_score = primary_score
+                                                            
                                                         temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
                                                     
                                                     
