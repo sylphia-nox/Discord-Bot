@@ -1013,7 +1013,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
     # this function returns a list of optimized gear
     async def optimize_armor(self, items, traits: list, stat_goal_reductions: list):
-        
+        print(f'Beggining Optimize_armor coroutine') #debug
         # assign variables: list would be better but existing code relies on variable names.
         trait1 = traits[0]
         trait2 = traits[1]
@@ -1183,7 +1183,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         best_score = 0
 
         # debug
-        print (f'Total Potential combinations: {len(helmets.index) * len(arms.index) * len(chests.indes) * len(boots.index)}')
+        print (f'Total Potential combinations: {len(helmets.index) * len(arms.index) * len(chests.index) * len(boots.index)}')
         count = 0
 
         # optimization ides
