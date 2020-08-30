@@ -1074,22 +1074,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # adding column containing total value of primary stats and remove any columns with value of 0
         item_df['desired_total'] = (item_df.item_stats.str[trait1-1] + item_df.item_stats.str[trait2-1]).astype('int8')  
 
-        # calculate cost for swapping each item and add to DF
-        costs = []
-        for row in item_df.itertuples(index=False):
-            # calculate cost and append to list
-            cost = high_values[int(row.itemSubType)] - int(row.desired_total)
-            
-            costs.append(cost)
-
-        item_df['cost'] = costs
-        item_df['cost'] = item_df['cost'].astype('int8')
-
-        # remove all items that result in a reduction in potential tiers if we have too many items.
-        if(len(item_df.index) > 100):
-            item_df = item_df[item_df.cost <= (true_surplus)]
-            item_df = item_df.reset_index(drop=True)
-
         # current DF format = ['id', 'itemSubType', [item_stats], 'itemHash', 'desired_total', 'cost']
         # desired dF format = ['id', 'itemSubType', 'desired_total', 'cost', 'trai1', trait2', 'trait3', 'primary_score', 'trait3_score']
         item_df['trait1'] = item_df.item_stats.str[trait1-1].astype('int8')
@@ -1098,6 +1082,33 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         # clear uneeded rows
         item_df.drop('item_stats', axis = 1)
+
+        # calculate cost for swapping each item and add to DF
+        costs = []
+        trait1_deltas = []
+        trait2_deltas = []
+        trait3_deltas = []
+        for row in item_df.itertuples(index=False):
+            # calculate cost and append to list
+            cost = high_values[int(row.itemSubType)] - int(row.desired_total)
+            trait1_deltas.append(row.trait1 - high_items[int(row.itemSubType)][5][trait1-1])
+            trait2_deltas.append(row.trait2 - high_items[int(row.itemSubType)][5][trait2-1])
+            trait3_deltas.append(row.trait3 - high_items[int(row.itemSubType)][5][trait3-1])
+            
+            costs.append(cost)
+
+        item_df['cost'] = costs
+        item_df['trait1_delta'] = trait1_deltas
+        item_df['trait1_delta'] = trait1_deltas
+        item_df['trait1_delta'] = trait1_deltas
+        item_df['cost'] = item_df['cost'].astype('int8')
+
+        # remove all items that result in a reduction in potential tiers if we have too many items.
+        if(len(item_df.index) > 100):
+            item_df = item_df[item_df.cost <= (true_surplus)]
+            item_df = item_df.reset_index(drop=True)
+
+        
 
         # create adjusted list of high_items with only the needed values
         temp_test_items = []
@@ -1215,6 +1226,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             temp_id = [0,0,0,0]
             temp_hashes = [0,0,0,0]
             is_exotic = [0,0,0,0]
+            trait1_deltas = [0,0,0,0]
+            trait2_deltas = [0,0,0,0]
+            trait3_deltas = [0,0,0,0]
             
             # assign stat values
             temp_stats[0] = [helmets.iloc[helmet_i]['trait1'], helmets.iloc[helmet_i]['trait2'], helmets.iloc[helmet_i]['trait3']] 
@@ -1227,6 +1241,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # calculate cost
             cost = sum(temp_costs)
             count += 1 #debug
+
+            trait1_deltas[0] = helmets.iloc[helmet_i]['trait1_delta']
+            trait2_deltas[0] = helmets.iloc[helmet_i]['trait2_delta']
+            trait3_deltas[0] = helmets.iloc[helmet_i]['trait3_delta']
+
             
             # if cost is less than surplus continue, otherwise, we will exit current loop level.
             if(cost <= surplus):
@@ -1235,49 +1254,66 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 arms_i = 0
                 while arms_active and arms_i < len(arms.index):
                     
-                    temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3']]
-                    temp_costs[1] = arms.iloc[arms_i]['cost']
-                    temp_hashes[1] = arms.iloc[arms_i]['itemHash']
-                    temp_id[1] = arms.iloc[arms_i]['id']
-                    is_exotic[1] = 1 if arms.iloc[arms_i]['exotic'].astype(bool) else 0
+                    trait1_deltas[1] = arms.iloc[arms_i]['trait1_delta']
+                    trait2_deltas[1] = arms.iloc[arms_i]['trait2_delta']
+                    trait3_deltas[1] = arms.iloc[arms_i]['trait3_delta']
+                    best_delta = max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)])
 
-                    cost = sum(temp_costs)
+                    is_exotic[1] = 1 if arms.iloc[arms_i]['exotic'].astype(bool) else 0
                     count += 1 #debug
-                    if(sum(is_exotic) <= 1):
+                    # check if too many exotics (helmet and arms)
+                    if(sum(is_exotic) <= 1 and best_delta >= 0):
+
+                        temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3']]
+                        temp_costs[1] = arms.iloc[arms_i]['cost']
+                        temp_hashes[1] = arms.iloc[arms_i]['itemHash']
+                        temp_id[1] = arms.iloc[arms_i]['id']
+                        cost = sum(temp_costs)
 
                         if(cost <= surplus):
                             chest_active = True
                             chest_i = 0
                             while chest_active and chest_i < len(chests.index):
                                 
-                                temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
-                                temp_costs[2] = chests.iloc[chest_i]['cost']
-                                temp_hashes[2] = chests.iloc[chest_i]['itemHash']
-                                temp_id[2] = chests.iloc[chest_i]['id']
+                                trait1_deltas[2] = chests.iloc[chest_i]['trait1_delta']
+                                trait2_deltas[2] = chests.iloc[chest_i]['trait2_delta']
+                                trait3_deltas[2] = chests.iloc[chest_i]['trait3_delta']
+                                best_delta = max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)])
+
                                 is_exotic[2] = 1 if chests.iloc[chest_i]['exotic'].astype(bool) else 0
-
-                                cost = sum(temp_costs)
                                 count += 1 #debug
+                                if(sum(is_exotic) <= 1 and best_delta >= 0):
 
-                                if(sum(is_exotic) <= 1):
+                                    temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
+                                    temp_costs[2] = chests.iloc[chest_i]['cost']
+                                    temp_hashes[2] = chests.iloc[chest_i]['itemHash']
+                                    temp_id[2] = chests.iloc[chest_i]['id']
+                                    cost = sum(temp_costs)
+                                
 
                                     if(cost <= surplus):
                                         boots_active = True
                                         boots_i = 0
                                         while boots_active and boots_i < len(boots.index):
                                             
-                                            temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3']]
-                                            temp_costs[2] =  boots.iloc[boots_i]['cost']
-                                            temp_hashes[3] = boots.iloc[boots_i]['itemHash']
-                                            temp_id[3] = boots.iloc[boots_i]['id']
+                                            
+                                            trait1_deltas[3] = boots.iloc[boots_i]['trait1_delta']
+                                            trait2_deltas[3] = boots.iloc[boots_i]['trait2_delta']
+                                            trait3_deltas[3] = boots.iloc[boots_i]['trait3_delta']
+                                            best_delta = max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)])
+
                                             is_exotic[3] = 1 if boots.iloc[boots_i]['exotic'].astype(bool) else 0
 
-                                            cost = sum(temp_costs)
                                             count += 1 #debug
+                                            if(sum(is_exotic) <= 1):
 
-                                            if(cost <= surplus):
+                                                temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3']]
+                                                temp_costs[2] =  boots.iloc[boots_i]['cost']
+                                                temp_hashes[3] = boots.iloc[boots_i]['itemHash']
+                                                temp_id[3] = boots.iloc[boots_i]['id']
+                                                cost = sum(temp_costs)
                                                 # check the loadout is valid
-                                                if(sum(is_exotic) <= 1):
+                                                if(cost <= surplus):
                                                     # get raw scores
                                                     primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
                                                     count2 += 1 #debug
@@ -1301,15 +1337,18 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                                     
                                                     
                                                 
-                                            # cost exceeded, exiting boots loop
-                                            else:
-                                                boots_active = False
+                                                # cost exceeded, exiting boots loop
+                                                else:
+                                                    boots_active = False
 
                                             # end of boots loop, iterate
                                             boots_i += 1
                                         # reset slot to default
                                         temp_costs[3] = 0
                                         is_exotic[3] = 0
+                                        trait1_deltas[3] = 0
+                                        trait2_deltas[3] = 0
+                                        trait3_deltas[3] = 0
                                     # cost exeeded, exiting chest loop
                                     else:
                                         chest_active = False
@@ -1318,6 +1357,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                             # Chest loop finished, reset slot to default and move back up to arms
                             temp_costs[2] = 0
                             is_exotic[2] = 0
+                            trait1_deltas[2] = 0
+                            trait2_deltas[2] = 0
+                            trait3_deltas[2] = 0
                         # cost exeeded, exiting arms loop
                         else:
                             arms_active = False
@@ -1328,6 +1370,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # reset slot to default
                 temp_costs[1] = 0
                 is_exotic[1] = 0
+                trait1_deltas[1] = 0
+                trait2_deltas[1] = 0
+                trait3_deltas[1] = 0
                 # loop succes, iterate
                 helmet_i += 1
             # exiting helmet loop
