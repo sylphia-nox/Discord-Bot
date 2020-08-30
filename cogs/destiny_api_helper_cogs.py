@@ -1085,27 +1085,14 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         # calculate cost for swapping each item and add to DF
         costs = []
-        trait1_deltas = []
-        trait2_deltas = []
-        trait3_deltas = []
         for row in item_df.itertuples(index=False):
             # calculate cost and append to list
             cost = high_values[int(row.itemSubType)] - int(row.desired_total)
-            trait1_deltas.append(row.trait1 - high_items[int(row.itemSubType)][5][trait1-1])
-            trait2_deltas.append(row.trait2 - high_items[int(row.itemSubType)][5][trait2-1])
-            trait3_deltas.append(row.trait3 - high_items[int(row.itemSubType)][5][trait3-1])
             
             costs.append(cost)
 
         item_df['cost'] = costs
-        item_df['trait1_delta'] = trait1_deltas
-        item_df['trait2_delta'] = trait2_deltas
-        item_df['trait3_delta'] = trait3_deltas
         item_df['cost'] = item_df['cost'].astype('int8')
-
-        print(item_df['trait1_delta'].value_counts()) #debug
-        print(item_df['trait2_delta'].value_counts()) #debug
-        print(item_df['trait3_delta'].value_counts()) #debug
 
         # remove all items that result in a reduction in potential tiers if we have too many items.
         if(len(item_df.index) > 100):
@@ -1222,18 +1209,18 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # 
         #
         #
-        
+        total_helmets = len(helmets.index)
+        total_arms = len(arms.index)
+        total_chests = len(chests.index)
+        total_boots = len(boots.index)
 
-        while helmet_active and helmet_i < len(helmets.index):
+        while helmet_active and helmet_i < total_helmets:
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
             temp_stats = [[],[],[],[]]
             temp_costs = [0,0,0,0]
             temp_id = [0,0,0,0]
             temp_hashes = [0,0,0,0]
             is_exotic = [0,0,0,0]
-            trait1_deltas = [0,0,0,0]
-            trait2_deltas = [0,0,0,0]
-            trait3_deltas = [0,0,0,0]
             
             # assign stat values
             temp_stats[0] = [helmets.iloc[helmet_i]['trait1'], helmets.iloc[helmet_i]['trait2'], helmets.iloc[helmet_i]['trait3']] 
@@ -1247,9 +1234,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             cost = sum(temp_costs)
             count += 1 #debug
 
-            trait1_deltas[0] = helmets.iloc[helmet_i]['trait1_delta']
-            trait2_deltas[0] = helmets.iloc[helmet_i]['trait2_delta']
-            trait3_deltas[0] = helmets.iloc[helmet_i]['trait3_delta']
+    
 
             
             # if cost is less than surplus continue, otherwise, we will exit current loop level.
@@ -1257,11 +1242,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # repeat down to the bottom
                 arms_active = True
                 arms_i = 0
-                while arms_active and arms_i < len(arms.index):
+                while arms_active and arms_i < total_arms:
                     
-                    trait1_deltas[1] = arms.iloc[arms_i]['trait1_delta']
-                    trait2_deltas[1] = arms.iloc[arms_i]['trait2_delta']
-                    trait3_deltas[1] = arms.iloc[arms_i]['trait3_delta']
+                    
 
                     is_exotic[1] = 1 if arms.iloc[arms_i]['exotic'].astype(bool) else 0
                     count += 1 #debug
@@ -1277,11 +1260,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         if(cost <= surplus):
                             chest_active = True
                             chest_i = 0
-                            while chest_active and chest_i < len(chests.index):
+                            while chest_active and chest_i < total_chests:
                                 
-                                trait1_deltas[2] = chests.iloc[chest_i]['trait1_delta']
-                                trait2_deltas[2] = chests.iloc[chest_i]['trait2_delta']
-                                trait3_deltas[2] = chests.iloc[chest_i]['trait3_delta']
+                                
 
                                 is_exotic[2] = 1 if chests.iloc[chest_i]['exotic'].astype(bool) else 0
                                 count += 1 #debug
@@ -1297,17 +1278,15 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     if(cost <= surplus):
                                         boots_active = True
                                         boots_i = 0
-                                        while boots_active and boots_i < len(boots.index):
+                                        while boots_active and boots_i < total_boots:
                                             
                                             
-                                            trait1_deltas[3] = boots.iloc[boots_i]['trait1_delta']
-                                            trait2_deltas[3] = boots.iloc[boots_i]['trait2_delta']
-                                            trait3_deltas[3] = boots.iloc[boots_i]['trait3_delta']
+                                            
 
                                             is_exotic[3] = 1 if boots.iloc[boots_i]['exotic'].astype(bool) else 0
 
                                             count += 1 #debug
-                                            if(sum(is_exotic) <= 1 and max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)]) >= 0):
+                                            if(sum(is_exotic) <= 1):
 
                                                 temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3']]
                                                 temp_costs[2] =  boots.iloc[boots_i]['cost']
@@ -1349,9 +1328,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                         # reset slot to default
                                         temp_costs[3] = 0
                                         is_exotic[3] = 0
-                                        trait1_deltas[3] = 0
-                                        trait2_deltas[3] = 0
-                                        trait3_deltas[3] = 0
+                                        
                                     # cost exeeded, exiting chest loop
                                     else:
                                         chest_active = False
@@ -1360,9 +1337,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                             # Chest loop finished, reset slot to default and move back up to arms
                             temp_costs[2] = 0
                             is_exotic[2] = 0
-                            trait1_deltas[2] = 0
-                            trait2_deltas[2] = 0
-                            trait3_deltas[2] = 0
+                            
                         # cost exeeded, exiting arms loop
                         else:
                             arms_active = False
@@ -1373,9 +1348,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # reset slot to default
                 temp_costs[1] = 0
                 is_exotic[1] = 0
-                trait1_deltas[1] = 0
-                trait2_deltas[1] = 0
-                trait3_deltas[1] = 0
+                
                 # loop succes, iterate
                 helmet_i += 1
             # exiting helmet loop
