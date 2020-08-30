@@ -75,7 +75,7 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
 
         # run requests in seperate thread
         loop = asyncio.get_event_loop()
-        r_json = await loop.run_in_executor(ThreadPoolExecutor(), self.get_sync, url, headers)
+        r_json = await loop.run_in_executor(None, self.get_sync, url, headers)
 
         #convert the json object we received into a Python dictionary object and return that object
         return r_json
@@ -85,7 +85,7 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
 
         status = r.status_code
         if status != 200:
-            raise errors.ApiError(f'Status code {status} received from API')
+            raise errors.ApiError(f'Status code {status} received from API', payload = status)
 
         #convert the json object we received into a Python dictionary object and return that object
         return r.json()
@@ -94,12 +94,12 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
     # helper function to call get without header or base url
     async def get_simple_async(self, url):
         loop = asyncio.get_event_loop()
-        r = await loop.run_in_executor(ThreadPoolExecutor(), requests.get, url)
+        r = await loop.run_in_executor(None, requests.get, url)
 
         # confirm 200 Good response
         status = r.status_code
         if status != 200:
-            raise errors.ApiError(f'Status code {status} received from API')
+            raise errors.ApiError(f'Status code {status} received from API', payload = status)
         return r.json()
 
 
@@ -136,7 +136,7 @@ class destiny_api_caller_cogs(commands.Cog, name='Destiny API Utilities'):
         # confirm 200 Good response
         status = r.status_code
         if status != 200 and status != 201:
-            raise errors.ApiError(f'Status code {status} received from API')
+            raise errors.ApiError(f'Status code {status} received from API', payload = status)
 
         return r.json()
 
