@@ -449,7 +449,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 answer = int(msg.content)
                 character_class = characters[answer-1][1]
                 char_id = characters[answer-1][0]
-                emblem = characterst[answer-1][3]
+                emblem = characters[answer-1][3]
                 await ask_for_character_message.delete()
             else:
                 await ctx.message.channel.send(f'Please provide a valid numeric response.')
