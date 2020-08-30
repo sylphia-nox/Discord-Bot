@@ -1251,7 +1251,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     count += 1 #debug
                     # check if too many exotics (helmet and arms)
                     if(sum(is_exotic) <= 1):
-
                         temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3']]
                         temp_costs[1] = arms.iloc[arms_i]['cost']
                         temp_hashes[1] = arms.iloc[arms_i]['itemHash']
@@ -1265,9 +1264,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                 
 
                                 is_exotic[2] = chests.iloc[chest_i]['exotic']
-                                count += 1 #debug
-                                if(sum(is_exotic) <= 1):
 
+                                if(sum(is_exotic) <= 1):
+                                    count += 1
                                     temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
                                     temp_costs[2] = chests.iloc[chest_i]['cost']
                                     temp_hashes[2] = chests.iloc[chest_i]['itemHash']
@@ -1294,45 +1293,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                                 
                                                 # check the loadout is valid
                                                 if(sum(temp_costs) <= surplus):
-                                                    #setup variables to work with
-                                                    temp_stat1 = 0
-                                                    temp_stat2 = 0
-                                                    temp_stat3 = 0
-
-                                                    # get stat values for best armor
-                                                    for temp_stat in temp_stats:
-                                                        temp_stat1 += temp_stat[0]
-                                                        temp_stat2 += temp_stat[1] 
-                                                        temp_stat3 += temp_stat[2] 
-
-                                                    # get deficiencies
-                                                    stat1_deficiency = stat1_goal - temp_stat1
-                                                    stat2_deficiency = stat2_goal - temp_stat2
-                                                    stat3_deficiency = stat3_goal - temp_stat3
-
-                                                    # get tiers away from 100/100, we will use this to calculate score later on
-                                                    temp_neg_trait1_tiers = int((stat1_deficiency+99)/10) -9
-                                                    temp_neg_trait2_tiers = int((stat2_deficiency+99)/10) -9
-                                                    temp_tier3_deficiency = int((stat3_deficiency+99)/10) -9
-
-                                                    # remove negative values since tiers over 100 are worthless
-                                                    if temp_neg_trait1_tiers < 0:
-                                                        temp_neg_trait1_tiers = 0
-                                                    if temp_neg_trait2_tiers < 0:
-                                                        temp_neg_trait2_tiers = 0
-                                                    if temp_tier3_deficiency < 0:
-                                                        temp_tier3_deficiency = 0
-
-                                                    # calculate combined negative tiers for 2 primary traits
-                                                    primary_score = neg_primary_tiers - (temp_neg_trait1_tiers + temp_neg_trait2_tiers)
                                                     # get raw scores
-                                                    #return neg_prim_tiers, neg_trait3_tiers, stat1, stat2, stat3
-                                                    #primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
-                                                    count2 += 1 #debug
+                                                    primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
+                                                    count2 += 1
 
                                                     # calculate scores
-                                                    # primary_score = neg_primary_tiers - primary_deficiency
-                                                    trait3_score = neg_trait3_tiers - temp_tier3_deficiency
+                                                    primary_score = neg_primary_tiers - primary_deficiency
+                                                    trait3_score = neg_trait3_tiers - tier3_deficiency
 
                                                     # check if armor is just a direct decrease in stat values
                                                     if temp_stat1 < stat1 and temp_stat2 < stat2 and temp_stat3 <= stat3:
@@ -1344,6 +1311,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                                     if (primary_score + 1) >= best_score:
                                                         if primary_score > best_score:
                                                             best_score = primary_score
+                                                            print(f'best_score: {best_score}')
+                                                            if best_score == 2:
+                                                                surplus = surplus - 10
                                                             
                                                         temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
                                                     
