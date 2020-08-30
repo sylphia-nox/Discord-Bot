@@ -1266,7 +1266,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     is_exotic[1] = 1 if arms.iloc[arms_i]['exotic'].astype(bool) else 0
                     count += 1 #debug
                     # check if too many exotics (helmet and arms)
-                    if(sum(is_exotic) <= 1 and max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)]) >= 0):
+                    if(sum(is_exotic) <= 1):
 
                         temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3']]
                         temp_costs[1] = arms.iloc[arms_i]['cost']
@@ -1285,7 +1285,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                                 is_exotic[2] = 1 if chests.iloc[chest_i]['exotic'].astype(bool) else 0
                                 count += 1 #debug
-                                if(sum(is_exotic) <= 1 and max([sum(trait1_deltas), sum(trait2_deltas), sum(trait3_deltas)]) >= 0):
+                                if(sum(is_exotic) <= 1):
 
                                     temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
                                     temp_costs[2] = chests.iloc[chest_i]['cost']
