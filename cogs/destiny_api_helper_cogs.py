@@ -1108,6 +1108,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         surplus = true_surplus # could set to true_surplus - 10 for a much stricter check process.
         highest_primary_score = 0
 
+        print(f'Total Items prior to highest_score_calc: {len(item_df.index)}')
         # next we need to reduce the calculations to a manageable amount, but if we are already in range we can avoid that
         if(len(item_df.index) > 20):
             # calculate scores
@@ -1141,9 +1142,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 trait3_scores.append(neg_trait3_tiers - tier3_deficiency)
 
                 if(primary_score > highest_primary_score):
-                    highest_primary_score == primary_score
+                    highest_primary_score = primary_score
 
                 # surplus = surplus - (highest_primary_score *10)
+
+            print(f'Highest Primary Score: {highest_primary_score}') #debug
             
             item_df['primary_score'] = primary_scores
             item_df['trait3_score'] = trait3_scores
@@ -1151,7 +1154,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
             item_df = item_df[item_df.primary_score >= (highest_primary_score-1)]
             item_df = item_df.reset_index(drop=True)
-
+            print(f'Total Items after highest_score_calc: {len(item_df.index)}') #debug
             # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
             if(len(item_df.index) > 100):
                 item_df = item_df[item_df.cost <= (surplus)]
