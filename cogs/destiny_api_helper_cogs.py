@@ -1099,8 +1099,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         item_df['cost'] = costs
         item_df['trait1_delta'] = trait1_deltas
-        item_df['trait1_delta'] = trait1_deltas
-        item_df['trait1_delta'] = trait1_deltas
+        item_df['trait2_delta'] = trait2_deltas
+        item_df['trait3_delta'] = trait3_deltas
         item_df['cost'] = item_df['cost'].astype('int8')
 
         # remove all items that result in a reduction in potential tiers if we have too many items.
