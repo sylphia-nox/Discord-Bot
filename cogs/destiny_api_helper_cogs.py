@@ -1179,7 +1179,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             item_df = item_df.head(100)
 
         # clear uneeded columns
-        item_df.drop(['primary_score','trait3_score'], axis = 1)
+        #item_df.drop(['primary_score','trait3_score'], axis = 1)
 
         # create list of high_item ids
         high_item_ids = []
@@ -1187,10 +1187,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             high_item_ids.append(item[0])
 
         # declare variables for the most unpythonic looping ever.
-        helmets = item_df[item_df.itemSubType.astype(int) == 0].sort_values(by='cost', ascending=True) # desired_total
-        arms = item_df[item_df.itemSubType.astype(int) == 1].sort_values(by='cost', ascending=True)
-        chests = item_df[item_df.itemSubType.astype(int) == 2].sort_values(by='cost', ascending=True)
-        boots = item_df[item_df.itemSubType.astype(int) == 3].sort_values(by='cost', ascending=True)
+        helmets = item_df[item_df.itemSubType.astype(int) == 0].sort_values(by=['cost','trait3_score'], ascending=[True, False]) # desired_total
+        arms = item_df[item_df.itemSubType.astype(int) == 1].sort_values(by=['cost','trait3_score'], ascending=[True, False])
+        chests = item_df[item_df.itemSubType.astype(int) == 2].sort_values(by=['cost','trait3_score'], ascending=[True, False])
+        boots = item_df[item_df.itemSubType.astype(int) == 3].sort_values(by=['cost','trait3_score'], ascending=[True, False])
 
         del item_df
     
@@ -1221,6 +1221,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         temp_hashes = [0,0,0,0]
         is_exotic = [0,0,0,0]
 
+        surplus_delta = (highest_primary_score *10)
+
         while helmet_active and helmet_i < total_helmets:
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
             
@@ -1236,10 +1238,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             count += 1 #debug
 
     
-
+            cost = sum(temp_costs)
             
             # if cost is less than surplus continue, otherwise, we will exit current loop level.
-            if(sum(temp_costs) <= surplus):
+            if(cost <= (surplus - surplus_delta) or (cost <= surplus and helmets.iloc[helmet_i]['trait3_score'] > 0)):
                 # repeat down to the bottom
                 arms_active = True
                 arms_i = 0
@@ -1256,7 +1258,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         temp_hashes[1] = arms.iloc[arms_i]['itemHash']
                         temp_id[1] = arms.iloc[arms_i]['id']
 
-                        if(sum(temp_costs) <= surplus):
+                        cost = sum(temp_costs)
+                        if(cost <= (surplus - surplus_delta) or (cost <= surplus and arms.iloc[arms_i]['trait3_score'] > 0)):
                             chest_active = True
                             chest_i = 0
                             while chest_active and chest_i < total_chests:
@@ -1273,7 +1276,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     temp_id[2] = chests.iloc[chest_i]['id']
                                 
 
-                                    if(sum(temp_costs) <= surplus):
+                                    cost = sum(temp_costs)
+                                    if(cost <= (surplus - surplus_delta) or (cost <= surplus and chests.iloc[chests_i]['trait3_score'] > 0)):
                                         boots_active = True
                                         boots_i = 0
                                         while boots_active and boots_i < total_boots:
@@ -1292,7 +1296,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                                 temp_id[3] = boots.iloc[boots_i]['id']
                                                 
                                                 # check the loadout is valid
-                                                if(sum(temp_costs) <= surplus):
+                                                cost = sum(temp_costs)
+                                                if(cost <= (surplus - surplus_delta) or (cost <= surplus and boots.iloc[boots_i]['trait3_score'] > 0)):
                                                     # get raw scores
                                                     primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
                                                     count2 += 1
@@ -1323,7 +1328,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                                     
                                                 
                                                 # cost exceeded, exiting boots loop
-                                                else:
+                                                elif cost > surplus:
                                                     boots_active = False
 
                                             # end of boots loop, iterate
@@ -1333,7 +1338,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                         is_exotic[3] = 0
                                         
                                     # cost exeeded, exiting chest loop
-                                    else:
+                                    elif cost > surplus:
                                         chest_active = False
                                 # end of chest loop, iterate
                                 chest_i +=1
@@ -1342,7 +1347,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                             is_exotic[2] = 0
                             
                         # cost exeeded, exiting arms loop
-                        else:
+                        elif cost > surplus:
                             arms_active = False
 
                     # end of arms loop, iterate        
@@ -1355,7 +1360,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 # loop succes, iterate
                 helmet_i += 1
             # exiting helmet loop
-            else:
+            elif cost > surplus:
                 helmet_active = False
 
         print(f'Count: {count}')
