@@ -410,6 +410,56 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         player_char_info = [memberID, membershipType, character_class, char_ids, char_id, emblem]
         return player_char_info
 
+    # helper function to get player info as player[memberID, membershipType, class_type, char_ids]
+    async def choose_player_char_and_get_info(self, ctx, memberID, membershipType, OAuth = False, access_token = ""):
+
+        # make request for player info, getting character info.
+        get_characters_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/?components=200', OAuth, access_token)
+
+        characters = []
+        char_ids = []
+        for key in get_characters_return['Response']['characters']['data']:
+            char_class = get_characters_return['Response']['characters']['data'][str(key)]['classType']
+            emblem = get_characters_return['Response']['characters']['data'][str(key)]['emblemPath']
+            if char_class == 0:
+                characters.append([key, char_class, "Titan", emblem])
+            elif char_class == 1:
+                characters.append([key, char_class, "Hunter", emblem])
+            elif char_class == 2:
+                characters.append([key, char_class, "Warlock", emblem])
+            char_ids.append(key)
+
+        character_list = ""
+        for i, char in enumerate(characters):
+            character_list += f'{i+1}: {char[2]}\n'
+
+        # ask for light level
+        ask_for_character_message = await ctx.message.channel.send(f'Which character?  Choose by number\n{character_list}')
+
+        character_class = -1
+
+        # loop to handle bad inputs
+        while character_class == -1:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+
+            # checking to confirm the response is valid
+            if msg.content.isnumeric() and  1 <= int(msg.content) <= len(characters):
+                answer = int(msg.content)
+                character_class = characters[answer-1][1]
+                char_id = characters[answer-1][0]
+                emblem = "https://www.bungie.net" + characters[answer-1][3]
+                await ask_for_character_message.delete()
+            else:
+                await ctx.message.channel.send(f'Please provide a valid numeric response.')
+
+        # delete json to save memory
+        del get_characters_return
+
+        player_char_info = [memberID, membershipType, character_class, char_ids, char_id, emblem]
+        return player_char_info
+
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
     async def get_player_items(self, player_char_info, OAuth = False, access_token = ""):
         global manifest
@@ -830,8 +880,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             print (sql_return)
             return "token not found"
 
-    
-
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
     async def get_player_armor(self, player_char_info, OAuth = False, access_token = "", all_items: bool = True):
         global manifest
@@ -956,7 +1004,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         return stats
 
     # this function returns the armor with the highest stats in the 2 primary stat columns and a reduced list of armor items.
-    async def get_max_stat_items(self, items, stat1, stat2):
+    def get_max_stat_items(self, items, stat1, stat2):
         high_items = [[],[],[],[]]
         high_values = [0,0,0,0]
         reduced_item_list = []
@@ -1011,16 +1059,22 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # return list of best items
         return high_items, reduced_item_list, high_values
 
+    # wrapper to run optimize_armor in executor
+    async def get_optimized_armor(self, items, traits: list, stat_goal_reductions: list):
+        loop = asyncio.get_event_loop()
+        items_df = await loop.run_in_executor(None, self.optimize_armor, items, traits, stat_goal_reductions)
+
+        return items_df
+    
     # this function returns a list of optimized gear
-    async def optimize_armor(self, items, traits: list, stat_goal_reductions: list):
-        
+    def optimize_armor(self, items, traits: list, stat_goal_reductions: list):
         # assign variables: list would be better but existing code relies on variable names.
         trait1 = traits[0]
         trait2 = traits[1]
         trait3 = traits[2]
         
         # get list of items with highest combined stat1 and stat2 values
-        high_items, items, high_values = await self.get_max_stat_items(items, trait1, trait2)
+        high_items, items, high_values = self.get_max_stat_items(items, trait1, trait2)
     
         #setup variables to work with, setting to 90 due to masterworking
         stat1_goal = 100 - stat_goal_reductions[0]
@@ -1056,7 +1110,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         neg_primary_tiers = neg_trait1_tiers + neg_trait2_tiers
 
-        true_surplus = await self.calculate_surplus(stat1_deficiency, stat2_deficiency)
+        true_surplus = self.calculate_surplus(stat1_deficiency, stat2_deficiency)
 
         ###
         # if we have more total points then needed, do something crazy
@@ -1068,46 +1122,39 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             true_surplus += (int(((stat1 + stat2) - (stat1_goal + stat2_goal))/10)) * 10
         
         # [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
-        item_df = pd.DataFrame(items, columns = ['id', 'itemType', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
-
-        ###
-        # To-do: Insert code to remove items that don't meet powercap or are not the correct exotic/ in the requested exotic slot
-        # 
-        #
-        ###
-
-        # removing uneeded columns
-        item_df = item_df.drop(['itemType','power_cap'], axis=1)
+        item_df = pd.DataFrame.from_records(items, exclude = ['power_cap', 'itemType'], columns = ['id', 'itemType', 'itemSubType', 'power_cap', 'exotic', 'item_stats', 'itemHash'])
+        item_df['itemSubType'] = item_df['itemSubType'].astype('int8')
+        item_df['exotic'] = item_df['exotic'].astype('int8')
 
         # adding column containing total value of primary stats and remove any columns with value of 0
-        item_df['desired_total'] = item_df.item_stats.str[trait1-1] + item_df.item_stats.str[trait2-1]
+        item_df['desired_total'] = (item_df.item_stats.str[trait1-1] + item_df.item_stats.str[trait2-1]).astype('int8')  
 
-        temp_item_df = item_df    
+        # current DF format = ['id', 'itemSubType', [item_stats], 'itemHash', 'desired_total', 'cost']
+        # desired dF format = ['id', 'itemSubType', 'desired_total', 'cost', 'trai1', trait2', 'trait3', 'primary_score', 'trait3_score']
+        item_df['trait1'] = item_df.item_stats.str[trait1-1].astype('int8')
+        item_df['trait2'] = item_df.item_stats.str[trait2-1].astype('int8')
+        item_df['trait3'] = item_df.item_stats.str[trait3-1].astype('int8')
+
+        # clear uneeded rows
+        item_df.drop('item_stats', axis = 1)
 
         # calculate cost for swapping each item and add to DF
         costs = []
-        for row in temp_item_df.itertuples(index=False):
+        for row in item_df.itertuples(index=False):
             # calculate cost and append to list
             cost = high_values[int(row.itemSubType)] - int(row.desired_total)
             
             costs.append(cost)
 
-        temp_item_df['cost'] = costs
+        item_df['cost'] = costs
+        item_df['cost'] = item_df['cost'].astype('int8')
 
         # remove all items that result in a reduction in potential tiers if we have too many items.
-        if(len(temp_item_df.index) > 100):
-            temp_item_df = temp_item_df[temp_item_df.cost <= (true_surplus)]
-            temp_item_df = temp_item_df.reset_index(drop=True)
+        if(len(item_df.index) > 100):
+            item_df = item_df[item_df.cost <= (true_surplus)]
+            item_df = item_df.reset_index(drop=True)
 
-        # current DF format = ['id', 'itemSubType', [item_stats], 'itemHash', 'desired_total', 'cost']
-        # desired dF format = ['id', 'itemSubType', 'desired_total', 'cost', 'trai1', trait2', 'trait3', 'primary_score', 'trait3_score']
-        calc_item_df = temp_item_df.copy()
-        calc_item_df['trait1'] = calc_item_df.item_stats.str[trait1-1]
-        calc_item_df['trait2'] = calc_item_df.item_stats.str[trait2-1]
-        calc_item_df['trait3'] = calc_item_df.item_stats.str[trait3-1]
-
-        # clear uneeded rows
-        calc_item_df.drop('item_stats', axis = 1)
+        
 
         # create adjusted list of high_items with only the needed values
         temp_test_items = []
@@ -1117,58 +1164,74 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # if we get any piece that increases the tier by at least one we want to reduce surplus by the highest primary_score * 10 since we now know we can hit higher tiers.
         surplus = true_surplus # could set to true_surplus - 10 for a much stricter check process.
         highest_primary_score = 0
+        #highest_tertiary_score_prime = 0
+        #highest_tertiary_score_sub = 0
 
-        # next we need to reduce the calculations to a manageable amount, but if we are already in range we can avoid that
-        if(len(calc_item_df.index) > 20):
-            # calculate scores
-            primary_scores = []
-            trait3_scores = []
+        print(f'Total Items prior to highest_score_calc: {len(item_df.index)}')
+        # next we need to reduce the calculations to a manageable amount
 
-            for row in calc_item_df.itertuples(index=False):
-                # create temp copy of high_items for manipulation
-                test_items = temp_test_items.copy()
-                del test_items[int(row.itemSubType)]
+        # calculate scores
+        primary_scores = []
+        trait3_scores = []
 
-                # add test item to test_items
-                test_items.append([row.trait1, row.trait2, row.trait3])
-                
+        for row in item_df.itertuples(index=False):
+            # create temp copy of high_items for manipulation
+            test_items = temp_test_items.copy()
+            del test_items[int(row.itemSubType)]
 
-                # get deficiency values
-                primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(test_items, stat1_goal, stat2_goal, stat3_goal)
-
-                # calculate scores
-                primary_score = neg_primary_tiers - primary_deficiency
-                trait3_score = neg_trait3_tiers - tier3_deficiency
-
-                # check if armor is just a direct decrease in stat values
-                if temp_stat1 < stat1 and temp_stat2 < stat2:
-                    primary_score -= 1
-                if temp_stat3 < stat3:
-                    trait3_score -= 1
-
-                # append score values to lists
-                primary_scores.append(primary_score)
-                trait3_scores.append(neg_trait3_tiers - tier3_deficiency)
-
-                if(primary_score < highest_primary_score):
-                    highest_primary_score == primary_score
-
-                surplus = surplus - (highest_primary_score *10)
+            # add test item to test_items
+            test_items.append([row.trait1, row.trait2, row.trait3])
             
-            calc_item_df['primary_score'] = primary_scores
-            calc_item_df['trait3_score'] = trait3_scores
 
-            # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
-            if(len(temp_item_df.index) > 100):
-                temp_item_df = temp_item_df[temp_item_df.cost <= (surplus)]
-                temp_item_df = temp_item_df.reset_index(drop=True)
-            # remove all items that will decrease score/cannot results in score increase
-            if(len(calc_item_df.index) > 100):
-                calc_item_df = calc_item_df[calc_item_df.primary_score >= 0]
-                calc_item_df = calc_item_df.reset_index(drop=True)
-            if(len(calc_item_df.index) > 100):
-                calc_item_df = calc_item_df.sort_values(by=['primary_score','trait3_score','desired_total'], ascending=[False, False, False])
-                calc_item_df = calc_item_df.head(100)
+            # get deficiency values
+            primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = self.calculate_scores(test_items, stat1_goal, stat2_goal, stat3_goal)
+
+            # calculate scores
+            primary_score = neg_primary_tiers - primary_deficiency
+            trait3_score = neg_trait3_tiers - tier3_deficiency
+
+            # check if armor is just a direct decrease in stat values
+            if temp_stat1 < stat1 and temp_stat2 < stat2 and temp_stat3 <= stat3:
+                primary_score -= 1
+            if temp_stat3 < stat3:
+                trait3_score -= 1
+
+            # append score values to lists
+            primary_scores.append(primary_score)
+            trait3_scores.append(neg_trait3_tiers - tier3_deficiency)
+
+            if(primary_score > highest_primary_score):
+                highest_primary_score = primary_score
+            #     highest_tertiary_score_sub = highest_tertiary_score_prime
+            #     highest_tertiary_score_prime = trait3_score
+            # elif(primary_score ==  highest_primary_score and trait3_score > highest_tertiary_score_prime):
+            #     highest_tertiary_score_prime = trait3_score
+            # elif(primary_score == highest_primary_score-1 and trait3_score > highest_tertiary_score_sub):
+            #     highest_tertiary_score_sub = trait3_score
+
+            # surplus = surplus - (highest_primary_score *10)
+        
+        item_df['primary_score'] = primary_scores
+        item_df['trait3_score'] = trait3_scores
+
+
+        item_df = item_df[(item_df.primary_score >= (highest_primary_score-1))]
+        item_df = item_df.reset_index(drop=True)
+
+        # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
+        if(len(item_df.index) > 100):
+            item_df = item_df[item_df.cost <= (surplus)]
+            item_df = item_df.reset_index(drop=True)
+        # remove all items that will decrease score/cannot results in score increase
+        if(len(item_df.index) > 100):
+            item_df = item_df[item_df.primary_score >= 0]
+            item_df = item_df.reset_index(drop=True)
+        if(len(item_df.index) > 100):
+            item_df = item_df.sort_values(by=['primary_score','trait3_score','desired_total'], ascending=[False, False, False])
+            item_df = item_df.head(100)
+
+        # clear uneeded columns
+        #item_df.drop(['primary_score','trait3_score'], axis = 1)
 
         # create list of high_item ids
         high_item_ids = []
@@ -1176,120 +1239,147 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             high_item_ids.append(item[0])
 
         # declare variables for the most unpythonic looping ever.
-        helmets = calc_item_df[calc_item_df.itemSubType.astype(int) == 0].sort_values(by='cost', ascending=True) # desired_total
-        arms = calc_item_df[calc_item_df.itemSubType.astype(int) == 1].sort_values(by='cost', ascending=True)
-        chests = calc_item_df[calc_item_df.itemSubType.astype(int) == 2].sort_values(by='cost', ascending=True)
-        boots = calc_item_df[calc_item_df.itemSubType.astype(int) == 3].sort_values(by='cost', ascending=True)
-    
+        helmets = item_df[item_df.itemSubType.astype(int) == 0].sort_values(by=['cost','trait3_score'], ascending=[True, False]) # desired_total
+        arms = item_df[item_df.itemSubType.astype(int) == 1].sort_values(by=['cost','trait3_score'], ascending=[True, False])
+        chests = item_df[item_df.itemSubType.astype(int) == 2].sort_values(by=['cost','trait3_score'], ascending=[True, False])
+        boots = item_df[item_df.itemSubType.astype(int) == 3].sort_values(by=['cost','trait3_score'], ascending=[True, False])
 
+        del item_df
+
+        # optimization ides
+        # check for invlalid loadout (exotics) at each level
+        # 
+        #
+        #
+
+        #loop variable declaration
         temp_combo_list = []
-        helmet_active = True
-        helmet_i = 0
-        while helmet_active and helmet_i < len(helmets.index):
+        best_score = 0
+        temp_stats = [[],[],[],[]]
+        temp_costs = [0,0,0,0]
+        temp_id = [0,0,0,0]
+        temp_hashes = [0,0,0,0]
+        is_exotic = [0,0,0,0]
+
+        surplus_delta = (highest_primary_score *10)
+        top_tier_items = 0
+
+        # loop through all valid options and score them
+        for helmet in helmets.itertuples(index=False):
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
-            temp_stats = [[],[],[],[]]
-            temp_costs = [0,0,0,0]
-            temp_id = [0,0,0,0]
-            temp_hashes = [0,0,0,0]
-            is_exotic = [0,0,0,0]
             
             # assign stat values
-            temp_stats[0] = [helmets.iloc[helmet_i]['trait1'], helmets.iloc[helmet_i]['trait2'], helmets.iloc[helmet_i]['trait3']] 
-            temp_costs[0] = helmets.iloc[helmet_i]['cost']
-            temp_hashes[0] = helmets.iloc[helmet_i]['itemHash']
-            is_exotic[0] = 1 if helmets.iloc[helmet_i]['exotic'].astype(bool) else 0
+            temp_stats[0] = [helmet.trait1, helmet.trait2, helmet.trait3] 
+            temp_costs[0] = helmet.cost
+            temp_hashes[0] = helmet.itemHash
+            is_exotic[0] = helmet.exotic
             # store id
-            temp_id[0] = helmets.iloc[helmet_i]['id']
+            temp_id[0] = helmet.id
 
             # calculate cost
             cost = sum(temp_costs)
-            
-            
-            # if cost is less than surplus continue, otherwise, we will exit current loop level.
-            if(cost <= surplus):
-                # repeat down to the bottom
-                arms_active = True
-                arms_i = 0
-                while arms_active and arms_i < len(arms.index):
-                    
-                    temp_stats[1] = [arms.iloc[arms_i]['trait1'], arms.iloc[arms_i]['trait2'], arms.iloc[arms_i]['trait3']]
-                    temp_costs[1] = arms.iloc[arms_i]['cost']
-                    temp_hashes[1] = arms.iloc[arms_i]['itemHash']
-                    temp_id[1] = arms.iloc[arms_i]['id']
-                    is_exotic[1] = 1 if arms.iloc[arms_i]['exotic'].astype(bool) else 0
 
+            if cost > surplus:
+                break
+            elif not (cost <= (surplus - surplus_delta) or (helmet.trait3_score > 0)):
+                continue
+
+            for arm in arms.itertuples(index=False):
+                
+                is_exotic[1] = arm.exotic
+
+                # check if too many exotics (helmet and arms)
+                if sum(is_exotic) > 1:
+                    continue
+                
+                temp_costs[1] = arm.cost
+                cost = sum(temp_costs)
+
+                if cost > surplus:
+                    break
+                elif not (cost <= (surplus - surplus_delta) or (arm.trait3_score > 0)):
+                    continue 
+
+                temp_stats[1] = [arm.trait1, arm.trait2, arm.trait3]
+                temp_hashes[1] = arm.itemHash
+                temp_id[1] = arm.id
+                
+                for chest in chests.itertuples(index=False):
+                        
+                    is_exotic[2] = chest.exotic
+                    if sum(is_exotic) > 1:
+                        continue
+
+                    temp_costs[2] = chest.cost
                     cost = sum(temp_costs)
-                    
-                    if(cost <= surplus):
-                        chest_active = True
-                        chest_i = 0
-                        while chest_active and chest_i < len(chests.index):
-                            
-                            temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
-                            temp_costs[2] = chests.iloc[chest_i]['cost']
-                            temp_hashes[2] = chests.iloc[chest_i]['itemHash']
-                            temp_id[2] = chests.iloc[chest_i]['id']
-                            is_exotic[2] = 1 if chests.iloc[chest_i]['exotic'].astype(bool) else 0
 
-                            cost = sum(temp_costs)
-                            if(cost <= surplus):
-                                boots_active = True
-                                boots_i = 0
-                                while boots_active and boots_i < len(boots.index):
-                                    
-                                    temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3']]
-                                    temp_costs[2] =  boots.iloc[boots_i]['cost']
-                                    temp_hashes[3] = boots.iloc[boots_i]['itemHash']
-                                    temp_id[3] = boots.iloc[boots_i]['id']
-                                    is_exotic[3] = 1 if boots.iloc[boots_i]['exotic'].astype(bool) else 0
+                    if cost > surplus:
+                        break
+                    elif not (cost <= (surplus - surplus_delta) or (chest.trait3_score > 0)):
+                        continue 
 
-                                    cost = sum(temp_costs)
-                                    if(cost <= surplus):
-                                        # check the loadout is valid
-                                        if(sum(is_exotic) <= 1):
-                                            # get raw scores
-                                            primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
+                    temp_stats[2] = [chest.trait1, chest.trait2, chest.trait3]
+                    temp_hashes[2] = chest.itemHash
+                    temp_id[2] = chest.id
+                
+                    for boot in boots.itertuples(index=False):
+                        
+                        is_exotic[3] = boot.exotic
+                        if sum(is_exotic) > 1:
+                            continue
 
-                                            # calculate scores
-                                            primary_score = neg_primary_tiers - primary_deficiency
-                                            trait3_score = neg_trait3_tiers - tier3_deficiency
+                        temp_costs[3] = boot.cost
+                        cost = sum(temp_costs)
+                        if cost > surplus:
+                            break
+                        elif not (cost <= (surplus - surplus_delta) or (chest.trait3_score > 0)):
+                            continue 
 
-                                            # check if armor is just a direct decrease in stat values
-                                            if temp_stat1 < stat1 and temp_stat2 < stat2:
-                                                primary_score -= 1
-                                            if temp_stat3 < stat3:
-                                                trait3_score -= 1
-                                            
-                                            
-                                            # store scores
-                                            temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
-                                            
-                                        # loop succes, iterate
-                                        boots_i += 1
-                                    # exiting boots loop
-                                    else:
-                                        boots_active = False
-                                # reset slot to default
-                                temp_costs[3] = 0
-                                # loop succes, iterate
-                                chest_i +=1
-                            # exiting chest loop
-                            else:
-                                chest_active = False
-                        # reset slot to default
-                        temp_costs[2] = 0
-                        # loop succes, iterate
-                        arms_i +=1
-                    # exiting arms loop
-                    else:
-                        arms_active = False
-                # reset slot to default
-                temp_costs[1] = 0
-                # loop succes, iterate
-                helmet_i += 1
-            # exiting helmet loop
-            else:
-                helmet_active = False
+                        temp_stats[3] = [boot.trait1, boot.trait2, boot.trait3]
+                        temp_hashes[3] = boot.itemHash
+                        temp_id[3] = boot.id
+                        
+                        # get raw scores
+                        primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
+
+                        # calculate scores
+                        primary_score = neg_primary_tiers - primary_deficiency
+                        trait3_score = neg_trait3_tiers - tier3_deficiency
+
+                        # check if armor is just a direct decrease in stat values
+                        if temp_stat1 < stat1 and temp_stat2 < stat2 and temp_stat3 <= stat3:
+                            primary_score -= 1
+                        if temp_stat3 < stat3:
+                            trait3_score -= 1
+
+                        # trying to improve performance, need to root out low performing options to reduce total result combos.
+                        if (primary_score + 1) >= best_score:
+                            if primary_score > best_score:
+                                best_score = primary_score
+                                top_tier_items = 1
+                                surplus = true_surplus
+                                surplus_delta = (highest_primary_score *10)
+                                if best_score == 2:
+                                    surplus = surplus - 10
+                            elif primary_score == best_score:
+                                top_tier_items += 1
+                                if top_tier_items == 5:
+                                    surplus -= surplus_delta
+                                    surplus_delta = 0
+                        
+                            temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
+                        
+                    # boots loop finished, reset slot to default and move back up to chests
+                    temp_costs[3] = 0
+                    is_exotic[3] = 0
+                        
+                # Chest loop finished, reset slot to default and move back up to arms
+                temp_costs[2] = 0
+                is_exotic[2] = 0
+                           
+            # end of arms loop, reset slot to default before raising back to helmet loop
+            temp_costs[1] = 0
+            is_exotic[1] = 0
 
         # we now have a list of every item combination with stat values.           
         results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score', 'hashes']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head(20)
@@ -1299,8 +1389,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # print(results_df.head(20))
         return results_df.head()
 
+
     # helper function to calculate scores input [trait1, trait2, trait3]
-    async def calculate_scores(self, items, stat1_goal, stat2_goal, stat3_goal):
+    def calculate_scores(self, items, stat1_goal, stat2_goal, stat3_goal):
         #setup variables to work with
         stat1 = 0
         stat2 = 0
@@ -1336,7 +1427,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # return values
         return neg_prim_tiers, neg_trait3_tiers, stat1, stat2, stat3
 
-    async def calculate_surplus(self, stat1_deficiency, stat2_deficiency):
+    def calculate_surplus(self, stat1_deficiency, stat2_deficiency):
         # get extra points
         if (stat1_deficiency < 0):
             stat1_surplus = abs(stat1_deficiency)
@@ -1465,18 +1556,20 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             final_stat_tiers = 0
             
             # iterate through to create message and caculate values
-            for i, trait in enumerate(traits):
+            for index, trait in enumerate(traits):
                 # if we are assuming certain mods/masterwork are applied we need to add those to the total
-                stats_final[i] += stat_bonuses[i]
-                extra_points += stats_final[i]%10
-                final_stat_tiers += (int(stats_final[i]/10))
-                final_stats_message += f'{trait_names[trait-1]}: {stats_final[i]}\n'
+                stats_final[index] += stat_bonuses[index]
+                extra_points += stats_final[index]%10
+                final_stat_tiers += (int(stats_final[index]/10))
+                final_stats_message += f'{trait_names[trait-1]}: {stats_final[index]}\n'
+
+            primary_stat_tiers = int(stats_final[0]/10) + int(stats_final[1]/10)
 
 
             base_stats_message += f'Extra Points: {extra_points}'
 
             # add to embed
-            embed.add_field(name=f'Armor Set {i+1}:', value=f'Total Tiers: {final_stat_tiers}\n', inline = False)
+            embed.add_field(name=f'Armor Set {i+1}:', value=f'Primary Tiers: {primary_stat_tiers}\nTotal Tiers: {final_stat_tiers}\n', inline = False)
             embed.add_field(name=f'Armor Pieces:', value = names_message, inline = True)
             embed.add_field(name=f'Base Stats:', value = base_stats_message, inline = True)
             embed.add_field(name=f'Final Stats:', value = final_stats_message, inline = True)
