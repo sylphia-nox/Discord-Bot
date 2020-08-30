@@ -1107,6 +1107,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # if we get any piece that increases the tier by at least one we want to reduce surplus by the highest primary_score * 10 since we now know we can hit higher tiers.
         surplus = true_surplus # could set to true_surplus - 10 for a much stricter check process.
         highest_primary_score = 0
+        #highest_tertiary_score_prime = 0
+        #highest_tertiary_score_sub = 0
 
         print(f'Total Items prior to highest_score_calc: {len(item_df.index)}')
         # next we need to reduce the calculations to a manageable amount, but if we are already in range we can avoid that
@@ -1143,6 +1145,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                 if(primary_score > highest_primary_score):
                     highest_primary_score = primary_score
+                #     highest_tertiary_score_sub = highest_tertiary_score_prime
+                #     highest_tertiary_score_prime = trait3_score
+                # elif(primary_score ==  highest_primary_score and trait3_score > highest_tertiary_score_prime):
+                #     highest_tertiary_score_prime = trait3_score
+                # elif(primary_score == highest_primary_score-1 and trait3_score > highest_tertiary_score_sub):
+                #     highest_tertiary_score_sub = trait3_score
 
                 # surplus = surplus - (highest_primary_score *10)
 
@@ -1152,7 +1160,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             item_df['trait3_score'] = trait3_scores
  
 
-            item_df = item_df[item_df.primary_score >= (highest_primary_score-1)]
+            item_df = item_df[(item_df.primary_score >= (highest_primary_score-1))]
             item_df = item_df.reset_index(drop=True)
             print(f'Total Items after highest_score_calc: {len(item_df.index)}') #debug
             # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
@@ -1235,80 +1243,91 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
                     cost = sum(temp_costs)
                     count += 1 #debug
+                    if(sum(is_exotic) <= 1):
 
-                    if(cost <= surplus):
-                        chest_active = True
-                        chest_i = 0
-                        while chest_active and chest_i < len(chests.index):
-                            
-                            temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
-                            temp_costs[2] = chests.iloc[chest_i]['cost']
-                            temp_hashes[2] = chests.iloc[chest_i]['itemHash']
-                            temp_id[2] = chests.iloc[chest_i]['id']
-                            is_exotic[2] = 1 if chests.iloc[chest_i]['exotic'].astype(bool) else 0
+                        if(cost <= surplus):
+                            chest_active = True
+                            chest_i = 0
+                            while chest_active and chest_i < len(chests.index):
+                                
+                                temp_stats[2] = [chests.iloc[chest_i]['trait1'], chests.iloc[chest_i]['trait2'], chests.iloc[chest_i]['trait3']]
+                                temp_costs[2] = chests.iloc[chest_i]['cost']
+                                temp_hashes[2] = chests.iloc[chest_i]['itemHash']
+                                temp_id[2] = chests.iloc[chest_i]['id']
+                                is_exotic[2] = 1 if chests.iloc[chest_i]['exotic'].astype(bool) else 0
 
-                            cost = sum(temp_costs)
-                            count += 1 #debug
-                            if(cost <= surplus):
-                                boots_active = True
-                                boots_i = 0
-                                while boots_active and boots_i < len(boots.index):
-                                    
-                                    temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3']]
-                                    temp_costs[2] =  boots.iloc[boots_i]['cost']
-                                    temp_hashes[3] = boots.iloc[boots_i]['itemHash']
-                                    temp_id[3] = boots.iloc[boots_i]['id']
-                                    is_exotic[3] = 1 if boots.iloc[boots_i]['exotic'].astype(bool) else 0
+                                cost = sum(temp_costs)
+                                count += 1 #debug
 
-                                    cost = sum(temp_costs)
-                                    count += 1 #debug
+                                if(sum(is_exotic) <= 1):
 
                                     if(cost <= surplus):
-                                        # check the loadout is valid
-                                        if(sum(is_exotic) <= 1):
-                                            # get raw scores
-                                            primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
-                                            count2 += 1 #debug
-
-                                            # calculate scores
-                                            primary_score = neg_primary_tiers - primary_deficiency
-                                            trait3_score = neg_trait3_tiers - tier3_deficiency
-
-                                            # check if armor is just a direct decrease in stat values
-                                            if temp_stat1 < stat1 and temp_stat2 < stat2 and temp_stat3 <= stat3:
-                                                primary_score -= 1
-                                            if temp_stat3 < stat3:
-                                                trait3_score -= 1
-
-                                            # trying to improve performance, need to root out low performing options to reduce total result combos.
-                                            if (primary_score + 1) >= best_score:
-                                                if primary_score > best_score:
-                                                    best_score = primary_score
-                                                temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
+                                        boots_active = True
+                                        boots_i = 0
+                                        while boots_active and boots_i < len(boots.index):
                                             
-                                            
-                                            
-                                        # loop succes, iterate
-                                        boots_i += 1
-                                    # exiting boots loop
+                                            temp_stats[3] = [boots.iloc[boots_i]['trait1'], boots.iloc[boots_i]['trait2'], boots.iloc[boots_i]['trait3']]
+                                            temp_costs[2] =  boots.iloc[boots_i]['cost']
+                                            temp_hashes[3] = boots.iloc[boots_i]['itemHash']
+                                            temp_id[3] = boots.iloc[boots_i]['id']
+                                            is_exotic[3] = 1 if boots.iloc[boots_i]['exotic'].astype(bool) else 0
+
+                                            cost = sum(temp_costs)
+                                            count += 1 #debug
+
+                                            if(cost <= surplus):
+                                                # check the loadout is valid
+                                                if(sum(is_exotic) <= 1):
+                                                    # get raw scores
+                                                    primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
+                                                    count2 += 1 #debug
+
+                                                    # calculate scores
+                                                    primary_score = neg_primary_tiers - primary_deficiency
+                                                    trait3_score = neg_trait3_tiers - tier3_deficiency
+
+                                                    # check if armor is just a direct decrease in stat values
+                                                    if temp_stat1 < stat1 and temp_stat2 < stat2 and temp_stat3 <= stat3:
+                                                        primary_score -= 1
+                                                    if temp_stat3 < stat3:
+                                                        trait3_score -= 1
+
+                                                    # trying to improve performance, need to root out low performing options to reduce total result combos.
+                                                    if (primary_score + 1) >= best_score:
+                                                        if primary_score > best_score:
+                                                            best_score = primary_score
+                                                        temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
+                                                    
+                                                    
+                                                    
+                                                
+                                            # cost exceeded, exiting boots loop
+                                            else:
+                                                boots_active = False
+
+                                            # end of boots loop, iterate
+                                            boots_i += 1
+                                        # reset slot to default
+                                        temp_costs[3] = 0
+                                        is_exotic[3] = 0
+                                    # cost exeeded, exiting chest loop
                                     else:
-                                        boots_active = False
-                                # reset slot to default
-                                temp_costs[3] = 0
-                                # loop succes, iterate
+                                        chest_active = False
+                                # end of chest loop, iterate
                                 chest_i +=1
-                            # exiting chest loop
-                            else:
-                                chest_active = False
-                        # reset slot to default
-                        temp_costs[2] = 0
-                        # loop succes, iterate
-                        arms_i +=1
-                    # exiting arms loop
-                    else:
-                        arms_active = False
+                            # Chest loop finished, reset slot to default and move back up to arms
+                            temp_costs[2] = 0
+                            is_exotic[2] = 0
+                        # cost exeeded, exiting arms loop
+                        else:
+                            arms_active = False
+
+                    # end of arms loop, iterate        
+                    arms_i +=1
+
                 # reset slot to default
                 temp_costs[1] = 0
+                is_exotic[1] = 0
                 # loop succes, iterate
                 helmet_i += 1
             # exiting helmet loop
