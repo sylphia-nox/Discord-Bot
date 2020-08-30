@@ -1300,10 +1300,10 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                                     temp_stat3 = 0
 
                                                     # get stat values for best armor
-                                                    for item in items:
-                                                        temp_stat1 += temp_stats[0]
-                                                        temp_stat2 += temp_stats[1] 
-                                                        temp_stat3 += temp_stats[2] 
+                                                    for temp_stat in temp_stats:
+                                                        temp_stat1 += temp_stat[0]
+                                                        temp_stat2 += temp_stat[1] 
+                                                        temp_stat3 += temp_stat[2] 
 
                                                     # get deficiencies
                                                     stat1_deficiency = stat1_goal - temp_stat1
