@@ -445,11 +445,11 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
 
             # checking to confirm the response is valid
-            if msg.content.isnumeric() and  1 <= int(msg.content) <= len(character_list):
+            if msg.content.isnumeric() and  1 <= int(msg.content) <= len(characters):
                 answer = int(msg.content)
-                character_class = character_list[answer-1][1]
-                char_id = character_list[answer-1][0]
-                emblem = character_list[answer-1][3]
+                character_class = characters[answer-1][1]
+                char_id = characters[answer-1][0]
+                emblem = characterst[answer-1][3]
                 await ask_for_character_message.delete()
             else:
                 await ctx.message.channel.send(f'Please provide a valid numeric response.')
