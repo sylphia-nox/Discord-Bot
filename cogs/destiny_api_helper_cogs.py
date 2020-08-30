@@ -1357,11 +1357,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 temp_costs[1] = 0
                 is_exotic[1] = 0
                 
-                # loop succes, iterate
-                helmet_i += 1
+                
             # exiting helmet loop
             elif cost > surplus:
                 helmet_active = False
+            # end of helmet loop, iterate
+            helmet_i += 1
 
         print(f'Count: {count}')
         print(f'Estimated full loop runs: {count/4}')
