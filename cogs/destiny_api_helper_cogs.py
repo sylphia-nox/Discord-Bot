@@ -1109,7 +1109,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         highest_primary_score = 0
 
         # next we need to reduce the calculations to a manageable amount, but if we are already in range we can avoid that
-        if(len(item_df.index) > 100):
+        if(len(item_df.index) > 20):
             # calculate scores
             primary_scores = []
             trait3_scores = []
@@ -1143,10 +1143,13 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 if(primary_score < highest_primary_score):
                     highest_primary_score == primary_score
 
-                surplus = surplus - (highest_primary_score *10)
+                # surplus = surplus - (highest_primary_score *10)
             
             item_df['primary_score'] = primary_scores
             item_df['trait3_score'] = trait3_scores
+ 
+
+            item_df = item_df[item_df.primary_score >= (highest_primary_score-1)]
 
             # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
             if(len(item_df.index) > 100):
@@ -1185,6 +1188,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # debug
         print (f'Total Potential combinations: {len(helmets.index) * len(arms.index) * len(chests.index) * len(boots.index)}')
         count = 0
+        count2 = 0
 
         # optimization ides
         # check for invlalid loadout (exotics) at each level
@@ -1260,6 +1264,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                         if(sum(is_exotic) <= 1):
                                             # get raw scores
                                             primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = await self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
+                                            count2 += 1 #debug
 
                                             # calculate scores
                                             primary_score = neg_primary_tiers - primary_deficiency
@@ -1308,6 +1313,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         print(f'Count: {count}')
         print(f'Estimated full loop runs: {count/4}')
+        print(f'Full combos evaluated: {count2}')
         print(f'Combo list length: {len(temp_combo_list)}')
 
         # we now have a list of every item combination with stat values.           
@@ -1491,7 +1497,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 final_stat_tiers += (int(stats_final[i]/10))
                 final_stats_message += f'{trait_names[trait-1]}: {stats_final[i]}\n'
 
-            primary_stat_tiers = stats_final[0] + stats_final[1]
+            primary_stat_tiers = int(stats_final[0]/10) + int(stats_final[1]/10)
 
 
             base_stats_message += f'Extra Points: {extra_points}'
