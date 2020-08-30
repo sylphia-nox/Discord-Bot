@@ -1222,6 +1222,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         is_exotic = [0,0,0,0]
 
         surplus_delta = (highest_primary_score *10)
+        top_tier_items = 0
 
         while helmet_active and helmet_i < total_helmets:
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
@@ -1317,8 +1318,16 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                                         if primary_score > best_score:
                                                             best_score = primary_score
                                                             print(f'best_score: {best_score}')
+                                                            top_tier_items = 1
+                                                            surplus = true_surplus
+                                                            surplus_delta = (highest_primary_score *10)
                                                             if best_score == 2:
                                                                 surplus = surplus - 10
+                                                        elif primary_score == best_score:
+                                                            top_tier_items += 1
+                                                            if top_tier_items == 5:
+                                                                surplus -= surplus_delta
+                                                                surplus_delta = 0
                                                         if (count2%100 == 0):
                                                             print(f'New item added at count: {count} Prim: {primary_score} Stat3: {trait3_score}')
                                                             
@@ -1543,12 +1552,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             final_stat_tiers = 0
             
             # iterate through to create message and caculate values
-            for i, trait in enumerate(traits):
+            for index, trait in enumerate(traits):
                 # if we are assuming certain mods/masterwork are applied we need to add those to the total
-                stats_final[i] += stat_bonuses[i]
-                extra_points += stats_final[i]%10
-                final_stat_tiers += (int(stats_final[i]/10))
-                final_stats_message += f'{trait_names[trait-1]}: {stats_final[i]}\n'
+                stats_final[index] += stat_bonuses[index]
+                extra_points += stats_final[index]%10
+                final_stat_tiers += (int(stats_final[index]/10))
+                final_stats_message += f'{trait_names[trait-1]}: {stats_final[index]}\n'
 
             primary_stat_tiers = int(stats_final[0]/10) + int(stats_final[1]/10)
 
