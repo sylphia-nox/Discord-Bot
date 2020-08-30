@@ -139,7 +139,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         armor = await destiny_helpers.filter_armor(armor, exotic_hash, power_cap)
 
         # get dataframe of optimized items
-        results_df = await destiny_helpers.optimize_armor(armor, traits, stat_goal_reductions)
+        results_df = await destiny_helpers.get_optimized_armor(armor, traits, stat_goal_reductions)
 
         # create embed to send to user
         embed = await destiny_helpers.format_armor_message(results_df, player_char_info, player_info[2], traits, stat_goal_reductions)
