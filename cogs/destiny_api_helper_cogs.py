@@ -1314,6 +1314,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                                             print(f'best_score: {best_score}')
                                                             if best_score == 2:
                                                                 surplus = surplus - 10
+                                                        if (count2%100 == 0):
+                                                            print(f'New item added at count: {count} Prim: {primary_score} Stat3: {trait3_score}')
                                                             
                                                         temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
                                                     
