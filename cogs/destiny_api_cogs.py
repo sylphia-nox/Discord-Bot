@@ -99,7 +99,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
     @commands.is_owner()
     async def reload_manifest(self, ctx):
          # load manifest
-        await destiny_helpers.get_manifest()
+        await destiny_helpers.check_for_updated_manifests()
 
         # delete command message to keep channels clean if not a dm and bot has permissions
         if ctx.channel.type is ChannelType.text and ctx.channel.type is not ChannelType.private and ctx.guild.me.guild_permissions.manage_messages:
@@ -146,7 +146,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         await ctx.send(embed = embed)
 
     # this command provides users with optimized gear to maximize stats.
-    @commands.command(name = 'cleanse', brief = "~cleanse <class_name>",  help = "~cleanse <class_name:(hunter/warlock/titan)>")
+    @commands.command(name = 'cleanse', brief = "~cleanse <class_name>",  help = "~cleanse <class_name:(hunter/warlock/titan)>  Will return a list with name, scr(base stat total weighted based on your provided stat order), power cap, and DIM search string.")
     async def cleanse(self, ctx, character, number:int = 15):
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
