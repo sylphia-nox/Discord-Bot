@@ -1131,7 +1131,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 trait3_score = neg_trait3_tiers - tier3_deficiency
 
                 # check if armor is just a direct decrease in stat values
-                if temp_stat1 < stat1 and temp_stat2 < stat2:
+                if temp_stat1 < stat1 and temp_stat2 < stat2 and temp_stat3 <= stat3:
                     primary_score -= 1
                 if temp_stat3 < stat3:
                     trait3_score -= 1
@@ -1180,6 +1180,18 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         temp_combo_list = []
         helmet_active = True
         helmet_i = 0
+        best_score = 0
+
+        # debug
+        print (f'Total Potential combinations: {len(helmets.index) * len(arms.index) * len(chests.indes) * len(boots.index)}')
+        count = 0
+
+        # optimization ides
+        # check for invlalid loadout (exotics) at each level
+        # 
+        #
+        #
+
         while helmet_active and helmet_i < len(helmets.index):
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
             temp_stats = [[],[],[],[]]
@@ -1198,8 +1210,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
             # calculate cost
             cost = sum(temp_costs)
-
-            best_score = 0
+            count += 1 #debug
             
             # if cost is less than surplus continue, otherwise, we will exit current loop level.
             if(cost <= surplus):
@@ -1215,7 +1226,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     is_exotic[1] = 1 if arms.iloc[arms_i]['exotic'].astype(bool) else 0
 
                     cost = sum(temp_costs)
-                    
+                    count += 1 #debug
+
                     if(cost <= surplus):
                         chest_active = True
                         chest_i = 0
@@ -1228,6 +1240,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                             is_exotic[2] = 1 if chests.iloc[chest_i]['exotic'].astype(bool) else 0
 
                             cost = sum(temp_costs)
+                            count += 1 #debug
                             if(cost <= surplus):
                                 boots_active = True
                                 boots_i = 0
@@ -1240,6 +1253,8 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     is_exotic[3] = 1 if boots.iloc[boots_i]['exotic'].astype(bool) else 0
 
                                     cost = sum(temp_costs)
+                                    count += 1 #debug
+
                                     if(cost <= surplus):
                                         # check the loadout is valid
                                         if(sum(is_exotic) <= 1):
@@ -1251,7 +1266,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                             trait3_score = neg_trait3_tiers - tier3_deficiency
 
                                             # check if armor is just a direct decrease in stat values
-                                            if temp_stat1 < stat1 and temp_stat2 < stat2:
+                                            if temp_stat1 < stat1 and temp_stat2 < stat2 and temp_stat3 <= stat3:
                                                 primary_score -= 1
                                             if temp_stat3 < stat3:
                                                 trait3_score -= 1
@@ -1291,7 +1306,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             else:
                 helmet_active = False
 
-        print(f'{len(temp_combo_list)}')
+        print(f'Count: {count}')
+        print(f'Estimated full loop runs: {count/4}')
+        print(f'Combo list length: {len(temp_combo_list)}')
 
         # we now have a list of every item combination with stat values.           
         results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score', 'hashes']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head(20)
