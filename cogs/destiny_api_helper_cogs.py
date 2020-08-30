@@ -1277,7 +1277,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                 
 
                                     cost = sum(temp_costs)
-                                    if(cost <= (surplus - surplus_delta) or (cost <= surplus and chests.iloc[chests_i]['trait3_score'] > 0)):
+                                    if(cost <= (surplus - surplus_delta) or (cost <= surplus and chests.iloc[chest_i]['trait3_score'] > 0)):
                                         boots_active = True
                                         boots_i = 0
                                         while boots_active and boots_i < total_boots:
