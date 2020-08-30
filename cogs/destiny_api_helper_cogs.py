@@ -1068,7 +1068,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     
     # this function returns a list of optimized gear
     def optimize_armor(self, items, traits: list, stat_goal_reductions: list):
-        print(f'Beggining Optimize_armor coroutine') #debug
         # assign variables: list would be better but existing code relies on variable names.
         trait1 = traits[0]
         trait2 = traits[1]
@@ -1211,8 +1210,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             #     highest_tertiary_score_sub = trait3_score
 
             # surplus = surplus - (highest_primary_score *10)
-
-        print(f'Highest Primary Score: {highest_primary_score}') #debug
         
         item_df['primary_score'] = primary_scores
         item_df['trait3_score'] = trait3_scores
@@ -1220,7 +1217,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
         item_df = item_df[(item_df.primary_score >= (highest_primary_score-1))]
         item_df = item_df.reset_index(drop=True)
-        print(f'Total Items after highest_score_calc: {len(item_df.index)}') #debug
+
         # remove all items that result in a reduction in potential tiers if we have too many items, we can now potentially decrease surplus given highest_primary_score.
         if(len(item_df.index) > 100):
             item_df = item_df[item_df.cost <= (surplus)]
@@ -1248,11 +1245,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         boots = item_df[item_df.itemSubType.astype(int) == 3].sort_values(by=['cost','trait3_score'], ascending=[True, False])
 
         del item_df
-    
-        # debug
-        print (f'Total Potential combinations: {len(helmets.index) * len(arms.index) * len(chests.index) * len(boots.index)}')
-        count = 0
-        count2 = 0
 
         # optimization ides
         # check for invlalid loadout (exotics) at each level
@@ -1272,6 +1264,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         surplus_delta = (highest_primary_score *10)
         top_tier_items = 0
 
+        # loop through all valid options and score them
         for helmet in helmets.itertuples(index=False):
             # end goal: [[item_ids], cost, trait1, trait2, trait3, primary_score, trait3_score]
             
@@ -1284,7 +1277,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             temp_id[0] = helmet.id
 
             # calculate cost
-            count += 1 #debug
             cost = sum(temp_costs)
 
             if cost > surplus:
@@ -1295,7 +1287,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             for arm in arms.itertuples(index=False):
                 
                 is_exotic[1] = arm.exotic
-                count += 1 #debug
 
                 # check if too many exotics (helmet and arms)
                 if sum(is_exotic) > 1:
@@ -1327,7 +1318,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     elif not (cost <= (surplus - surplus_delta) or (chest.trait3_score > 0)):
                         continue 
 
-                    count += 1 #debug
                     temp_stats[2] = [chest.trait1, chest.trait2, chest.trait3]
                     temp_hashes[2] = chest.itemHash
                     temp_id[2] = chest.id
@@ -1337,8 +1327,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         is_exotic[3] = boot.exotic
                         if sum(is_exotic) > 1:
                             continue
-
-                        count += 1 #debug
 
                         temp_costs[3] = boot.cost
                         cost = sum(temp_costs)
@@ -1353,7 +1341,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         
                         # get raw scores
                         primary_deficiency, tier3_deficiency, temp_stat1, temp_stat2, temp_stat3 = self.calculate_scores(temp_stats, stat1_goal, stat2_goal, stat3_goal)
-                        count2 += 1 #debug
 
                         # calculate scores
                         primary_score = neg_primary_tiers - primary_deficiency
@@ -1369,7 +1356,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                         if (primary_score + 1) >= best_score:
                             if primary_score > best_score:
                                 best_score = primary_score
-                                print(f'best_score: {best_score}') #debug
                                 top_tier_items = 1
                                 surplus = true_surplus
                                 surplus_delta = (highest_primary_score *10)
@@ -1381,7 +1367,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                                     surplus -= surplus_delta
                                     surplus_delta = 0
                             if (count2%100 == 0):
-                                print(f'New item added at count: {count} Prim: {primary_score} Stat3: {trait3_score}') #debug
                                 
                             temp_combo_list.append([[temp_id[0], temp_id[1], temp_id[2], temp_id[3]], cost, temp_stat1, temp_stat2, temp_stat3, primary_score, trait3_score, [temp_hashes[0], temp_hashes[1], temp_hashes[2], temp_hashes[3]]])
                         
@@ -1396,12 +1381,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             # end of arms loop, reset slot to default before raising back to helmet loop
             temp_costs[1] = 0
             is_exotic[1] = 0
-                
-
-        print(f'Count: {count}')                            #debug
-        print(f'Estimated full loop runs: {count/4}')       #debug
-        print(f'Full combos evaluated: {count2}')           #debug
-        print(f'Combo list length: {len(temp_combo_list)}') #debug
 
         # we now have a list of every item combination with stat values.           
         results_df = pd.DataFrame(temp_combo_list, columns = ['ids', 'cost', 'stat1', 'stat2', 'stat3', 'prim_score', 'trait3_score', 'hashes']).sort_values(by=['prim_score','trait3_score','stat1','cost'], ascending=[False, False, False, True]).head(20)

@@ -128,7 +128,6 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
     # this command provides users with optimized gear to maximize stats.
     @commands.command(name = 'optimize', brief = "~optimize <class_name>",  help = "~optimize <class_name:(hunter/warlock/titan)>, Command to create optimized loadouts based on 3 stats.  Bot will respond with additional questions, use y or n to respond to yes/no questions.")
     async def optimize(self, ctx, character:str = ""):
-        print(f'Starting optimize command')
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
         
@@ -138,7 +137,6 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
         else:
             player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
 
-        print(f'Finished getting player info')
         # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
         armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token)
         
