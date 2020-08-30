@@ -1251,7 +1251,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 count += 1 #debug
 
                 # check if too many exotics (helmet and arms)
-                if sum(is_exotic > 1):
+                if sum(is_exotic) > 1:
                     continue
                 
                 temp_costs[1] = arm.cost
@@ -1269,7 +1269,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 for chest in chests.itertuples(index=False):
                         
                     is_exotic[2] = chest.exotic
-                    if sum(is_exotic > 1):
+                    if sum(is_exotic) > 1:
                         continue
 
                     temp_costs[2] = chest.cost
@@ -1288,7 +1288,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                     for boot in boots.itertuples(index=False):
                         
                         is_exotic[3] = boot.exotic
-                        if sum(is_exotic > 1):
+                        if sum(is_exotic) > 1:
                             continue
 
                         count += 1 #debug
