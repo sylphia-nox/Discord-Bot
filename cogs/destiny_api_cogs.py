@@ -20,7 +20,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
     # this command shows a user their current power, highest power level of each equipement piece, and needed power to hit the next level.
     @commands.command(name = 'power', brief = "`~power <class> <steam_name:optional>`", help = "`~power<class> optional:<steam_name>` Steam_name is needed if you have not authenticated.  Class should be warlock/hunter/titan (not case sensitive). Advanced ~power <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
-    async def power(self, ctx, character: str, steam_name: str = "", platform: int = 3, OAuth = True):
+    async def power(self, ctx, character: str = "", steam_name: str = "", platform: int = 3, OAuth = True):
 
         if steam_name == "":
             player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
@@ -37,7 +37,10 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
                     OAuth = False
         
         # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
-        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, OAuth, access_token)
+        if character == "":
+            player_char_info = await destiny_helpers.choose_player_char_and_get_info(ctx, player_info[0], player_info[1], OAuth, access_token)
+        else:
+            player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, OAuth, access_token)
 
         # declare list to hold items and get items
         items = await destiny_helpers.get_player_items(player_char_info, OAuth, access_token)
@@ -56,7 +59,7 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
             await ctx.message.delete()
 
     @commands.command(name = 'level', brief = "`~level <class> <steam_name:optional>`", help = "`~level <class> optional:<steam_name>` Steam_name is needed if you have not authenticated. Class should be warlock/hunter/titan (not case sensitive).  Advanced ~level <class> <account_name> <platform> (steam = 3, PSN = 2, XB = 1)")
-    async def level(self, ctx, character: str, steam_name: str = "", platform: int = 3, OAuth = True):
+    async def level(self, ctx, character:str = "", steam_name: str = "", platform: int = 3, OAuth = True):
         
         if steam_name == "":
             player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
@@ -72,8 +75,11 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
                 if (access_token == "refresh token expired" or access_token == "token not found"):
                     OAuth = False
 
-        # get player character info
-        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, OAuth, access_token)
+        # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
+        if character == "":
+            player_char_info = await destiny_helpers.choose_player_char_and_get_info(ctx, player_info[0], player_info[1], OAuth, access_token)
+        else:
+            player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, OAuth, access_token)
         
         # declare list to hold items and get items
         items = await destiny_helpers.get_player_items(player_char_info, OAuth, access_token)
@@ -121,13 +127,17 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
     
     # this command provides users with optimized gear to maximize stats.
     @commands.command(name = 'optimize', brief = "~optimize <class_name>",  help = "~optimize <class_name:(hunter/warlock/titan)>, Command to create optimized loadouts based on 3 stats.  Bot will respond with additional questions, use y or n to respond to yes/no questions.")
-    async def optimize(self, ctx, character):
+    async def optimize(self, ctx, character:str = ""):
         print(f'Starting optimize command')
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
         
         # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
-        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
+        if character == "":
+            player_char_info = await destiny_helpers.choose_player_char_and_get_info(ctx, player_info[0], player_info[1], True, access_token)
+        else:
+            player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
+
         print(f'Finished getting player info')
         # declare list to hold armor and get items [itemInstanceID, itemType, itemSubType, power_cap, exotic, item_stats, itemHash]
         armor = await destiny_helpers.get_player_armor(player_char_info, True, access_token)
@@ -148,12 +158,15 @@ class destiny_api_cogs(commands.Cog, name='Destiny Commands'):
 
     # this command provides users with optimized gear to maximize stats.
     @commands.command(name = 'cleanse', brief = "~cleanse <class_name>",  help = "~cleanse <class_name:(hunter/warlock/titan)>  Will return a list with name, scr(base stat total weighted based on your provided stat order), power cap, and DIM search string.")
-    async def cleanse(self, ctx, character, number:int = 15):
+    async def cleanse(self, ctx, character:str = "", number:int = 15):
         player_info = await destiny_helpers.get_member_info_Oauth(ctx.message.author.id)
         access_token = player_info[3]
         
         # get player character info [memberID, membershipType, character_class, char_ids, char_id, emblem]
-        player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
+        if character == "":
+            player_char_info = await destiny_helpers.choose_player_char_and_get_info(ctx, player_info[0], player_info[1], True, access_token)
+        else:
+            player_char_info = await destiny_helpers.get_player_char_info(player_info[0], player_info[1], character, True, access_token)
 
         # ask if player want to include all items or only items in vault
         all_items = await destiny_helpers.include_items_on_character(ctx)

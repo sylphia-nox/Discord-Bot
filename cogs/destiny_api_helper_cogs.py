@@ -410,6 +410,56 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         player_char_info = [memberID, membershipType, character_class, char_ids, char_id, emblem]
         return player_char_info
 
+    # helper function to get player info as player[memberID, membershipType, class_type, char_ids]
+    async def choose_player_char_and_get_info(self, ctx, memberID, membershipType, OAuth = False, access_token = ""):
+
+        # make request for player info, getting character info.
+        get_characters_return = await api.get(f'/Destiny2/{membershipType}/Profile/{memberID}/?components=200', OAuth, access_token)
+
+        characters = []
+        char_ids = []
+        for key in get_characters_return['Response']['characters']['data']:
+            char_class = get_characters_return['Response']['characters']['data'][str(key)]['classType']
+            emblem = get_characters_return['Response']['characters']['data'][str(key)]['emblemPath']
+            if char_class == 0:
+                characters.append([key, char_class, "Titan", emblem])
+            elif char_class == 1:
+                characters.append([key, char_class, "Hunter", emblem])
+            elif char_class == 2:
+                characters.append([key, char_class, "Warlock", emblem])
+            char_ids.append(key)
+
+        character_list = ""
+        for i, char in enumerate(characters):
+            character_list += f'{i+1}: {char[2]}\n'
+
+        # ask for light level
+        ask_for_character_message = await ctx.message.channel.send(f'Which character?  Choose by number\n{character_list}')
+
+        character_class = -1
+
+        # loop to handle bad inputs
+        while character_class == -1:
+
+            # get response message
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel is ctx.message.channel)
+
+            # checking to confirm the response is valid
+            if msg.content.isnumeric() and  1 <= int(msg.content) <= len(character_list):
+                answer = int(msg.content)
+                character_class = character_list[answer-1][1]
+                char_id = character_list[answer-1][0]
+                emblem = character_list[answer-1][3]
+                await ask_for_character_message.delete()
+            else:
+                await ctx.message.channel.send(f'Please provide a valid numeric response.')
+
+        # delete json to save memory
+        del get_characters_return
+
+        player_char_info = [memberID, membershipType, character_class, char_ids, char_id, emblem]
+        return player_char_info
+
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
     async def get_player_items(self, player_char_info, OAuth = False, access_token = ""):
         global manifest
@@ -830,8 +880,6 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
             print (sql_return)
             return "token not found"
 
-    
-
     # helper function to get list of items as items[InstanceID, itemType, itemSubType, power_level]
     async def get_player_armor(self, player_char_info, OAuth = False, access_token = "", all_items: bool = True):
         global manifest
@@ -1011,13 +1059,12 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # return list of best items
         return high_items, reduced_item_list, high_values
 
-    
+    # wrapper to run optimize_armor in executor
     async def get_optimized_armor(self, items, traits: list, stat_goal_reductions: list):
         loop = asyncio.get_event_loop()
         items_df = await loop.run_in_executor(None, self.optimize_armor, items, traits, stat_goal_reductions)
 
         return items_df
-    
     
     # this function returns a list of optimized gear
     def optimize_armor(self, items, traits: list, stat_goal_reductions: list):
