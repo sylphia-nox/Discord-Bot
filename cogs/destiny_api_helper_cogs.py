@@ -1530,7 +1530,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         for i in range(combos):
             names_message = ""
             for name in combo_df.iloc[i]['names']:
-                names_message += f'{name[0:19]}\n'
+                names_message += f'{name[0:18]}\n'
 
             DIM_search += f'Set {i+1}: `'
             for index, Id in enumerate(combo_df.iloc[i]['ids']):
@@ -1653,7 +1653,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
     # helper funciton for users to select light level for filtering out amor that will be sunset         
     async def pick_light_level(self, ctx):
         # ask for light level
-        light_level_message = await ctx.message.channel.send(f'What is the minimum Light Level you want your amor to be able to achieve? This filters armor that cannot achieve above your provided power level.')
+        light_level_message = await ctx.message.channel.send(f'What is the minimum Light Level you want your armor to be able to achieve? This filters armor that cannot achieve above your provided power level.')
 
         light_level = -1
 
