@@ -1577,6 +1577,9 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
         # add DIM strings to bottom
         embed.add_field(name=f'DIM Search Strings:', value = DIM_search, inline = False)
 
+        if combos == 0:
+            raise errors.NoValidCombos("There were no valid combos found.")
+
         return embed
 
     async def pick_exotic(self, ctx, items):
