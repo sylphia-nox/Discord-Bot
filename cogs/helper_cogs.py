@@ -423,6 +423,9 @@ class helper_cogs(commands.Cog, name='Utilities'):
             print(f'Could not log error to GCP')
             print(f'{traceback.format_exc()}')
             pass
+        except:
+            print("Critical failure in log_error")
+            print(traceback.format_exc())
 
     async def purge_oauth_DB(self):
         bad_items = 0
