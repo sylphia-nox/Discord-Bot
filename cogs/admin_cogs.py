@@ -42,7 +42,7 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
             await ctx.message.delete()
 
     # this command allows a user with certain privileges to delete Raids
-    @commands.command(name='delete', brief = "`~delete <raid #>`", help='type ~delete #, this command is only available to admin users.')
+    @commands.command(name='delete', brief = "`~delete <raid #>`", help='type ~delete #, # is the raid number to delete.')
     @commands.has_any_role(*admin_role_codes)
     @commands.guild_only()
     async def delete(self, ctx, raid_id: int):
@@ -66,7 +66,7 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
             await ctx.message.delete()
 
     # this command allows an admin user to remove someone from a raid post
-    @commands.command(name='remove', brief = "`~remove @usertag <spot number>`", help='type remove @usertag #, where # is the raid ID to remove the tagged user from the raid')
+    @commands.command(name='remove', brief = "`~remove @usertag <spot number>`", help='type remove @usertag #, where # is the raid ID from which to remove the tagged user.')
     @commands.has_any_role(*admin_role_codes)
     @commands.guild_only()
     async def remove(self, ctx, user: discord.Member, raid_id: int):
@@ -78,7 +78,7 @@ class admin_cogs(commands.Cog, name='Admin Commands'):
             await ctx.message.delete()
 
     # this command allows an admin user to reschedule a raid
-    @commands.command(name='reschedule', brief = "`~reschedule <new time>`", help = 'type `~reschedule <new time>`, new time must be a parsable time or date/time.')
+    @commands.command(name='reschedule', brief = "`~reschedule <new time>`", help = 'type `~reschedule <new time>`, new time must be a parsable time or date/time.  If there is any whitespace surrround the time with "".')
     @commands.has_any_role(*admin_role_codes)
     @commands.guild_only()
     async def reschedule(self, ctx, raid_id: int, new_time: str):
