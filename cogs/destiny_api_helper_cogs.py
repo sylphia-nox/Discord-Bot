@@ -75,7 +75,7 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
 
 
         ItemLiteUrl = ""
-        ItemUrl = "/common/destiny2_content/json/en/DestinyInventoryItemDefinition-900dbb84-139b-43a4-a41e-9dbe81a031de.json"
+        ItemUrl = "/common/destiny2_content/json/en/DestinyInventoryItemDefinition-83e9ee00-d5d1-453c-b454-ea08c1acefb4.json"
         PowerCapUrl = ""
 
     # helper function to check if items need to be updated
