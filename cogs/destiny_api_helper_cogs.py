@@ -101,16 +101,16 @@ class destiny_api_helper_cogs(commands.Cog, name='Destiny Utilities'):
                 print("New ItemLiteDefinition manifest loaded")
 
             # check if power cap definitions need to be updated
-            if new_powerCapUrl != PowerCapUrl:
-                PowerCapUrl = new_powerCapUrl
-                power_caps = await api.get_simple_async("https://www.bungie.net/" + new_powerCapUrl)
-                print("New PowerCapDefinition manifest loaded")
+            # if new_powerCapUrl != PowerCapUrl:
+            #     PowerCapUrl = new_powerCapUrl
+            #     power_caps = await api.get_simple_async("https://www.bungie.net/" + new_powerCapUrl)
+            #     print("New PowerCapDefinition manifest loaded")
 
-            # check if plugs and intrinsic stats need to be updated
-            if new_itemUrl != ItemUrl:
-                ItemUrl = new_itemUrl
-                await self.update_db_tables(new_itemUrl)
-                print("Plugs and intrinsic armor updated.")
+            # # check if plugs and intrinsic stats need to be updated
+            # if new_itemUrl != ItemUrl:
+            #     ItemUrl = new_itemUrl
+            #     await self.update_db_tables(new_itemUrl)
+            #     print("Plugs and intrinsic armor updated.")
         except Exception as e:
             raise errors.ManifestLoadError("Critical Error: manifest not loaded") from e
 
