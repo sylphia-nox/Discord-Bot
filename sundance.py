@@ -1,5 +1,5 @@
 #sundance.py
-#Created by Michael Scarfi
+#Created by Sylphia Nox
 #
 #Function: cordinate Raids and Fireteams
 
