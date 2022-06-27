@@ -6,7 +6,7 @@ appdirs
 asn1crypto
 async-timeout
 discord.py
-mysql-connector-python==8.0.12
+mysql-connector-python==8.0.14
 numpy
 pandas
 python-dateutil
